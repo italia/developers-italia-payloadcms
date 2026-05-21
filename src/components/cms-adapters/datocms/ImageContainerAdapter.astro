@@ -1,0 +1,13 @@
+---
+import { ImageContainer } from "@components/molecules/ImageContainer";
+import type { RatioImageProps } from "@components/molecules/ImageContainer/types";
+import type { ImageBlockFragmentType } from "@graphql/fragment/commonFragments";
+
+type Props = {
+  block: ImageBlockFragmentType;
+};
+
+const { block } = Astro.props;
+---
+
+<ImageContainer ratio={block.ratio as RatioImageProps} image={block.image} />

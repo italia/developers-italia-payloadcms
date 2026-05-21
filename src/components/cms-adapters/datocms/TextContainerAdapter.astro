@@ -1,0 +1,30 @@
+---
+import { TextContainer } from "@components/molecules/TextContainer";
+import type {
+  HeadingTag,
+  TextContainerVariant,
+} from "@components/molecules/TextContainer/types";
+import type { TextBlockFragmentType } from "@graphql/fragment/commonFragments";
+import { getCtaFields } from "@utils/getCtaFields";
+
+type Props = {
+  block: TextBlockFragmentType;
+  variant: TextContainerVariant;
+  heading?: HeadingTag;
+};
+
+const { block, variant, heading = "h2" } = Astro.props;
+const { lang } = Astro.locals;
+
+const { labelButton, linkTo, openInNewTab } = getCtaFields(block.cta, lang);
+---
+
+<TextContainer
+  title={block.title}
+  paragraph={block.paragraph}
+  variant={variant}
+  labelButton={labelButton}
+  linkTo={linkTo}
+  openInNewTab={openInNewTab}
+  heading={heading}
+/>

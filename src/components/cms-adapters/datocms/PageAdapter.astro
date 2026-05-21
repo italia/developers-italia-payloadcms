@@ -1,0 +1,106 @@
+---
+import ActionCardSectionAdapter from "@components/cms-adapters/datocms/ActionCardSectionAdapter.astro";
+import CalloutLinkAdapter from "@components/cms-adapters/datocms/CalloutLinkAdapter.astro";
+import CardLinkListAdapter from "@components/cms-adapters/datocms/CardLinkListAdapter.astro";
+import CatalogueFeedAdapter from "@components/cms-adapters/datocms/CatalogueFeedAdapter.astro";
+import DataSectionAdapter from "@components/cms-adapters/datocms/DataSectionAdapter.astro";
+import FAQSectionAdapter from "@components/cms-adapters/datocms/FAQSectionAdapter.astro";
+import HeroAdapter from "@components/cms-adapters/datocms/HeroAdapter.astro";
+import IntroArticleAdapter from "@components/cms-adapters/datocms/IntroArticleAdapter.astro";
+import ListCollectionAdapter from "@components/cms-adapters/datocms/ListCollectionAdapter.astro";
+import NewsFeedAdapter from "@components/cms-adapters/datocms/NewsFeedAdapter.astro";
+import SearchBarAdapter from "@components/cms-adapters/datocms/SearchBarAdapter.astro";
+import SpeakerAdapter from "@components/cms-adapters/datocms/SpeakerAdapter.astro";
+import StructuredTextBlockAdapter from "@components/cms-adapters/datocms/StructuredTextBlockAdapter.astro";
+import SupportChannelsSectionAdapter from "@components/cms-adapters/datocms/SupportChannelsSectionAdapter.astro";
+import SupportCTASectionAdapter from "@components/cms-adapters/datocms/SupportCTASectionAdapter.astro";
+import TextAndAccordionAdapter from "@components/cms-adapters/datocms/TextAndAccordionAdapter.astro";
+import TextAndImageAdapter from "@components/cms-adapters/datocms/TextAndImageAdapter.astro";
+import TextAndStatisticsAdapter from "@components/cms-adapters/datocms/TextAndStatisticsAdapter.astro";
+import TextAndUseCasesAdapter from "@components/cms-adapters/datocms/TextAndUseCasesAdapter.astro";
+import TextOnlyAdapter from "@components/cms-adapters/datocms/TextOnlyAdapter.astro";
+import TopicFilterAdapter from "@components/cms-adapters/datocms/TopicFilterAdapter.astro";
+import UseCaseContainerAdapter from "@components/cms-adapters/datocms/UseCaseContainerAdapter.astro";
+import WebinarDescriptionAdapter from "@components/cms-adapters/datocms/WebinarDescriptionAdapter.astro";
+import type { CatalogueContentFragmentType } from "@graphql/fragment/catalogue";
+import type { HomepageModelContentFragmentType } from "@graphql/fragment/homepage";
+import type { InsightContentFragmentType } from "@graphql/fragment/insight";
+import type { PageContentFragmentType } from "@graphql/fragment/page";
+import type { SearchPageContentFragmentType } from "@graphql/fragment/search";
+import type { StoryContentFragmentType } from "@graphql/fragment/story";
+import type { WebinarContentFragmentType } from "@graphql/fragment/webinar";
+import { DatoBlockModel } from "@utils/cmsMapper";
+
+type ContentType =
+  | HomepageModelContentFragmentType
+  | PageContentFragmentType
+  | InsightContentFragmentType
+  | CatalogueContentFragmentType
+  | StoryContentFragmentType
+  | WebinarContentFragmentType
+  | SearchPageContentFragmentType;
+
+type Props = {
+  content: ContentType[];
+  isFontSerif?: boolean;
+};
+
+const { content, isFontSerif = false } = Astro.props;
+---
+
+{
+  content.map((block) => {
+    switch (block.componentName) {
+      case DatoBlockModel.Hero:
+        return <HeroAdapter block={block} />;
+      case DatoBlockModel.NewsFeed:
+        return <NewsFeedAdapter block={block} />;
+      case DatoBlockModel.SupportChannels:
+        return <SupportChannelsSectionAdapter block={block} />;
+      case DatoBlockModel.FaqSection:
+        return <FAQSectionAdapter block={block} />;
+      case DatoBlockModel.DataSection:
+        return <DataSectionAdapter block={block} />;
+      case DatoBlockModel.UseCaseContainer:
+        return <UseCaseContainerAdapter block={block} />;
+      case DatoBlockModel.TopicFilter:
+        return <TopicFilterAdapter block={block} />;
+      case DatoBlockModel.SupportCta:
+        return <SupportCTASectionAdapter block={block} size="default" />;
+      case DatoBlockModel.StructuredText:
+        return (
+          <StructuredTextBlockAdapter block={block} isFontSerif={isFontSerif} />
+        );
+      case DatoBlockModel.ListCollection:
+        return <ListCollectionAdapter block={block} />;
+      case DatoBlockModel.CatalogueFeed:
+        return <CatalogueFeedAdapter block={block} />;
+      case DatoBlockModel.ActionCard:
+        return <ActionCardSectionAdapter block={block} />;
+      case DatoBlockModel.SearchBar:
+        return <SearchBarAdapter block={block} />;
+      case DatoBlockModel.TextImage:
+        return <TextAndImageAdapter block={block} />;
+      case DatoBlockModel.TextStatistic:
+        return <TextAndStatisticsAdapter block={block} />;
+      case DatoBlockModel.TextUseCase:
+        return <TextAndUseCasesAdapter block={block} />;
+      case DatoBlockModel.TextAccordion:
+        return <TextAndAccordionAdapter block={block} />;
+      case DatoBlockModel.WebinarDescription:
+        return <WebinarDescriptionAdapter block={block} />;
+      case DatoBlockModel.Speaker:
+        return <SpeakerAdapter block={block} />;
+      case DatoBlockModel.IntroArticle:
+        return <IntroArticleAdapter block={block} />;
+      case DatoBlockModel.CalloutLink:
+        return <CalloutLinkAdapter block={block} />;
+      case DatoBlockModel.TextOnly:
+        return <TextOnlyAdapter block={block} />;
+      case DatoBlockModel.CardLinkList:
+        return <CardLinkListAdapter block={block} />;
+      default:
+        return null;
+    }
+  })
+}

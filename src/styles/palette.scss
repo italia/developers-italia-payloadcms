@@ -1,0 +1,25 @@
+$accent-color: #c8f6e7;
+$accent-color-dark: #004d33;
+$primary-darker: #036;
+$color-text-base: #1a1a1a;
+$bg-medium: #bfdfff;
+$color-text-secondary: #303f4c;
+$primary: #0066cc;
+$gray-border: #c4c9cc;
+$gray-100: #f5f5f5;
+$white: #ffffff;
+$primary-a10: #036;
+$gray-400: #a3a3a3;
+$primary-dark: #17334f;
+
+.bg-medium {
+  background-color: $bg-medium !important;
+}
+
+.text-accent {
+  color: $accent-color;
+}
+
+.text-accent-dark {
+  color: $accent-color-dark;
+}

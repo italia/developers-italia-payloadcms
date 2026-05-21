@@ -1,0 +1,49 @@
+---
+import { TopicFilter } from "@components/organisms/TopicFilter";
+import type { ContentCollectionProps } from "@components/organisms/TopicFilter/types";
+import type { TopicFilterFragmentType } from "@graphql/fragment/sectionFragments";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+
+type Props = {
+  block: TopicFilterFragmentType;
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+
+const contentCollection: ContentCollectionProps[] = block.content.map(
+  (content) => {
+    const topicSlug = getLocaleValue(
+      content.content[0].allTopicLocales,
+      lang,
+      null,
+    );
+    return {
+      title: content.title,
+      topicSlug: getLocaleValue(topicSlug?._allLabelLocales, lang, ""),
+      paragraph: content.paragraph || undefined,
+      items: content.content.map((item) => {
+        const topicRecord = getLocaleValue(item.allTopicLocales, lang, null);
+        return {
+          id: item.id,
+          title: getLocaleValue(item.allTitleLocales, lang, ""),
+          description: getLocaleValue(item.allParagraphLocales, lang, ""),
+          image: item.image,
+          linkTo: linkResolver(item.id, lang),
+          category: getLocaleValue(topicRecord?._allLabelLocales, lang, ""),
+          isExternal: false,
+        };
+      }),
+    };
+  },
+);
+---
+
+<TopicFilter
+  title={block.title}
+  filterTitle={block.titleFilter}
+  labelForAll={block.labelForAll}
+  paragraph={block.paragraph}
+  contentCollection={contentCollection}
+/>

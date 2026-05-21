@@ -1,0 +1,60 @@
+---
+import ItIcon from "@static/assets/ItIcon.astro";
+import type {
+  GenericListItemProps,
+  GenericListSizeProps,
+  GenericListVariantProps,
+} from "./types";
+
+type Props = GenericListItemProps & {
+  size?: GenericListSizeProps;
+  variant?: GenericListVariantProps;
+  bordered?: boolean;
+};
+const {
+  text,
+  subtext,
+  avatar,
+  icon,
+  size = "default",
+  variant = "light",
+  bordered = false,
+} = Astro.props;
+const textClassName = size === "small" ? "fs-6" : size === "bold" ? "text" : "";
+
+const colorClassName = variant === "dark" ? "text-white text-underline" : "";
+const iconClassName = variant === "dark" ? "icon-white" : "";
+---
+
+<li>
+  <div class={`list-item ${!bordered ? "border-0" : ""}`}>
+    {
+      avatar && (
+        <div class="avatar size-lg">
+          <img src={avatar} alt={text} />
+        </div>
+      )
+    }
+
+    {
+      !avatar && icon && (
+        <div class="it-rounded-icon">
+          <ItIcon name={icon} class={iconClassName} />
+        </div>
+      )
+    }
+
+    <div class={`it-right-zone ${colorClassName}`}>
+      {
+        subtext ? (
+          <div>
+            <p class="text text-secondary m-0">{text}</p>
+            <p class="small m-0">{subtext}</p>
+          </div>
+        ) : (
+          <div class={`${textClassName} m-0 col-10`}>{text}</div>
+        )
+      }
+    </div>
+  </div>
+</li>

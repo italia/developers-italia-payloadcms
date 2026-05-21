@@ -1,0 +1,162 @@
+---
+import { SplitContent } from "@components/layout/SplitContent";
+import { CardEditorialStory } from "@components/molecules/CardEditorialStory";
+import { CardEditorialNews } from "@components/molecules/CardEditorialNews";
+import type { CardEditorialNewsProps } from "@components/molecules/CardEditorialNews/types";
+import { TabContent, Tabs } from "@components/molecules/Tabs";
+import TextContainer from "@components/molecules/TextContainer/TextContainer.astro";
+import { Carousel, CarouselItem } from "@components/molecules/Carousel";
+import ButtonLink from "@components/atoms/Button/ButtonLink.astro";
+import type { CardEditorialStoryProps } from "@components/molecules/CardEditorialStory/types";
+import type { SectionBackground } from "@utils/background";
+
+type NewsTab = {
+  title: string;
+  componentName: "CardEditorialNews";
+  news: CardEditorialNewsProps[];
+};
+
+type StoryTab = {
+  title: string;
+  componentName: "CardEditorialStory";
+  news: CardEditorialStoryProps[];
+};
+
+export type UpdateTabSectionTab = NewsTab | StoryTab;
+
+type UpdateTabSectionProps = {
+  id: string;
+  title: string;
+  paragraph: string;
+  tabs: UpdateTabSectionTab[];
+  backgroundColor?: SectionBackground;
+  labelButton?: string;
+  linkTo?: string;
+};
+
+type Props = UpdateTabSectionProps;
+
+const {
+  id,
+  title,
+  paragraph,
+  tabs = [],
+  labelButton,
+  linkTo,
+  backgroundColor = "dark",
+} = Astro.props;
+
+const tabsItems = tabs.map((tab, index) => ({
+  id: `tab-${id}-${index}`,
+  label: tab.title,
+  active: index === 0,
+}));
+
+const hasMultipleTabs = tabsItems.length > 1;
+
+const variantTextContainer =
+  backgroundColor === "dark"
+    ? "dark"
+    : backgroundColor === "primary"
+      ? "primary"
+      : "light";
+
+const variantButtonLink =
+  backgroundColor === "dark" || backgroundColor === "primary"
+    ? "dark"
+    : "light";
+---
+
+<SplitContent
+  leftColumns={5}
+  background={backgroundColor}
+  alignItems="top"
+  sectionTitleId={title}
+>
+  <TextContainer
+    slot="left"
+    title={title}
+    paragraph={paragraph}
+    variant={variantTextContainer}
+  />
+  <div class="row pt-lg-5">
+    <Tabs id={id} background={backgroundColor} items={tabsItems}>
+      {
+        tabs.map((tab, index) => (
+          <TabContent tab={tabsItems[index]}>
+            <Carousel>
+              {tab.componentName === "CardEditorialNews" &&
+                tab.news.map((n) => (
+                  <CarouselItem>
+                    <CardEditorialNews {...n} />
+                  </CarouselItem>
+                ))}
+
+              {tab.componentName === "CardEditorialStory" &&
+                tab.news.map((n) => (
+                  <CarouselItem>
+                    <CardEditorialStory {...n} />
+                  </CarouselItem>
+                ))}
+            </Carousel>
+
+            <div class="d-none d-lg-block">
+              <ul
+                class={`it-card-list row ${hasMultipleTabs ? "pt-5" : ""}`}
+                aria-label={tab.title}
+              >
+                {tab.componentName === "CardEditorialNews" &&
+                  tab.news.map((n) => (
+                    <li class="col-12 col-lg-4 mb-3">
+                      <CardEditorialNews {...n} />
+                    </li>
+                  ))}
+
+                {tab.componentName === "CardEditorialStory" &&
+                  tab.news.map((n) => (
+                    <li class="col-12 col-lg-4 mb-3">
+                      <CardEditorialStory {...n} />
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </TabContent>
+        ))
+      }
+    </Tabs>
+    {
+      labelButton && linkTo && (
+        <div class="mt-5 d-flex justify-content-center">
+          <ButtonLink
+            size="small"
+            variant={variantButtonLink}
+            label={labelButton}
+            linkTo={linkTo}
+          />
+        </div>
+      )
+    }
+  </div>
+</SplitContent>
+
+<script>
+  const refreshTabCarousels = () => {
+    const carousels = document.querySelectorAll(".splide");
+    carousels.forEach((carousel) => {
+      // @ts-ignore - Se l'istanza è presente, facciamo refresh
+      if (carousel.splide) {
+        // @ts-ignore - Se l'istanza è presente, facciamo refresh
+        carousel.splide.refresh();
+      } else {
+        window.dispatchEvent(new Event("resize"));
+      }
+    });
+  };
+
+  document.addEventListener("shown.bs.tab", refreshTabCarousels);
+</script>
+<style is:global>
+  .splide__pagination__page.is-active {
+    background-color: white !important;
+  }
+</style>

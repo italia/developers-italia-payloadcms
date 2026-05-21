@@ -1,0 +1,71 @@
+---
+import { Sidebar } from "@components/organisms/Sidebar";
+import type {
+  SidebarItemFirstLevelProps,
+  SidebarItemSecondLevelProps,
+} from "@components/organisms/Sidebar/types";
+import type {
+  MenuArticleItemFragmentType,
+  SidebarMenuFragmentType,
+} from "@graphql/fragment/commonFragments";
+import type { SidebarFragmentType } from "@graphql/fragment/layout";
+import { DatoBlockModel } from "@utils/cmsMapper";
+import {
+  createFlatMenuSidebar,
+  createMenuSidebar,
+} from "@utils/createMenuSidebarHelper";
+import { getLocaleValue } from "@utils/getLocaleValue";
+
+type Props = {
+  sidebar: SidebarFragmentType;
+};
+
+const { sidebar } = Astro.props;
+const currentPathname = Astro.url.pathname.replace(/\/$/, "");
+const { lang } = Astro.locals;
+const headerLabel = getLocaleValue(sidebar._allHeaderLabelLocales, lang, "");
+const openLabel = getLocaleValue(sidebar._allOpenLabelLocales, lang, "");
+const closeLabel = getLocaleValue(sidebar._allCloseLabelLocales, lang, "");
+
+const menu = getLocaleValue(sidebar._allMenuLocales, lang, null);
+
+if (!menu) {
+  return;
+}
+
+const isMenuArticle = (item: any): item is MenuArticleItemFragmentType =>
+  item.__typename === DatoBlockModel.MenuArticleItem;
+
+const isAccordionMenu = (item: any): item is SidebarMenuFragmentType =>
+  item.__typename === DatoBlockModel.AccordionMenu;
+
+const menuItems = menu ?? [];
+
+const flatItems = menuItems.filter(
+  isMenuArticle,
+) as MenuArticleItemFragmentType[];
+const accordionItems = menuItems.filter(
+  isAccordionMenu,
+) as SidebarMenuFragmentType[];
+
+const sidebarAccordionItems: SidebarItemFirstLevelProps[] = createMenuSidebar(
+  accordionItems,
+  currentPathname,
+  lang,
+);
+
+const sidebarItems: SidebarItemSecondLevelProps[] = createFlatMenuSidebar(
+  flatItems,
+  currentPathname,
+  lang,
+);
+---
+
+<Sidebar
+  id={sidebar.id}
+  header={headerLabel || undefined}
+  openLabel={openLabel}
+  closeLabel={closeLabel}
+  accordionItems={sidebarAccordionItems}
+  flatItems={sidebarItems}
+/>

@@ -1,0 +1,49 @@
+---
+import { ButtonLink } from "@components/atoms/Button";
+import type { TextContainerProps } from "./types";
+
+type Props = TextContainerProps;
+
+const {
+  title,
+  paragraph,
+  labelButton,
+  linkTo,
+  variant = "light",
+  heading: TitleTag = "h2",
+  openInNewTab = false,
+} = Astro.props;
+
+const colorClass =
+  variant === "dark" || variant === "primary" ? "text-white" : "";
+
+const variantButton =
+  variant === "primary"
+    ? "outline-dark"
+    : variant === "dark"
+      ? "dark"
+      : undefined;
+---
+
+<style is:global>
+  @import "./style.scss";
+</style>
+<div class=`text-container mb-4 mb-lg-0 ${colorClass}`>
+  <TitleTag class="mb-3" id={title}>
+    {title}
+  </TitleTag>
+  <Fragment class="mb-4" set:html={paragraph} />
+  {
+    labelButton && linkTo && (
+      <div class="mt-5">
+        <ButtonLink
+          size="small"
+          label={labelButton}
+          variant={variantButton}
+          linkTo={linkTo}
+          openInNewTab={openInNewTab}
+        />
+      </div>
+    )
+  }
+</div>

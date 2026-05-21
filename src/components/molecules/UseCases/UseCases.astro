@@ -1,0 +1,28 @@
+---
+import { UseCaseCard } from "@components/molecules/UseCaseCard";
+import type {
+  UseCaseCardBackgroundColor,
+  UseCaseCardProps,
+} from "@components/molecules/UseCaseCard/types";
+
+type Props = {
+  label: string;
+  items: UseCaseCardProps[];
+  backgroundColor?: UseCaseCardBackgroundColor;
+};
+
+const { items, label, backgroundColor } = Astro.props;
+---
+
+<style>
+  @import "./style.scss";
+</style>
+
+<h3 class="it-label">{label}</h3>
+<div class="usecase-container">
+  {
+    items.map((useCase) => (
+      <UseCaseCard {...useCase} backgroundColor={backgroundColor} />
+    ))
+  }
+</div>

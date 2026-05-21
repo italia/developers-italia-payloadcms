@@ -1,0 +1,34 @@
+---
+import StatisticAdapter from "@components/cms-adapters/datocms/StatisticAdapter.astro";
+import TextContainerAdapter from "@components/cms-adapters/datocms/TextContainerAdapter.astro";
+import { TextAndStatistics } from "@components/organisms/TextAndStatistics";
+import type { TextAndStatisticsFragmentType } from "@graphql/fragment/sectionFragments";
+import type { SectionBackground } from "@utils/background";
+
+type Props = {
+  block: TextAndStatisticsFragmentType;
+};
+
+const { block } = Astro.props;
+
+const variantTextContainer =
+  block.backgroundColor === "dark" ? "dark" : "light";
+---
+
+<TextAndStatistics
+  background={block.backgroundColor as SectionBackground}
+  showInline={block.showInline}
+  sectionTitleId={block.text.title}
+>
+  <TextContainerAdapter
+    slot="text"
+    block={block.text}
+    variant={variantTextContainer}
+  />
+  <StatisticAdapter
+    slot="statistics"
+    block={block.statistics}
+    variant={variantTextContainer}
+    showInline={block.showInline}
+  />
+</TextAndStatistics>

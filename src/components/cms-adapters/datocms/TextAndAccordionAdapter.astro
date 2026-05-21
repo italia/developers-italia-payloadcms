@@ -1,0 +1,21 @@
+---
+import AccordionAdapter from "@components/cms-adapters/datocms/AccordionAdapter.astro";
+import TextContainerAdapter from "@components/cms-adapters/datocms/TextContainerAdapter.astro";
+import { TextAndAccordions } from "@components/organisms/TextAndAccordions";
+import type { TextAndAccordionFragmentType } from "@graphql/fragment/sectionFragments";
+import type { SectionBackground } from "@utils/background";
+
+type Props = {
+  block: TextAndAccordionFragmentType;
+};
+
+const { block } = Astro.props;
+---
+
+<TextAndAccordions
+  background={block.backgroundColor as SectionBackground}
+  sectionTitleId={block.text.title}
+>
+  <TextContainerAdapter slot="text" block={block.text} variant="light" />
+  <AccordionAdapter slot="accordion" block={block.accordion} />
+</TextAndAccordions>

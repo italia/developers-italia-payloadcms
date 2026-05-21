@@ -1,0 +1,102 @@
+---
+import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
+
+import type { CatalogueContentFragmentType } from "@graphql/fragment/catalogue";
+import type { TagFragmentType } from "@graphql/fragment/commonFragments";
+import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
+
+import type { SiteLocale } from "@graphql/types";
+import Layout from "@layouts/Layout.astro";
+import { getLastUpdateCollection } from "@utils/getLastUpdateCollection";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import {
+  extractFaqItems,
+  extractListItems,
+  type JsonLdPageData,
+} from "@utils/JsonLD/seoJsonLd";
+import { linkResolver } from "@utils/linkResolver";
+import { removeLang } from "@utils/pathHelper";
+import { getCollection, getEntry } from "astro:content";
+
+export async function getStaticPaths() {
+  type PathItem = {
+    params: {
+      catalogue: string;
+      lang: SiteLocale;
+    };
+    props: {
+      seoMeta: TagFragmentType[];
+      seo: SeoFieldFragmentType | null;
+      content: CatalogueContentFragmentType[];
+      id: string;
+      publishedAt: string;
+      updatedAt: string;
+    };
+  };
+
+  const catalogues = await getCollection("catalogue");
+
+  const pathsPromises =
+    catalogues?.flatMap((item) => {
+      const page = item.data;
+      const datesRegistry = page.datesRegistry;
+      return page.locales.map(async (lang) => {
+        const content = getLocaleValue(page.allContentLocales, lang, undefined);
+
+        const finalUpdateDate = getLastUpdateCollection(content, datesRegistry);
+
+        const seoResCollection = await getEntry(
+          "global_seo",
+          `${page.id}_${lang}`,
+        );
+        const seoRes = seoResCollection?.data;
+
+        const fullPath = linkResolver(page.id, lang);
+
+        const slug = removeLang(fullPath, lang);
+
+        return {
+          params: {
+            catalogue: slug,
+            lang: lang,
+          },
+          props: {
+            seoMeta: seoRes?.metaTags || [],
+            seo: seoRes?.seo || null,
+            id: page.id,
+            content: content,
+            publishedAt: finalUpdateDate,
+            updatedAt: seoRes?.updatedAt || page.updatedAt,
+          },
+        };
+      });
+    }) || [];
+
+  const paths = await Promise.all(pathsPromises);
+
+  return paths.filter((path): path is PathItem => !!path.params.lang);
+}
+
+const { id, content, seo, seoMeta, publishedAt, updatedAt } = Astro.props;
+const { lang } = Astro.params;
+
+Astro.locals.lang = lang;
+Astro.locals.recordId = id;
+
+const jsonLd: JsonLdPageData = {
+  pageType: ["list"],
+  seo: seo || undefined,
+  publishedAt,
+  updatedAt,
+  faq: extractFaqItems(content ?? []),
+  listItems: extractListItems(
+    content ?? [],
+    Astro.site || process.env.SITE_URL || "",
+    lang,
+  ),
+};
+---
+
+<Layout pageSeo={seoMeta} datePublished={publishedAt} jsonLd={jsonLd}>
+  <PageAdapter content={content} />
+</Layout>

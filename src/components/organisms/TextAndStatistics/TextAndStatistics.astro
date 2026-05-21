@@ -1,0 +1,36 @@
+---
+import { SplitContent } from "@components/layout/SplitContent";
+import { SectionContainer } from "@components/organisms/SectionContainer";
+import { getSectionBgClass } from "@utils/background";
+import type { TextAndStatisticsProps } from "./types";
+type Props = TextAndStatisticsProps;
+
+const {
+  background = "default",
+  showInline = false,
+  sectionTitleId,
+} = Astro.props;
+---
+
+{
+  showInline ? (
+    <SectionContainer
+      className={getSectionBgClass(background)}
+      sectionTitleId={sectionTitleId}
+    >
+      <slot name="text" />
+      <slot name="statistics" />
+    </SectionContainer>
+  ) : (
+    <SplitContent
+      rightColumns={5}
+      leftColumns={6}
+      alignItems="center"
+      background={background}
+      sectionTitleId={sectionTitleId}
+    >
+      <slot name="text" slot="left" />
+      <slot name="statistics" slot="right" />
+    </SplitContent>
+  )
+}

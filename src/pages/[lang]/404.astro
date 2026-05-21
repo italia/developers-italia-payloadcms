@@ -1,0 +1,79 @@
+---
+import { ButtonLink } from "@components/atoms/Button";
+import { Image } from "@components/atoms/Image";
+import { SplitContent } from "@components/layout/SplitContent";
+import type { ImageFragmentType } from "@graphql/fragment/commonFragments";
+import type { SiteLocale } from "@graphql/types";
+import Layout from "@layouts/Layout.astro";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+import { getCollection, getEntry } from "astro:content";
+
+export async function getStaticPaths() {
+  type PathItem = {
+    params: {
+      lang: SiteLocale;
+    };
+    props: {
+      title: string;
+      paragraph: string;
+      labelCta: string;
+      image: ImageFragmentType;
+      homepageId: string;
+    };
+  };
+
+  const response = await getEntry("locales", "site-locales");
+
+  const locales = response?.data.locales;
+  if (!locales) throw new Error("Locales not found");
+
+  const paths = await Promise.all(
+    locales.map(async (lang) => {
+      const response = await getCollection("error_page");
+      const globalSetting = response[0].data.globalSetting;
+      const homepageId = response[0].data.homepageId;
+      if (!globalSetting) return null;
+
+      return {
+        params: { lang },
+        props: {
+          title: getLocaleValue(globalSetting._allTitleLocales, lang, ""),
+          paragraph: getLocaleValue(
+            globalSetting._allParagraphLocales,
+            lang,
+            "",
+          ),
+          labelCta: getLocaleValue(globalSetting._allLabelCtaLocales, lang, ""),
+          image: globalSetting.image,
+          homepageId,
+        },
+      } as PathItem;
+    }),
+  );
+
+  return paths;
+}
+
+const { lang } = Astro.params;
+const { title, paragraph, image, labelCta, homepageId } = Astro.props;
+---
+
+<Layout>
+  <SplitContent leftColumns={6} rightColumns={5}>
+    <div slot="left" class=`text-container mb-4 mb-lg-0`>
+      <h1 class="mb-3">{title}</h1>
+      <div class="mb-4" set:html={paragraph} />
+      <div class="mt-5">
+        <ButtonLink
+          size="small"
+          label={labelCta}
+          linkTo={linkResolver(homepageId, lang)}
+        />
+      </div>
+    </div>
+    <div class="ratio ratio-4x3" slot="right">
+      <Image {...image} />
+    </div>
+  </SplitContent>
+</Layout>

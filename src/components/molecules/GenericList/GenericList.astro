@@ -1,0 +1,42 @@
+---
+import GenericListItem from "./GenericListItem.astro";
+import type { GenericListProps } from "./types";
+
+type Props = GenericListProps;
+
+const {
+  label,
+  items,
+  variant,
+  size,
+  bordered,
+  titleSize = "default",
+} = Astro.props;
+---
+
+<style>
+  @import "./style.scss";
+</style>
+
+{
+  label && titleSize === "large" ? (
+    <h2 class="mb-3">{label}</h2>
+  ) : (
+    <p class="it-label">{label}</p>
+  )
+}
+
+<div class="it-list-wrapper">
+  <ul class="it-list">
+    {
+      items.map((item) => (
+        <GenericListItem
+          {...item}
+          variant={variant}
+          size={size}
+          bordered={bordered}
+        />
+      ))
+    }
+  </ul>
+</div>

@@ -1,0 +1,33 @@
+---
+import { DataContainer } from "@components/molecules/DataContainer";
+import type {
+  DataContainerProps,
+  VariantTextDataContainerProps,
+} from "@components/molecules/DataContainer/types";
+
+type Props = {
+  items: DataContainerProps[];
+  variant?: VariantTextDataContainerProps;
+  showInline?: boolean;
+};
+
+const { items, variant = "light", showInline = false } = Astro.props;
+
+const classInline = showInline
+  ? "d-flex flex-lg-row flex-column justify-content-between mt-4 mt-lg-5"
+  : "statistics-container";
+---
+
+<style>
+  @import "./style.scss";
+</style>
+
+<ul class={`list-unstyled ${classInline}`} role="list">
+  {
+    items.map((item) => (
+      <li class="statistics-item mt-4 mt-lg-0">
+        <DataContainer {...item} variant={variant} />
+      </li>
+    ))
+  }
+</ul>

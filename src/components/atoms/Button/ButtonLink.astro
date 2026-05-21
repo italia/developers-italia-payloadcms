@@ -1,0 +1,45 @@
+---
+import { getI18n } from "@i18n/microcopy";
+import ButtonBase from "./ButtonBase.astro";
+import { getButtonClasses } from "./helper";
+import type { ButtonLinkProps } from "./types";
+
+type Props = ButtonLinkProps;
+
+const {
+  label,
+  linkTo,
+  variant = "light",
+  size = "large",
+  download,
+  openInNewTab = false,
+  icon,
+} = Astro.props;
+
+const { className, colorIcon } = getButtonClasses(variant, size, !!icon);
+
+const target = openInNewTab ? "_blank" : "_self";
+const rel = openInNewTab ? "noopener noreferrer" : undefined;
+
+const { lang } = Astro.locals;
+const t = getI18n(lang);
+const ariaLabel = download
+  ? t["link.download"]
+  : openInNewTab
+    ? t["link.external"]
+    : t["link.internal"];
+---
+
+<style>
+  @import "./style.scss";
+</style>
+<a
+  class={className}
+  href={linkTo}
+  download={download}
+  rel={rel}
+  target={target}
+>
+  <ButtonBase label={label} icon={icon} colorIcon={colorIcon} />
+  <span class="visually-hidden">{ariaLabel}</span>
+</a>

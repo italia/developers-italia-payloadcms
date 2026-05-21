@@ -1,0 +1,26 @@
+---
+import type { CardEditorialWithIconProps } from "@components/molecules/CardEditorialWithIcon/types";
+import { ListCard } from "@components/molecules/ListCard";
+import type { ListCardEditorialWithIconFragmentType } from "@graphql/fragment/commonFragments";
+
+type DatoRecord = ListCardEditorialWithIconFragmentType & {
+  __typename: string;
+  id: string;
+};
+
+type Props = {
+  block: DatoRecord;
+};
+
+const { block } = Astro.props;
+
+const cardsData: CardEditorialWithIconProps[] = block?.items.map((item) => {
+  return {
+    title: item.title,
+    description: item.description,
+    icon: item.iconSelect,
+  };
+});
+---
+
+<ListCard cards={cardsData} type="CardEditorialWithIcon" />

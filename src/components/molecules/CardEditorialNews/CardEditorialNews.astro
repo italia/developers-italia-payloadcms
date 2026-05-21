@@ -1,0 +1,70 @@
+---
+import { DateTime } from "@components/atoms/DateTime";
+import { Image } from "@components/atoms/Image";
+import { getI18n } from "@i18n/microcopy";
+import type { CardEditorialNewsProps } from "./types";
+
+type Props = CardEditorialNewsProps;
+
+const {
+  id = "",
+  title,
+  description,
+  image,
+  linkTo,
+  category,
+  dateTime,
+  action,
+  fullHeight = true,
+  isExternal = true,
+} = Astro.props;
+
+const shouldShowFooter = category || dateTime;
+const cardTitleId = `card-title-${id}`;
+const { lang } = Astro.locals;
+const t = getI18n(lang);
+
+const ariaLabel = isExternal ? t["link.external"] : t["link.internal"];
+const target = isExternal ? "_blank" : "_self";
+const rel = isExternal ? "noopener noreferrer" : undefined;
+---
+
+<article
+  class=`it-card it-card-image ${fullHeight && "it-card-height-full"} rounded shadow-sm border`
+  aria-labelledby={cardTitleId}
+>
+  <h3 class="it-card-title" id={cardTitleId}>
+    <a href={linkTo} target={target} rel={rel}>
+      {title}
+      <span class="visually-hidden">{ariaLabel}</span>
+    </a>
+  </h3>
+  {
+    image && (
+      <div class="it-card-image-wrapper">
+        <div class="ratio ratio-16x9">
+          <figure class="figure img-full">
+            <Image {...image} />
+          </figure>
+        </div>
+      </div>
+    )
+  }
+  <div class="it-card-body">
+    <p class="it-card-text">{description}</p>
+  </div>
+  {
+    shouldShowFooter && (
+      <footer class="it-card-related it-card-footer">
+        {category && (
+          <div class="it-card-taxonomy">
+            <span class="visually-hidden">{t["card.topic"]}</span>
+            <p class="it-card-category">{category}</p>
+          </div>
+        )}
+        {dateTime && <DateTime className="it-card-date" value={dateTime} />}
+      </footer>
+    )
+  }
+  {action && <div class="it-card-footer">{action}</div>}
+</article>

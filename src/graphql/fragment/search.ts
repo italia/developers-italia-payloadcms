@@ -1,0 +1,54 @@
+import { HeroFragment } from "@graphql/fragment/sectionFragments";
+import { graphql, type FragmentOf } from "@graphql/graphql";
+
+export const SearchBarFragment = graphql(`
+  fragment SearchBarFragment on SearchBarRecord @_unmask {
+    title
+    labelForNoResult
+    labelForAllResult
+    labelButton
+    inputPlaceholder
+  }
+`);
+
+export type SearchBarFragmentType = FragmentOf<typeof SearchBarFragment>;
+
+export const SearchPageContentFragment = graphql(
+  `
+    fragment SearchPageContentFragment on SearchModelContentField @_unmask {
+      ... on RecordInterface {
+        id
+        componentName: __typename
+      }
+      ... on HeroRecord {
+        ...HeroFragment
+      }
+      ... on SearchBarRecord {
+        ...SearchBarFragment
+      }
+    }
+  `,
+  [HeroFragment, SearchBarFragment],
+);
+
+export type SearchPageContentFragmentType = FragmentOf<
+  typeof SearchPageContentFragment
+>;
+
+export const SearchRecordFragment = graphql(
+  `
+    fragment SearchRecordFragment on SearchRecord @_unmask {
+      id
+      locales: _locales
+      allContentLocales: _allContentLocales {
+        locale
+        value {
+          ...SearchPageContentFragment
+        }
+      }
+    }
+  `,
+  [SearchPageContentFragment],
+);
+
+export type SearchRecordFragmentType = FragmentOf<typeof SearchRecordFragment>;

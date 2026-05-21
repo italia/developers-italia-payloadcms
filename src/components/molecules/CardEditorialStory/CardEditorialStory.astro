@@ -1,0 +1,67 @@
+---
+import { ChipLink } from "@components/atoms/Chip";
+import { DateTime } from "@components/atoms/DateTime";
+import { Image } from "@components/atoms/Image";
+import { getI18n } from "@i18n/microcopy";
+import type { CardEditorialStoryProps } from "./types";
+
+type Props = CardEditorialStoryProps;
+
+const {
+  id = "",
+  title,
+  description,
+  image,
+  linkTo,
+  category,
+  dateTime,
+} = Astro.props;
+
+const shouldShowFooter = category || dateTime;
+const cardTitleId = `card-title-${id}`;
+const { lang } = Astro.locals;
+const t = getI18n(lang);
+---
+
+<article
+  class="it-card it-card-image it-card-height-full rounded shadow-sm border"
+  aria-labelledby={cardTitleId}
+>
+  <h3 class="it-card-title" id={cardTitleId}>
+    <a href={linkTo}>{title}</a>
+  </h3>
+
+  {
+    image && (
+      <div class="it-card-image-wrapper">
+        <div class="ratio ratio-16x9">
+          <figure class="figure img-full">
+            <Image {...image} />
+          </figure>
+        </div>
+      </div>
+    )
+  }
+
+  <div class="it-card-body">
+    <p class="it-card-text">{description}</p>
+  </div>
+
+  {
+    shouldShowFooter && (
+      <footer class="it-card-related it-card-footer">
+        {category && (
+          <div class="it-card-taxonomy">
+            <ChipLink
+              linkTo={""}
+              label={category}
+              visuallyHidden={t["card.topic"]}
+              disabled
+            />
+          </div>
+        )}
+        {dateTime && <DateTime className="it-card-date" value={dateTime} />}
+      </footer>
+    )
+  }
+</article>

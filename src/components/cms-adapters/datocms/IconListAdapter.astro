@@ -1,0 +1,18 @@
+---
+import { ListWithIcon } from "@components/molecules/ListWithIcon";
+import type { ListWithIconItemProps } from "@components/molecules/ListWithIcon/types";
+import type { IconListBlockFragmentType } from "@graphql/fragment/commonFragments";
+
+type Props = {
+  block: IconListBlockFragmentType;
+};
+
+const { block } = Astro.props;
+
+const items: ListWithIconItemProps[] =
+  block.items?.items.map((item) => {
+    return { icon: item.iconSelect, label: item.label };
+  }) || [];
+---
+
+<ListWithIcon title={block.title || undefined} items={items} />

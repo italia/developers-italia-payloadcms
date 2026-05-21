@@ -1,0 +1,19 @@
+---
+import { FAQSection } from "@components/organisms/FAQSection";
+import type { FaqSectionRecordFragmentType } from "@graphql/fragment/sectionFragments";
+import type { SectionBackground } from "@utils/background";
+
+type Props = {
+  block: FaqSectionRecordFragmentType;
+};
+
+const { block } = Astro.props;
+---
+
+<FAQSection
+  background={block.backgroundColor as SectionBackground}
+  title={block.title}
+  accordion={{
+    ...block.accordion,
+  }}
+/>

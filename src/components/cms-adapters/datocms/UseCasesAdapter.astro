@@ -1,0 +1,37 @@
+---
+import type {
+  UseCaseCardBackgroundColor,
+  UseCaseCardProps,
+} from "@components/molecules/UseCaseCard/types";
+import { UseCases } from "@components/molecules/UseCases";
+import type { UseCaseBlockFragmentType } from "@graphql/fragment/commonFragments";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+
+type Props = {
+  block: UseCaseBlockFragmentType;
+  backgroundColor?: UseCaseCardBackgroundColor;
+};
+
+const { block, backgroundColor = "light" } = Astro.props;
+const { lang } = Astro.locals;
+
+const usecases: UseCaseCardProps[] = block.useCases.map((usecase) => {
+  let paragraphData =
+    "allParagraphLocales" in usecase ? usecase.allParagraphLocales : [];
+
+  return {
+    id: usecase.id,
+    title: getLocaleValue(usecase.allTitleLocales, lang, ""),
+    paragraph: getLocaleValue(paragraphData, lang, "") || "",
+    linkTo: linkResolver(usecase.id, lang),
+    image: usecase.image || undefined,
+  };
+});
+---
+
+<UseCases
+  label={block.title}
+  items={usecases}
+  backgroundColor={backgroundColor}
+/>

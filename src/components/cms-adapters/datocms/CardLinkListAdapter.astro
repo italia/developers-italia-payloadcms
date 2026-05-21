@@ -1,0 +1,39 @@
+---
+import type { CardEditorialNewsProps } from "@components/molecules/CardEditorialNews/types";
+import { ListCollection } from "@components/organisms/ListCollection";
+import type { CardLinkListFragmentType } from "@graphql/fragment/sectionFragments";
+import type { SectionBackground } from "@utils/background";
+import { linkResolver } from "@utils/linkResolver";
+
+type Props = {
+  block: CardLinkListFragmentType;
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+
+const items: CardEditorialNewsProps[] = block.listContent.map((item) => {
+  const url = item.link.externalUrl;
+  const linkTo = item.link?.link?.id
+    ? linkResolver(item.link.link.id, lang)
+    : null;
+
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.paragraph || "",
+    image: item.image,
+    linkTo: url || linkTo || "#",
+    action: url ? new URL(url).host : undefined,
+    isExternal: !!url,
+  };
+});
+---
+
+<ListCollection
+  title={block.title}
+  items={items}
+  paragraph={block.paragraph || undefined}
+  background={block.backgroundColor as SectionBackground}
+  showInline={block.showInlineCard}
+/>

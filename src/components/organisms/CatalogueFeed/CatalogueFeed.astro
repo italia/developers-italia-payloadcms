@@ -1,0 +1,115 @@
+---
+import { SplitContent } from "@components/layout/SplitContent";
+import { TabContent, Tabs } from "@components/molecules/Tabs";
+import { PaginatedCollection } from "@components/react/PaginatedCollection/PaginatedCollection";
+import {
+  getNews,
+  getResources,
+  getStories,
+  getWebinars,
+} from "@lib/dataFetcher";
+import { isDraftModeEnabled } from "@lib/draftMode";
+import {
+  mapNewsToCardEditorialNewsProps,
+  mapResourceToResourceProps,
+  mapStoryToCardEditorialStoryProps,
+  mapWebinarToCardEditorialNewsProps,
+} from "@utils/mappers";
+import type { ElementType, UpdateTabSectionProps } from "./types";
+
+type Props = UpdateTabSectionProps;
+
+const { id, background = "default", tabs = [] } = Astro.props;
+const { lang } = Astro.locals;
+
+const tabsItems = tabs.map((tab, index) => ({
+  id: `tab-${id}-${index}`,
+  label: tab.title,
+  active: index === 0,
+  filterStory: tab.filterStory,
+}));
+
+const isPreview = isDraftModeEnabled(Astro.cookies);
+
+const news = await getNews(isPreview);
+const stories = await getStories(isPreview);
+const webinars = await getWebinars(isPreview);
+const resources = await getResources(isPreview);
+
+function isValidTabType(val: string): val is ElementType {
+  return (
+    val === "news_item" ||
+    val === "story_item" ||
+    val === "webinar_item" ||
+    val === "resource"
+  );
+}
+
+function getFilteredItems(tabType: ElementType, tabCategoryReference?: string) {
+  switch (tabType) {
+    case "story_item":
+      const filteredStoryByLang = stories.filter((s) =>
+        s.data.allTitleLocales?.some((item) => item.locale === lang),
+      );
+
+      const filteredStories = tabCategoryReference
+        ? filteredStoryByLang.filter(
+            (s) => s.data.articleClassification?.id === tabCategoryReference,
+          )
+        : filteredStoryByLang;
+
+      return filteredStories.map((s) =>
+        mapStoryToCardEditorialStoryProps(s.data, lang),
+      );
+
+    case "news_item":
+      const filteredNews = news.filter((n) =>
+        n.data.allTitleLocales?.some((item) => item.locale === lang),
+      );
+
+      return filteredNews.map((n) =>
+        mapNewsToCardEditorialNewsProps(n.data, lang),
+      );
+
+    case "webinar_item":
+      const filteredWebinars = webinars.filter((w) =>
+        w.data.allTitleLocales?.some((item) => item.locale === lang),
+      );
+      return filteredWebinars.map((w) =>
+        mapWebinarToCardEditorialNewsProps(w.data, lang),
+      );
+
+    case "resource":
+      return resources.map((r) => mapResourceToResourceProps(r.data, lang));
+    default:
+      return [];
+  }
+}
+---
+
+<SplitContent leftColumns={5} alignItems="top" background={background}>
+  <div class="row">
+    <Tabs id={id} items={tabsItems}>
+      {
+        tabs.map((tab, index) => {
+          const tabType = tab.newsPageTabType;
+          if (!isValidTabType(tabType)) return null;
+
+          const items = getFilteredItems(tabType, tab.filterStory);
+
+          return (
+            <TabContent tab={tabsItems[index]}>
+              <PaginatedCollection
+                client:load
+                {...tab}
+                items={items as any}
+                newsPageTabType={tabType}
+                lang={lang}
+              />
+            </TabContent>
+          );
+        })
+      }
+    </Tabs>
+  </div>
+</SplitContent>

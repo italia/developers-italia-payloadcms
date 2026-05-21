@@ -1,0 +1,13 @@
+---
+import ItIcon from "@static/assets/ItIcon.astro";
+
+type Props = {
+  label: string;
+  icon?: string;
+  colorIcon: string;
+};
+const { label, icon, colorIcon } = Astro.props;
+---
+
+{label}
+{icon && <ItIcon name={icon} size="sm" class={colorIcon} />}

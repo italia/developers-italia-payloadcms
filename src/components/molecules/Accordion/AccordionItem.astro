@@ -1,0 +1,52 @@
+---
+import type { AccordionItemProps } from "./types";
+type Props = AccordionItemProps & {
+  fullWidth?: boolean;
+  index: number;
+  allOpen?: boolean;
+  idParent?: string;
+};
+const {
+  header,
+  body,
+  id,
+  fullWidth = true,
+  index,
+  allOpen = true,
+  idParent,
+} = Astro.props;
+
+const isFirst = allOpen || index === 0;
+---
+
+<div class="accordion-item bg-transparent">
+  <p class="accordion-header" id={`heading-${id}`}>
+    <button
+      class:list={["accordion-button", { collapsed: !isFirst }]}
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target={`#collapse-${id}`}
+      aria-expanded={isFirst ? "true" : "false"}
+      aria-controls={`collapse-${id}`}
+    >
+      {header}
+    </button>
+  </p>
+  <div
+    id={`collapse-${id}`}
+    class:list={["accordion-collapse collapse", { show: isFirst || false }]}
+    data-bs-parent={`#${idParent}`}
+    role="region"
+    aria-labelledby={`heading-${id}`}
+  >
+    <div class="accordion-body">
+      {
+        fullWidth ? (
+          <div set:html={body} />
+        ) : (
+          <div class="col-12 col-lg-7" set:html={body} />
+        )
+      }
+    </div>
+  </div>
+</div>

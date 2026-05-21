@@ -1,0 +1,66 @@
+---
+import TextContainerAdapter from "@components/cms-adapters/datocms/TextContainerAdapter.astro";
+import { ImageContainer } from "@components/molecules/ImageContainer";
+import type { HeadingTag } from "@components/molecules/TextContainer/types";
+import { AdditionalContent } from "@components/organisms/AdditionalContent";
+import { TextAndImage } from "@components/organisms/TextAndImage";
+import type { VariantTextAndImageProps } from "@components/organisms/TextAndImage/types";
+import type { TextAndImageFragmentType } from "@graphql/fragment/sectionFragments";
+import type { SectionBackground } from "@utils/background";
+
+type Props = {
+  block: TextAndImageFragmentType;
+};
+
+const { block } = Astro.props;
+
+const variantTextContainer =
+  block.backgroundColor === "dark"
+    ? "dark"
+    : block.backgroundColor === "primary"
+      ? "primary"
+      : "light";
+
+const variantAdditionalContent =
+  block.backgroundColor === "dark" || block.backgroundColor === "primary"
+    ? "light"
+    : undefined;
+
+const additionalContent = block.additionalContent;
+---
+
+<TextAndImage
+  sectionTitleId={block.text.title}
+  variant={block.variant as VariantTextAndImageProps}
+  background={block.backgroundColor as SectionBackground}
+>
+  <TextContainerAdapter
+    slot="text"
+    block={block.text}
+    variant={variantTextContainer}
+    heading={(block.heading as HeadingTag) || undefined}
+  />
+
+  {
+    block.image && (
+      <ImageContainer slot="image" image={block.image} ratio="4x3" />
+    )
+  }
+
+  {
+    additionalContent && (
+      <AdditionalContent
+        slot="additionalContent"
+        title={additionalContent.title || undefined}
+        content={additionalContent.content.map((item) => {
+          return {
+            title: item.title,
+            description: item.description,
+            icon: item.iconSelect,
+          };
+        })}
+        variant={variantAdditionalContent}
+      />
+    )
+  }
+</TextAndImage>

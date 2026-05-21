@@ -1,0 +1,33 @@
+---
+import { getSectionBgClass } from "@utils/background";
+import TabsItem from "./TabsItem.astro";
+import type { TabsProps } from "./types";
+type Props = TabsProps;
+const { id, items, background = "default" } = Astro.props;
+
+const hasMultipleTabs = items.length > 1;
+---
+
+<style>
+  @import "./style.scss";
+</style>
+{
+  hasMultipleTabs && (
+    <ul
+      class={`nav nav-tabs auto mb-5 ${getSectionBgClass(background)}`}
+      id={`tabs-${id}`}
+      role="tablist"
+    >
+      {items.map((item) => (
+        <TabsItem {...item} />
+      ))}
+    </ul>
+  )
+}
+<div
+  class="tab-content"
+  id=`tabs-${id}-content`
+  role={hasMultipleTabs ? "presentation" : undefined}
+>
+  <slot />
+</div>

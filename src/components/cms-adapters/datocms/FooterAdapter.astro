@@ -1,0 +1,121 @@
+---
+import { Footer } from "@components/organisms/Footer";
+import type {
+  FooterLinkProps,
+  FooterLinkSupportingBrandProps,
+  FooterLogoProps,
+  MailingListFormProps,
+} from "@components/organisms/Footer/types";
+import type { FooterFragmentType } from "@graphql/fragment/layout";
+import { DatoBlockModel } from "@utils/cmsMapper";
+import { getLocaleValue } from "@utils/getLocaleValue";
+
+import { linkResolver } from "@utils/linkResolver";
+
+type Props = FooterFragmentType;
+
+const {
+  _allHeadingLocales,
+  _allOrganizationsLocales,
+  _allTopicTitleLocales,
+  _allTopicLinkLocales,
+  _allUtilityTitleLocales,
+  _allUtilityLocales,
+  _allSmallPrintLocales,
+  _allMailingListFormLocales,
+  showSitemapLink,
+} = Astro.props;
+
+const { lang } = Astro.locals;
+const heading = getLocaleValue(_allHeadingLocales, lang, "");
+const organizations = getLocaleValue(_allOrganizationsLocales, lang, null);
+const topicTitle = getLocaleValue(_allTopicTitleLocales, lang, "");
+const topicLink = getLocaleValue(_allTopicLinkLocales, lang, null);
+const utilityTitle = getLocaleValue(_allUtilityTitleLocales, lang, "");
+const utility = getLocaleValue(_allUtilityLocales, lang, null);
+const smallPrint = getLocaleValue(_allSmallPrintLocales, lang, null);
+const mailingList = getLocaleValue(_allMailingListFormLocales, lang, null);
+
+const logos: FooterLogoProps[] =
+  organizations?.map((org) => {
+    return {
+      mainLogo: org.mainLogo,
+      brandLogo: org.brandLogo,
+      label: org.label,
+      linkTo: org.url,
+    };
+  }) || [];
+
+const topicItems =
+  topicLink?.map((link) => {
+    return {
+      label: link.label,
+      visuallyHidden: "link",
+      linkTo: linkResolver(link.linkTo.id, lang),
+    };
+  }) || [];
+
+const socialUtilities: FooterLinkSupportingBrandProps[] =
+  utility
+    ?.filter((util) => util.componentName === DatoBlockModel.SupportingBrand)
+    .map((util) => ({
+      label: util.label,
+      ariaLabel: "link",
+      icon: util.brandLogo,
+      url: util.url,
+    })) || [];
+
+const linkUtilities: FooterLinkProps[] =
+  utility
+    ?.filter((util) => util.componentName === DatoBlockModel.ExternalLink)
+    .map((util) => ({
+      label: util.label,
+      ariaLabel: "link",
+      url: util.url,
+      openInNewTab: true,
+    })) || [];
+
+const smallPrints: FooterLinkProps[] =
+  smallPrint?.map((link) => {
+    const isExternal = link.componentName === DatoBlockModel.ExternalLink;
+    const url = isExternal ? link.url : linkResolver(link.linkTo?.id, lang);
+
+    return {
+      label: link.label,
+      [isExternal ? "url" : "linkTo"]: url,
+    };
+  }) || [];
+
+const mailingListForm: MailingListFormProps | undefined = mailingList
+  ? {
+      title: mailingList.title,
+      privacyPolicy: {
+        label: mailingList.privacyPolicy.label,
+        linkTo: linkResolver(mailingList.privacyPolicy.linkTo.id, lang),
+      },
+    }
+  : undefined;
+---
+
+<Footer
+  mailingListForm={mailingListForm}
+  brand={{
+    heading: heading,
+    logos: logos,
+  }}
+  topics={{
+    title: topicTitle,
+    items: topicItems,
+  }}
+  utilities={[
+    {
+      title: utilityTitle,
+      socialItems: socialUtilities,
+      linkItems: linkUtilities,
+    },
+  ]}
+  smallPrints={{
+    links: smallPrints,
+    showSitemap: showSitemapLink,
+  }}
+/>

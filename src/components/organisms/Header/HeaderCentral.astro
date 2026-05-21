@@ -1,0 +1,80 @@
+---
+import { Icon } from "@components/atoms/Icon";
+import { getI18n } from "@i18n/microcopy";
+import ItSearch from "@static/assets/ItSearch.astro";
+import HeaderNavbar from "./HeaderNavbar.astro";
+import type { HeaderCentralProps } from "./types";
+
+type Props = HeaderCentralProps;
+
+const {
+  brandTitle,
+  brandTagLine,
+  menuItems,
+  linkBackHome,
+  logo,
+  search,
+  variant = "light",
+} = Astro.props;
+
+const lang = Astro.locals.lang || "it";
+
+const t = getI18n(lang);
+
+const classVariant = variant === "light" ? "theme-light" : "";
+const classVariantNav = variant === "light" ? "theme-light-desk" : "";
+---
+
+<div class="it-nav-wrapper">
+  <div class={`it-header-center-wrapper ${classVariant}`}>
+    <div class="container-xxl">
+      <div class="row">
+        <div class="col-12">
+          <div class="it-header-center-content-wrapper">
+            <div class="it-brand-wrapper">
+              <a href={linkBackHome} aria-label={t["header.logo"]}>
+                <Icon icon={logo} className="text-primary" />
+                <div class="it-brand-text">
+                  <div class="it-brand-title">{brandTitle}</div>
+                  <div class="it-brand-tagline d-none d-md-block">
+                    {brandTagLine}
+                  </div>
+                </div>
+              </a>
+            </div>
+            {
+              search?.isEnabled && (
+                <div class="it-right-zone">
+                  <div class="it-search-wrapper">
+                    <span class="d-none d-md-block" aria-hidden="true">
+                      {search.label}
+                    </span>
+                    <a
+                      class="search-link rounded-icon"
+                      aria-label={search.label}
+                      href={search.url}
+                    >
+                      <ItSearch aria-hidden="true" />
+                    </a>
+                  </div>
+                </div>
+              )
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    id="header-nav-wrapper"
+    class={`it-header-navbar-wrapper ${classVariantNav}`}
+  >
+    <div class="container-xxl">
+      <div class="row">
+        <div class="col-12">
+          <HeaderNavbar menuItems={menuItems} />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

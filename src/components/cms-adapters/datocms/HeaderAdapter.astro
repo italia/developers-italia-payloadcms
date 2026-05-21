@@ -1,0 +1,65 @@
+---
+import { Header } from "@components/organisms/Header";
+import type { VariantHeaderProps } from "@components/organisms/Header/types";
+import type { HeaderFragmentType } from "@graphql/fragment/layout";
+import type { SearchMenuFragmentType } from "@graphql/fragment/sectionFragments";
+import { createMenu, createMetaMenu } from "@utils/createMenuHelper";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+
+type Props = HeaderFragmentType & {
+  homeRecordId?: string;
+  search?: SearchMenuFragmentType;
+};
+
+const {
+  _allTaglineLocales,
+  _allListNavbarBrandLocales,
+  siteName,
+  allMainNavigation,
+  allSecondaryNavigation,
+  locales,
+  homeRecordId,
+  logoSelect,
+  search,
+  allMetaNavigation,
+  variant = "light",
+} = Astro.props;
+
+const { lang } = Astro.locals;
+const currentUrl = Astro.url.pathname;
+const currentSite = Astro.url.origin;
+
+const tagline = getLocaleValue(_allTaglineLocales, lang, "");
+const organizations = getLocaleValue(_allListNavbarBrandLocales, lang, []);
+
+const mainNavigation = getLocaleValue(allMainNavigation, lang, []);
+const secondaryNavigation = getLocaleValue(allSecondaryNavigation, lang, []);
+
+const metaNavigation = getLocaleValue(allMetaNavigation, lang, []);
+
+const menuItems = createMenu(
+  mainNavigation,
+  secondaryNavigation,
+  currentUrl,
+  lang,
+);
+const metaMenuItems = createMetaMenu(metaNavigation, currentSite);
+---
+
+<Header
+  variant={variant as VariantHeaderProps}
+  brandTagLine={tagline}
+  brandTitle={siteName}
+  brandList={organizations}
+  metaNav={metaMenuItems}
+  menuItems={menuItems}
+  locales={locales}
+  logo={logoSelect}
+  search={search && {
+    isEnabled: search.isSearchEnabled,
+    label: getLocaleValue(search._allSearchLabelLocales, lang, ""),
+    url: linkResolver(search.id, lang),
+  }}
+  linkBackHome={linkResolver(homeRecordId, lang)}
+/>

@@ -1,0 +1,26 @@
+---
+import { Link } from "@components/atoms/Link";
+import type { ExternalLinkFragmentType } from "@graphql/fragment/commonFragments";
+
+type DatoRecord = ExternalLinkFragmentType & {
+  __typename: string;
+  id: string;
+};
+
+type Props = {
+  block: DatoRecord;
+};
+
+const { block } = Astro.props;
+
+if (!block.label || !block.url) {
+  return null;
+}
+
+const label = block.label;
+const url = block.url;
+---
+
+<div class="mt-2">
+  <Link label={label} url={url} openInNewTab={true} isIcon={true} />
+</div>

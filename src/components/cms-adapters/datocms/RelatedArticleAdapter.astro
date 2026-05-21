@@ -1,0 +1,30 @@
+---
+import type { RelatedArticleFragmentType } from "@graphql/fragment/commonFragments";
+import { DatoBlockModel } from "@utils/cmsMapper";
+import ArticleListAdapter from "./ArticleListAdapter.astro";
+import ArticleNavigationAdapter from "./ArticleNavigationAdapter.astro";
+
+type DatoRecord = RelatedArticleFragmentType & {
+  __typename: string;
+  id: string;
+};
+
+type Props = {
+  block: DatoRecord;
+};
+
+const { block } = Astro.props;
+---
+
+{
+  (() => {
+    switch (block.relatedBlock.componentName) {
+      case DatoBlockModel.ArticleNavigation:
+        return <ArticleNavigationAdapter block={block.relatedBlock} />;
+      case DatoBlockModel.ArticleList:
+        return <ArticleListAdapter block={block.relatedBlock} />;
+      default:
+        return;
+    }
+  })()
+}

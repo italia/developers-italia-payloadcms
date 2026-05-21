@@ -1,0 +1,22 @@
+---
+import { SplitContent } from "@components/layout/SplitContent";
+import type { SectionBackground } from "@utils/background";
+
+type Props = {
+  background?: SectionBackground;
+  sectionTitleId?: string;
+};
+
+const { background = "default", sectionTitleId } = Astro.props;
+---
+
+<SplitContent
+  rightColumns={6}
+  leftColumns={5}
+  alignItems="top"
+  background={background}
+  sectionTitleId={sectionTitleId}
+>
+  <slot name="text" slot="left" />
+  <slot name="useCases" slot="right" />
+</SplitContent>

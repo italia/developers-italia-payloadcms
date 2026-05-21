@@ -1,0 +1,27 @@
+---
+import { CardEditorialNews } from "@components/molecules/CardEditorialNews";
+import { OrderedList } from "@components/molecules/OrderedList";
+import type { ResultProps } from "./types";
+
+type Props = ResultProps;
+
+const { title, paragraph, items, titleListNews, news } = Astro.props;
+---
+
+<div class="row align-items-center justify-content-between">
+  <div class="col-lg-6 col-12">
+    <h3 class="mb-3">
+      {title}
+    </h3>
+    <p class="mb-4">{paragraph}</p>
+    <OrderedList items={items} variant="small" />
+  </div>
+  <div class="col-lg-4 col-12">
+    {titleListNews && <p class="it-label">{titleListNews}</p>}
+    {
+      news.map((newItem) => (
+        <CardEditorialNews fullHeight={false} {...newItem} />
+      ))
+    }
+  </div>
+</div>

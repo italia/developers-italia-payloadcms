@@ -1,0 +1,73 @@
+---
+import type { SiteLocale } from "@graphql/types";
+import { getI18n } from "@i18n/microcopy";
+import ItExpand from "@static/assets/ItExpand.astro";
+import { linkResolver } from "@utils/linkResolver";
+
+type Props = {
+  locales: string[];
+};
+
+const { locales } = Astro.props;
+const { lang: currentLocale, recordId: currentRecordId } = Astro.locals;
+
+const getTranslatedHref = (targetLocale: string) => {
+  if (currentRecordId) {
+    const translatedHref = linkResolver(currentRecordId, targetLocale);
+    if (translatedHref !== "#") return translatedHref;
+  }
+  return `/${targetLocale}`;
+};
+
+const t = getI18n(currentLocale);
+---
+
+<div class="nav-item dropdown">
+  <a
+    class="nav-link dropdown-toggle"
+    href="#"
+    role="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    id="languagesDropButton"
+  >
+    <span class="visually-hidden">{t["header.languageSelector"]}</span>
+    <span lang={currentLocale}>{t["language.short"]}</span>
+    <ItExpand class="d-none d-lg-block" />
+  </a>
+  <div class="dropdown-menu">
+    <div class="row">
+      <div class="col-12">
+        <div class="link-list-wrapper">
+          <ul
+            id="languages"
+            class="link-list"
+            aria-labelledby="languagesDropButton"
+          >
+            {
+              locales.map((locale) => {
+                const t = getI18n(locale as SiteLocale);
+                return (
+                  <li>
+                    <a
+                      class={`dropdown-item list-item ${locale === currentLocale ? "active" : ""}`}
+                      href={getTranslatedHref(locale)}
+                      lang={locale}
+                    >
+                      <span>
+                        <span>{t["language"].toUpperCase()}</span>
+                        {locale === currentLocale && (
+                          <span class="visually-hidden">selezionata</span>
+                        )}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,67 @@
+---
+import type { ListLinkItemProps } from "@components/molecules/ListLink/types";
+import { QuickLinkCard } from "@components/molecules/QuickLinkCard";
+import type { QuickLinkCardFragmentType } from "@graphql/fragment/commonFragments";
+import { getI18n } from "@i18n/microcopy";
+import { DatoBlockModel } from "@utils/cmsMapper";
+import { createDownloadUrl } from "@utils/createDownloadUrl";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+
+type DatoRecord = QuickLinkCardFragmentType & {
+  __typename: string;
+  id: string;
+};
+
+type Props = {
+  block: DatoRecord | QuickLinkCardFragmentType;
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+
+const t = getI18n(lang);
+
+const downloadLabel = t["link.download"];
+const externalLinkLabel = t["link.external"];
+const articleLinkLabel = t["link.internal"];
+
+const links: ListLinkItemProps[] = block.linkToResource.map((link) => {
+  if (link.componentName === DatoBlockModel.Resource) {
+    const res = getLocaleValue(link.allResourceLocales, lang, null);
+
+    if (res?.componentName === DatoBlockModel.DownloadLink) {
+      return {
+        linkTo: createDownloadUrl(res.doc),
+        text: res.label,
+        iconRight: "it-download",
+        ariaLabelLink: `${downloadLabel} ${res.label}`,
+      };
+    }
+
+    return {
+      linkTo: res?.url || "#",
+      text: res?.label || "",
+      iconRight: "it-external-link",
+      openInNewTab: true,
+      ariaLabelLink: `${externalLinkLabel} ${res?.label || ""}`,
+    };
+  }
+
+  if (link.componentName === DatoBlockModel.Article) {
+    return {
+      linkTo: linkResolver(link.id, lang),
+      text: link.title,
+      iconRight: "it-arrow-right",
+      ariaLabelLink: `${articleLinkLabel} ${link.title}`,
+    };
+  }
+
+  return {
+    linkTo: "#",
+    text: "Link non valido",
+  };
+});
+---
+
+<QuickLinkCard title={block.title} links={links} />

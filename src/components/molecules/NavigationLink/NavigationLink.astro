@@ -1,0 +1,31 @@
+---
+import ItArrowLeft from "@static/assets/ItArrowLeft.astro";
+import ItArrowRight from "@static/assets/ItArrowRight.astro";
+import type { NavigationLinkProps } from "./types";
+
+type Props = NavigationLinkProps;
+
+const { title, linkTo, label, direction = "next" } = Astro.props;
+
+const isPrevious = direction === "previous";
+---
+
+<div class="navigation-link d-flex flex-column gap-2">
+  {label && <p class="it-label mb-0">{label}</p>}
+  <a
+    href={linkTo}
+    class="d-flex align-items-center gap-2 text-decoration-none fw-semibold text-primary justify-content-start"
+  >
+    {
+      isPrevious && (
+        <ItArrowLeft size="sm" color="primary" class="align-middle" />
+      )
+    }
+    <span>{title}</span>
+    {
+      !isPrevious && (
+        <ItArrowRight size="sm" color="primary" class="align-middle" />
+      )
+    }
+  </a>
+</div>

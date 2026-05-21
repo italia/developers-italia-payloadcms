@@ -1,0 +1,40 @@
+---
+import { linkResolver } from "@utils/linkResolver";
+
+import type { UseCaseCardProps } from "@components/molecules/UseCaseCard/types";
+import { UseCaseContainer } from "@components/organisms/UseCaseContainer";
+import type { UseCaseContainerFragmentType } from "@graphql/fragment/sectionFragments";
+import { getLocaleValue } from "@utils/getLocaleValue";
+
+type Props = {
+  block: UseCaseContainerFragmentType;
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+
+const useCases: UseCaseCardProps[] = block.useCases.map((useCase) => {
+  const listTopics = getLocaleValue(useCase.allTopicsLocales, lang, undefined);
+
+  return {
+    id: useCase.id,
+    title: getLocaleValue(useCase.allTitleLocales, lang, ""),
+    paragraph: getLocaleValue(useCase.allParagraphLocales, lang, "") || "",
+    linkTo: linkResolver(useCase.id, lang),
+    image: useCase.image || undefined,
+    listTopics: {
+      title: listTopics?.title || "",
+      topics:
+        listTopics?.topics.map((topic) =>
+          getLocaleValue(topic._allLabelLocales, lang, ""),
+        ) || [],
+    },
+    descriptionTitle:
+      getLocaleValue(useCase.allDescriptionTitleLocales, lang, "") || undefined,
+    description:
+      getLocaleValue(useCase.allDescriptionLocales, lang, "") || undefined,
+  };
+});
+---
+
+<UseCaseContainer useCases={useCases} />

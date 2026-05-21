@@ -1,0 +1,39 @@
+---
+import { CardEditorialWithIcon } from "@components/molecules/CardEditorialWithIcon";
+import type { CardEditorialWithIconProps } from "@components/molecules/CardEditorialWithIcon/types";
+import { CardInfo } from "@components/molecules/CardInfo";
+import type { CardInfoProps } from "@components/molecules/CardInfo/types";
+
+type Props =
+  | { type: "CardEditorialWithIcon"; cards: CardEditorialWithIconProps[] }
+  | { type: "CardInfo"; cards: CardInfoProps[] };
+
+const { cards, type } = Astro.props;
+
+if (!cards || cards.length === 0) {
+  return null;
+}
+---
+
+<ul class="it-card-list row">
+  {
+    type === "CardEditorialWithIcon" &&
+      cards.map((card) => {
+        return (
+          <li class="col-12 col-lg-6 mb-3 mb-md-4">
+            <CardEditorialWithIcon {...card} />
+          </li>
+        );
+      })
+  }
+  {
+    type === "CardInfo" &&
+      cards.map((card) => {
+        return (
+          <li class="col-12 col-lg-6  mb-3 mb-md-4">
+            <CardInfo {...card} />
+          </li>
+        );
+      })
+  }
+</ul>

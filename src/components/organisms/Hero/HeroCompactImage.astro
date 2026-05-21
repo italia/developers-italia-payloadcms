@@ -1,0 +1,60 @@
+---
+import { ButtonLink } from "@components/atoms/Button";
+import { Image } from "@components/atoms/Image";
+import type { HeroProps } from "./types";
+type Props = HeroProps;
+
+const {
+  title,
+  paragraph,
+  image,
+  showBreadcrumb,
+  bgClass,
+  linkTo,
+  labelButton,
+  variantButton,
+  openInNewTab = false,
+} = Astro.props;
+---
+
+<style>
+  @import "./style.scss";
+</style>
+<section class=`it-hero-wrapper xsmall-size ${bgClass}` aria-labelledby={title}>
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-12 col-lg-8">
+        <div class="it-hero-text-wrapper px-0">
+          {showBreadcrumb && <slot name="breadcrumb" />}
+          <h1 id={title}>{title}</h1>
+          {paragraph && <p class="font-sans-serif">{paragraph}</p>}
+          {
+            labelButton && linkTo && (
+              <div class="it-btn-container">
+                <ButtonLink
+                  size="small"
+                  label={labelButton}
+                  variant={variantButton}
+                  linkTo={linkTo}
+                  openInNewTab={openInNewTab}
+                />
+              </div>
+            )
+          }
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-4 px-0">
+        {
+          image && (
+            <div class="img-container">
+              <div class="ratio ratio-4x3">
+                <Image {...image} loading="eager" />
+              </div>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>

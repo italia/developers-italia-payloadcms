@@ -1,0 +1,22 @@
+---
+import { Icon } from "@components/atoms/Icon";
+import { getI18n } from "@i18n/microcopy";
+import type { FooterLinkSupportingBrandProps } from "./types";
+
+type Props = FooterLinkSupportingBrandProps;
+
+const { icon, label, url } = Astro.props;
+const { lang } = Astro.locals;
+const t = getI18n(lang);
+---
+
+<a
+  href={url}
+  class="list-item left-icon"
+  target="_blank"
+  rel="noreferrer"
+  aria-label={t["link.external"]}
+>
+  {icon && <Icon icon={icon} className="icon-sm text-white me-2" />}
+  <span>{label}</span>
+</a>

@@ -1,0 +1,23 @@
+---
+import { ListInternalLink } from "@components/molecules/ListInternalLink";
+import type { ListInternalLinkFragmentType } from "@graphql/fragment/commonFragments";
+import { linkResolver } from "@utils/linkResolver";
+
+type DatoRecord = ListInternalLinkFragmentType & {
+  __typename: string;
+  id: string;
+};
+
+type Props = {
+  block: DatoRecord;
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+const links = block.links.map((link) => ({
+  linkTo: linkResolver(link.linkTo.id, lang),
+  label: link.label,
+}));
+---
+
+<ListInternalLink links={links} />

@@ -1,0 +1,64 @@
+---
+import type { LinkProps } from "@components/atoms/Link/types";
+import { OrderedList } from "@components/molecules/OrderedList";
+import type { ListItemProps } from "@components/molecules/OrderedList/types";
+import type { OrderedListFragmentType } from "@graphql/fragment/commonFragments";
+import { createDownloadUrl } from "@utils/createDownloadUrl";
+import { linkResolver } from "@utils/linkResolver";
+
+type DatoRecord = OrderedListFragmentType & {
+  __typename: string;
+  id: string;
+};
+
+type Props = {
+  block: DatoRecord;
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+
+const items: ListItemProps[] = block.items.map((item) => {
+  let links: LinkProps[] = [];
+  if ("links" in item) {
+    links = item?.links.map((link) => {
+      if ("url" in link) {
+        return {
+          url: link.url,
+          label: link.label,
+        };
+      }
+
+      if ("linkTo" in link) {
+        return {
+          linkTo: linkResolver(link.linkTo.id, lang),
+          label: link.label,
+        };
+      }
+
+      if ("doc" in link) {
+        return {
+          download: createDownloadUrl(link.doc),
+          label: link.label,
+        };
+      }
+
+      return {
+        linkTo: "#",
+        label: "Link non valido",
+      };
+    });
+  }
+
+  return {
+    title: item.title,
+    paragraph: item.paragraph,
+    resources: {
+      title: ("subtitle" in item && item.subtitle) || "",
+      links: links,
+    },
+  };
+});
+---
+
+<OrderedList items={items} variant="default" />

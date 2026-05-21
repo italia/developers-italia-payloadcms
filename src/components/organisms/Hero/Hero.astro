@@ -1,0 +1,89 @@
+---
+import { getHeroBgClass } from "@utils/background";
+import HeroCompactImage from "./HeroCompactImage.astro";
+import HeroDefault from "./HeroDefault.astro";
+import HeroFullHeightImage from "./HeroFullHeightImage.astro";
+import type { HeroProps } from "./types";
+
+type Props = HeroProps;
+
+const {
+  title,
+  paragraph,
+  image,
+  imageMobile,
+  showBreadcrumb = false,
+  variant = "default",
+  backgroundColor = "default",
+  labelButton,
+  linkTo,
+  openInNewTab = false,
+} = Astro.props;
+
+const classBackground =
+  image && (variant === "default" || variant === "small")
+    ? getHeroBgClass("primary")
+    : getHeroBgClass(backgroundColor);
+
+const variantButton = backgroundColor === "primary" ? "dark" : "light";
+---
+
+<style>
+  @import "./style.scss";
+</style>
+
+{
+  (variant === "default" || variant === "small") && (
+    <HeroDefault
+      title={title}
+      paragraph={paragraph}
+      image={image}
+      imageMobile={imageMobile}
+      variant={variant}
+      showBreadcrumb={showBreadcrumb}
+      bgClass={classBackground}
+      labelButton={labelButton}
+      linkTo={linkTo}
+      variantButton={variantButton}
+      openInNewTab={openInNewTab}
+    >
+      <slot name="breadcrumb" slot="breadcrumb" />
+    </HeroDefault>
+  )
+}
+
+{
+  variant === "xsmall-compact" && (
+    <HeroCompactImage
+      title={title}
+      paragraph={paragraph}
+      image={image}
+      showBreadcrumb={showBreadcrumb}
+      bgClass={classBackground}
+      labelButton={labelButton}
+      linkTo={linkTo}
+      variantButton={variantButton}
+      openInNewTab={openInNewTab}
+    >
+      <slot name="breadcrumb" slot="breadcrumb" />
+    </HeroCompactImage>
+  )
+}
+
+{
+  variant === "xsmall-full" && (
+    <HeroFullHeightImage
+      title={title}
+      paragraph={paragraph}
+      image={image}
+      showBreadcrumb={showBreadcrumb}
+      bgClass={classBackground}
+      labelButton={labelButton}
+      linkTo={linkTo}
+      variantButton={variantButton}
+      openInNewTab={openInNewTab}
+    >
+      <slot name="breadcrumb" slot="breadcrumb" />
+    </HeroFullHeightImage>
+  )
+}

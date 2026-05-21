@@ -1,0 +1,29 @@
+---
+import type { TabItemProps } from "./types";
+
+type Props = TabItemProps;
+
+const { id, label, active, disabled } = Astro.props;
+
+const disabledClass = disabled ? "disabled" : "";
+const activeClass = active ? "active" : "";
+const className = `nav-link ${disabledClass} ${activeClass}`;
+
+const tabIndex = disabled ? "-1" : undefined;
+const ariaDisabled = disabled ? "true" : undefined;
+---
+
+<li class="nav-item">
+  <a
+    class={className}
+    tabindex={tabIndex}
+    aria-disabled={ariaDisabled}
+    href={`#${id}`}
+    role="tab"
+    aria-controls={id}
+    data-bs-toggle="tab"
+    aria-selected={active}
+  >
+    {label}
+  </a>
+</li>

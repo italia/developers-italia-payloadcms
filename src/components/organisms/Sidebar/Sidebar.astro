@@ -1,0 +1,64 @@
+---
+import { getI18n } from "@i18n/microcopy";
+import ItChevronLeft from "@static/assets/ItChevronLeft.astro";
+import ItChevronRight from "@static/assets/ItChevronRight.astro";
+import SidebarItemFirstLevel from "./SidebarItemFirstLevel.astro";
+import SidebarItemSecondLevel from "./SidebarItemSecondLevel.astro";
+import type { SidebarProps } from "./types";
+
+type Props = SidebarProps;
+
+const { id, header, openLabel, closeLabel, accordionItems, flatItems } =
+  Astro.props;
+
+const lang = Astro.locals.lang || "it";
+
+const t = getI18n(lang);
+---
+
+<nav
+  class="navbar it-navscroll-wrapper navbar-expand-lg it-bottom-navscroll it-right-side border-end-0"
+  data-bs-navscroll
+>
+  <button
+    class="custom-navbar-toggler"
+    type="button"
+    aria-controls={id}
+    aria-label={t["sidebar.openButton"]}
+    data-bs-toggle="navbarcollapsible"
+    data-bs-target="#navbarNav"
+  >
+    <span class="it-list"></span>
+    <ItChevronRight size="sm" color="primary" class="align-middle" />{openLabel}
+  </button>
+  <div class="navbar-collapsable" id="navbarNav" tabindex="-1">
+    <div class="close-div visually-hidden">
+      <button class="btn close-menu" type="button">
+        <span class="it-close"></span>{closeLabel}
+      </button>
+    </div>
+    <div class="inline-menu menu-wrapper py-lg-0" tabindex="-1">
+      <button type="button" class="it-back-button btn w-100 text-start">
+        <ItChevronLeft size="sm" color="primary" class="align-top" />
+        <span>{closeLabel}</span>
+      </button>
+      <div class="link-list-wrapper py-0 py-lg-80">
+        <p class="h4 text-uppercase px-4">{header}</p>
+        <ul class="link-list">
+          {accordionItems?.map((item) => <SidebarItemFirstLevel {...item} />)}
+          {
+            flatItems && flatItems.length > 0 && (
+              <li>
+                <ul class={`link-sublist px-0`}>
+                  {flatItems.map((item) => (
+                    <SidebarItemSecondLevel {...item} />
+                  ))}
+                </ul>
+              </li>
+            )
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>

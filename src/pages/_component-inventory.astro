@@ -1,0 +1,152 @@
+---
+import { TabContent, Tabs } from "@components/molecules/Tabs";
+import { DataSection } from "@components/organisms/DataSection";
+import { Hero } from "@components/organisms/Hero";
+import { NewsFeed } from "@components/organisms/NewsFeed";
+import { SupportChannelsSection } from "@components/organisms/SupportChannelsSection";
+import "@styles/global.scss";
+import bsi from "bootstrap-italia/dist/js/bootstrap-italia.bundle.min.js?url";
+
+import AtomsComponentInventory from "@components/AtomsComponentInventory.astro";
+import type { TabItemProps } from "@components/molecules/Tabs/types";
+import MoleculesComponentInventory from "@components/MoleculesComponentInventory.astro";
+import OrganismsComponentInventory from "@components/OrganismsComponentInventory.astro";
+import { channelItems, image, listItems } from "@utils/mock";
+
+const tabsComponentInventory: TabItemProps[] = [
+  { id: "content-atoms", label: "Atoms", active: true },
+  { id: "content-molecules", label: "Molecules", active: false },
+  { id: "content-organisms", label: "Organisms", active: false },
+  { id: "content-example", label: "Example", active: false },
+];
+---
+
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+  </head>
+  <body>
+    <main>
+      <div class="container-fluid">
+        <h1 class="mb-4">Component Inventory</h1>
+
+        <Tabs id="mytabs" items={tabsComponentInventory}>
+          <TabContent tab={tabsComponentInventory[0]}>
+            <AtomsComponentInventory />
+          </TabContent>
+
+          <TabContent tab={tabsComponentInventory[1]}>
+            <MoleculesComponentInventory />
+          </TabContent>
+
+          <TabContent tab={tabsComponentInventory[2]}>
+            <OrganismsComponentInventory />
+          </TabContent>
+
+          <TabContent tab={tabsComponentInventory[3]}>
+            <h2 class="m-4">Esempio</h2>
+
+            <Hero
+              title="Titolo della sezione"
+              paragraph="Platea dictumst vestibulum rhoncus est pellentesque elit ullamcorper dignissim cras. Dictum sit amet justo donec enim diam vulputate ut. Eu nisl nunc mi ipsum faucibus."
+              image={image}
+            />
+
+            <NewsFeed
+              id="newsFeed2"
+              title="Novità dal mondo cloud"
+              paragraph="Notizie sul cloud e testimonianze di come enti e servizi pubblici hanno adottato e fatto evolvere l'infrastruttura."
+              tabs={[
+                {
+                  title: "Notizie",
+                  componentName: "CardEditorialNews",
+                  news: [
+                    {
+                      title: "Notizia 1",
+                      description: "Lorem ipsum",
+                      category: "Articolo",
+                      image: image,
+                      linkTo: "http://www.google.com?q=Notizia1",
+                      dateTime: "2025-12-01",
+                    },
+                  ],
+                },
+                {
+                  title: "Storie in evidenza",
+                  componentName: "CardEditorialStory",
+                  news: [
+                    {
+                      title: "Notizia 1",
+                      description: "Lorem ipsum",
+                      category: "Articolo",
+                      image: image,
+                      linkTo: "#",
+                      dateTime: "2025-12-01",
+                    },
+                  ],
+                },
+              ]}
+            />
+
+            <SupportChannelsSection
+              title="Cos’è il cloud e perché è importante?"
+              paragraph="Il cloud è alla base della modernizzazione della Pubblica Amministrazione. Permette di erogare servizi digitali più sicuri, scalabili e sostenibili, migliorando la gestione dei dati e semplificando il lavoro di enti e fornitori. "
+              channels={channelItems}
+            />
+
+            <DataSection
+              highlights={{
+                title: "Risultati raggiunti ",
+                paragraph:
+                  "L’adozione del Cloud nella Pubblica Amministrazione è in costante crescita. Attraverso i progetti finanziati dal PNRR e le iniziative locali, ogni regione sta contribuendo alla modernizzazione dei servizi pubblici digitali.",
+                image: image,
+                cards: [
+                  {
+                    title:
+                      "PA e enti pubblici che hanno già avviato la migrazione al cloud",
+                    description: "70.000 +",
+                  },
+                  {
+                    title:
+                      "PA e enti pubblici che hanno già avviato la migrazione al cloud",
+                    description: "70.000 +",
+                  },
+                  {
+                    title:
+                      "PA e enti pubblici che hanno già avviato la migrazione al cloud",
+                    description: "70.000 +",
+                  },
+                ],
+              }}
+              panel={{
+                title: "Distribuzione dei progetti sul territorio",
+                paragraph: "Il numero di progetti Cloud divisi per regione.",
+              }}
+              result={{
+                items: listItems,
+                title: "L’esperienza delle regioni ",
+                paragraph:
+                  "Alcune regioni hanno sviluppato progetti cloud nella PA che offrono modelli operativi replicabili. Queste esperienze sono a disposizione di tutte le amministrazioni e contribuiscono a una diffusione più uniforme della Strategia Cloud Italia sul territorio.",
+                news: [
+                  {
+                    linkTo: "#",
+                    title:
+                      "Nasce l’Innovation Hub di Polo Strategico Nazionale",
+                    description:
+                      "Al via un ecosistema collaborativo per accelerare la trasformazione digitale della Pubblica Amministrazione",
+                    image: image,
+                  },
+                ],
+              }}
+            />
+          </TabContent>
+        </Tabs>
+      </div>
+    </main>
+  </body>
+  <script src={bsi} defer is:inline></script>
+</html>

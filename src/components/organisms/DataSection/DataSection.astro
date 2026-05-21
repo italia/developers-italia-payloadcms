@@ -1,0 +1,21 @@
+---
+import { SectionContainer } from "@components/organisms/SectionContainer";
+import Highlights from "./Highlights.astro";
+import Panel from "./Panel.astro";
+import Result from "./Result.astro";
+import type { HighlightsProps, PanelProps, ResultProps } from "./types";
+
+type Props = {
+  highlights: HighlightsProps;
+  panel: PanelProps;
+  result: ResultProps;
+};
+
+const { highlights, panel, result } = Astro.props;
+---
+
+<SectionContainer sectionTitleId={highlights.title}>
+  {highlights && <Highlights {...highlights} />}
+  {panel && <Panel {...panel} />}
+  {result && <Result {...result} />}
+</SectionContainer>

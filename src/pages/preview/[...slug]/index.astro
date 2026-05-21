@@ -1,0 +1,156 @@
+---
+import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
+import SidebarAdapter from "@components/cms-adapters/datocms/SidebarAdapter.astro";
+import SidebarLayoutAdapter from "@components/cms-adapters/datocms/SidebarLayoutAdapter.astro";
+import DraftModeQueryListener from "@components/DraftModeQueryListener.astro";
+import type { TypedDocumentNode } from "@datocms/cda-client";
+import type { SidebarFragmentType } from "@graphql/fragment/layout";
+
+import { HomepageQuery } from "@graphql/query/homepage";
+import { LayoutQuery, SidebarQuery } from "@graphql/query/layout";
+import {
+  ArticleByIdQuery,
+  CatalogueByIdQuery,
+  InsightByIdQuery,
+  PageByIdQuery,
+  StoryItemByIdQuery,
+  WebinarByIdQuery,
+} from "@graphql/query/preview";
+
+import { SearchPageContentQuery } from "@graphql/query/search";
+import type { SiteLocale } from "@graphql/types";
+import Layout from "@layouts/Layout.astro";
+import { executeQuery } from "@lib/datocms";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+
+type QueryConfig<T = any, V = any> = {
+  query: TypedDocumentNode<T, V>;
+  key: string;
+};
+export const prerender = false;
+
+const { slug: raw = "" } = Astro.params;
+const slugs = raw.split("/");
+
+const lang = slugs[0];
+Astro.locals.lang = lang;
+
+const url = new URL(Astro.request.url);
+const type = url.searchParams.get("type");
+const id = url.searchParams.get("id");
+
+if (!id || !type) {
+  return Astro.redirect("/404");
+}
+
+const queryMap: Record<string, QueryConfig> = {
+  homepage: { query: HomepageQuery, key: "homepage" },
+  search: { query: SearchPageContentQuery, key: "search" },
+  page: { query: PageByIdQuery, key: "page" },
+  catalogue: { query: CatalogueByIdQuery, key: "catalogue" },
+  article: { query: ArticleByIdQuery, key: "article" },
+  webinar_item: { query: WebinarByIdQuery, key: "webinarItem" },
+  insight: { query: InsightByIdQuery, key: "insight" },
+  story_item: { query: StoryItemByIdQuery, key: "storyItem" },
+  layout: { query: LayoutQuery, key: "layout" },
+  sidebar_for_article: { query: SidebarQuery, key: "sidebarForArticle" },
+};
+
+const config = queryMap[type];
+if (!config) return Astro.redirect("/404");
+const currentVariables = { id, locale: lang as SiteLocale };
+
+const response = await executeQuery(config.query, {
+  variables: currentVariables,
+  includeDrafts: true,
+});
+
+let dataRecord = response[config.key];
+let content = dataRecord.content;
+if (
+  (type === "search" || type === "homepage") &&
+  dataRecord?.allContentLocales
+) {
+  content = getLocaleValue(dataRecord.allContentLocales, lang, null);
+}
+
+if (!dataRecord) return Astro.redirect("/404");
+
+let sidebarData: SidebarFragmentType | null = null;
+if (type === "article" || type === "sidebar_for_article") {
+  const { sidebarForArticle } = await executeQuery(
+    queryMap.sidebar_for_article.query,
+    {
+      variables: { locale: lang as SiteLocale },
+      includeDrafts: true,
+    },
+  );
+  sidebarData = sidebarForArticle;
+  if (!sidebarData) return Astro.redirect("/404");
+}
+
+if (dataRecord) {
+  Astro.locals.recordId = dataRecord?.id;
+}
+
+let redirectUrl = "/";
+const slugProduction = linkResolver(id, lang);
+if (slugProduction !== "#") {
+  redirectUrl = slugProduction;
+}
+---
+
+{
+  type === "layout" && (
+    <Layout redirectUrl={redirectUrl}>
+      <div class="container">
+        <div class="row">
+          <div class="col">CONTENT PAGE</div>
+        </div>
+      </div>
+    </Layout>
+  )
+}
+
+{
+  type === "sidebar_for_article" && sidebarData && (
+    <Layout redirectUrl={redirectUrl}>
+      <div class="container">
+        <div class="row">
+          <div class="col-12 col-lg-4 px-lg-0 pb-lg-5 border-end position-sticky">
+            <SidebarAdapter sidebar={sidebarData} />
+          </div>
+          <div class="col-12 col-lg-7 px-lg-0" />
+        </div>
+      </div>
+    </Layout>
+  )
+}
+
+{
+  type === "article" && sidebarData && (
+    <Layout redirectUrl={redirectUrl} pageSeo={dataRecord?.seo}>
+      <SidebarLayoutAdapter sidebar={sidebarData} content={content as any} />
+    </Layout>
+  )
+}
+
+{
+  (type === "homepage" ||
+    type === "page" ||
+    type === "search" ||
+    type === "webinar_item" ||
+    type === "story_item" ||
+    type === "insight" ||
+    type === "catalogue") && (
+    <Layout redirectUrl={redirectUrl} pageSeo={dataRecord?.seo}>
+      <PageAdapter content={content as any} />
+    </Layout>
+  )
+}
+
+<DraftModeQueryListener
+  query={config.query as any}
+  variables={currentVariables as any}
+/>

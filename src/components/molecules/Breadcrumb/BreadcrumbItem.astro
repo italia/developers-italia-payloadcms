@@ -1,0 +1,17 @@
+---
+import type { BreadcrumbItemProps } from "./types";
+
+type Props = BreadcrumbItemProps;
+const { label, linkTo, id, active, variant = "light" } = Astro.props;
+const ariaCurrent = active ? "page" : undefined;
+---
+
+<li
+  id={id}
+  class={`breadcrumb-item ${active && "active"}`}
+  aria-current={ariaCurrent}
+>
+  {!active && <a href={linkTo}>{label}</a>}
+  {!active && <span class="separator mb-0">/</span>}
+  {active && label}
+</li>

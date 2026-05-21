@@ -1,0 +1,69 @@
+---
+import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
+import type { TagFragmentType } from "@graphql/fragment/commonFragments";
+import type { SearchPageContentFragmentType } from "@graphql/fragment/search";
+import type { SiteLocale } from "@graphql/types";
+import Layout from "@layouts/Layout.astro";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+import { removeLang } from "@utils/pathHelper";
+import { getCollection, getEntry } from "astro:content";
+
+export async function getStaticPaths() {
+  type PathItem = {
+    params: {
+      search: string;
+      lang: SiteLocale;
+    };
+    props: {
+      seoMeta: TagFragmentType[];
+      content: SearchPageContentFragmentType[];
+      id: string;
+    };
+  };
+
+  const response = await getCollection("search");
+
+  const page = response[0].data;
+  if (!page) return;
+
+  const pathsPromises =
+    page?.locales.map(async (lang) => {
+      const fullPath = linkResolver(page.id, lang);
+
+      const slug = removeLang(fullPath, lang);
+
+      const seoResCollection = await getEntry(
+        "global_seo",
+        `${page.id}_${lang}`,
+      );
+      const seoRes = seoResCollection?.data;
+
+      return {
+        params: {
+          search: slug,
+          lang: lang,
+        },
+        props: {
+          seoMeta: seoRes?.metaTags || [],
+          id: page.id,
+          content: getLocaleValue(page.allContentLocales, lang, null),
+        },
+      };
+    }) || [];
+
+  const paths = await Promise.all(pathsPromises);
+
+  return paths.filter((path): path is PathItem => !!path.params.lang);
+}
+
+const { id, content, seoMeta } = Astro.props;
+const { lang } = Astro.params;
+
+Astro.locals.lang = lang;
+Astro.locals.recordId = id;
+---
+
+<Layout pageSeo={seoMeta}>
+  <PageAdapter content={content} />
+</Layout>

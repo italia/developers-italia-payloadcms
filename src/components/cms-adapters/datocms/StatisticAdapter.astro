@@ -1,0 +1,38 @@
+---
+import type {
+  DataContainerProps,
+  VariantTextDataContainerProps,
+} from "@components/molecules/DataContainer/types";
+import { Statistics } from "@components/molecules/Statistics";
+import type { StatisticBlockFragmentType } from "@graphql/fragment/commonFragments";
+
+type Props = {
+  block: StatisticBlockFragmentType;
+  variant?: VariantTextDataContainerProps;
+  showInline?: boolean;
+};
+
+const { block, variant = "dark", showInline = false } = Astro.props;
+let items: DataContainerProps[] = [];
+
+if (block.statistics.length > 0) {
+  items = block.statistics.map((item) => {
+    return {
+      info: item.info,
+      title: item.title,
+      contentIcon: item.iconSelect,
+    };
+  });
+}
+
+if (block.kpiElement.length > 0) {
+  items = block.kpiElement.map((item) => {
+    return {
+      info: `${item.valuePrefix} ${item.value}`,
+      title: item.title,
+    };
+  });
+}
+---
+
+<Statistics items={items} variant={variant} showInline={showInline} />

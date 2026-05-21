@@ -1,0 +1,23 @@
+---
+import type { CardInfoProps } from "@components/molecules/CardInfo/types";
+import { ListCard } from "@components/molecules/ListCard";
+import type { ListCardInfoFragmentType } from "@graphql/fragment/commonFragments";
+
+type DatoRecord = ListCardInfoFragmentType & {
+  __typename: string;
+  id: string;
+};
+
+type Props = {
+  block: DatoRecord;
+};
+
+const { block } = Astro.props;
+
+const items: CardInfoProps[] = block.items.map((item) => ({
+  title: item.title,
+  description: item.paragraph,
+}));
+---
+
+<ListCard type="CardInfo" cards={items} />

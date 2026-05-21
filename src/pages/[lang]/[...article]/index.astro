@@ -1,0 +1,93 @@
+---
+import SidebarLayoutAdapter from "@components/cms-adapters/datocms/SidebarLayoutAdapter.astro";
+import type { ArticleContentFragmentType } from "@graphql/fragment/article";
+import type { TagFragmentType } from "@graphql/fragment/commonFragments";
+import type { SidebarFragmentType } from "@graphql/fragment/layout";
+import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
+import type { SiteLocale } from "@graphql/types";
+import Layout from "@layouts/Layout.astro";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { type JsonLdPageData } from "@utils/JsonLD/seoJsonLd";
+import { linkResolver } from "@utils/linkResolver";
+import { removeLang } from "@utils/pathHelper";
+import { getCollection, getEntry } from "astro:content";
+
+export async function getStaticPaths() {
+  type PathItem = {
+    params: {
+      article: string;
+      lang: SiteLocale;
+    };
+    props: {
+      seoMeta: TagFragmentType[];
+      seo: SeoFieldFragmentType | null;
+      content: ArticleContentFragmentType;
+      id: string;
+      sidebar: SidebarFragmentType;
+      publishedAt: string;
+      updatedAt: string;
+    };
+  };
+
+  const response = await getCollection("article");
+  const sidebarEntry = await getEntry("sidebar", "sidebar");
+
+  const sidebarForArticle = sidebarEntry?.data;
+
+  if (!sidebarForArticle) throw new Error("Sidebar not found");
+
+  const pathsPromises =
+    response?.flatMap((item) => {
+      const page = item.data;
+      return page.locales.map(async (lang) => {
+        const seoResCollection = await getEntry(
+          "global_seo",
+          `${page.id}_${lang}`,
+        );
+        const seoRes = seoResCollection?.data;
+
+        const fullPath = linkResolver(page.id, lang);
+
+        const slug = removeLang(fullPath, lang);
+
+        return {
+          params: {
+            article: slug,
+            lang: lang,
+          },
+          props: {
+            seoMeta: seoRes?.metaTags || [],
+            seo: seoRes?.seo ?? null,
+            id: page.id,
+            sidebar: { ...sidebarForArticle, id: `sidebar_${page.id}` },
+            content: getLocaleValue(page.allContentLocales, lang, null),
+            publishedAt: page.publishedAt,
+            updatedAt: seoRes?.updatedAt || page.updatedAt,
+          },
+        };
+      });
+    }) || [];
+
+  const paths = await Promise.all(pathsPromises);
+
+  return paths.filter((path): path is PathItem => !!path.params.lang);
+}
+
+const { seo, seoMeta, content, id, sidebar, publishedAt, updatedAt } =
+  Astro.props;
+const { lang } = Astro.params;
+
+Astro.locals.lang = lang;
+Astro.locals.recordId = id;
+const jsonLd: JsonLdPageData = {
+  pageType: ["content"],
+  seo: seo || undefined,
+  articleType: "TechArticle",
+  publishedAt,
+  updatedAt,
+};
+---
+
+<Layout pageSeo={seoMeta} datePublished={publishedAt} jsonLd={jsonLd}>
+  <SidebarLayoutAdapter sidebar={sidebar} content={content} />
+</Layout>

@@ -1,0 +1,104 @@
+---
+import { Badge } from "@components/atoms/Badge";
+import { Button, ButtonLink } from "@components/atoms/Button";
+import type { ActionCardProps } from "./types";
+
+type Props = ActionCardProps;
+
+const { title, paragraph, category, cta, labelButtonMore, labelButtonLess } =
+  Astro.props;
+---
+
+<style>
+  @import "./style.scss";
+</style>
+
+<article class="it-card rounded shadow border p-4 p-lg-5">
+  <div class="row justify-content-between align-items-top mb-5">
+    <div class="col-12 col-lg-6">
+      <h2 id={title}>{title}</h2>
+      {category && <Badge variant="primary" label={category} />}
+    </div>
+    <div
+      class="col-12 col-lg-6 text-center text-lg-end mt-3 mt-lg-0 d-lg-block d-none"
+    >
+      <ButtonLink
+        download
+        linkTo={cta.url}
+        label={cta.label}
+        icon="it-download"
+      />
+    </div>
+  </div>
+  <div
+    id="content-body"
+    class="it-card-body p-0 content-collapsed font-serif"
+    set:html={paragraph}
+  />
+  <div
+    class="it-card-footer border-0 m-auto"
+    id="toggle-container"
+    aria-label="Espandi"
+    data-more={labelButtonMore}
+    data-less={labelButtonLess}
+  >
+    <Button
+      id="toggle-btn"
+      label={labelButtonMore}
+      variant="link"
+      size="small"
+      icon="it-plus"
+    />
+  </div>
+  <div class="col-12 text-center mt-3 d-lg-none d-block">
+    <ButtonLink
+      download
+      linkTo={cta.url}
+      label={cta.label}
+      icon="it-download"
+    />
+  </div>
+</article>
+
+<script>
+  function setupReadMore() {
+    const container = document.getElementById("toggle-container");
+    const labelMore = container?.getAttribute("data-more") || "";
+    const labelLess = container?.getAttribute("data-less") || "";
+
+    const btn = document.getElementById("toggle-btn");
+    const content = document.getElementById("content-body");
+
+    if (btn && content) {
+      const spanText = btn.querySelector("span");
+      const iconUse = btn.querySelector("use");
+      const spritePath = "/bsi-svg/sprites.svg";
+      btn.addEventListener("click", () => {
+        const isExpanded = content.classList.contains("content-expanded");
+
+        if (isExpanded) {
+          // Nascondi
+          content.classList.remove("content-expanded");
+          content.classList.add("content-collapsed");
+          if (spanText) spanText.innerHTML = labelMore;
+          if (iconUse) {
+            iconUse.setAttribute("href", `${spritePath}#it-plus`);
+            iconUse.setAttribute("xlink:href", `${spritePath}#it-plus`);
+          }
+        } else {
+          // Mostra
+          content.classList.remove("content-collapsed");
+          content.classList.add("content-expanded");
+          if (spanText) spanText.innerHTML = labelLess;
+          if (iconUse) {
+            iconUse.setAttribute("href", `${spritePath}#it-minus`);
+            iconUse.setAttribute("xlink:href", `${spritePath}#it-minus`);
+          }
+        }
+      });
+    }
+  }
+
+  setupReadMore();
+  document.addEventListener("astro:page-load", setupReadMore);
+</script>

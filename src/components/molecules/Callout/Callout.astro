@@ -1,0 +1,18 @@
+---
+import ItInfoCircle from "@static/assets/ItInfoCircle.astro";
+import type { CalloutProps } from "./types";
+
+type Props = CalloutProps;
+const { visuallyHidden, title, paragraph } = Astro.props;
+---
+
+<div class="callout note">
+  <div class="callout-inner">
+    <div class="callout-title">
+      <ItInfoCircle />
+      {visuallyHidden && <span class="visually-hidden">{visuallyHidden}</span>}
+      <span class="text">{title}</span>
+    </div>
+    <Fragment set:html={paragraph} />
+  </div>
+</div>

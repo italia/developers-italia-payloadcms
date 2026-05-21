@@ -1,0 +1,27 @@
+---
+import { Icon } from "@components/atoms/Icon";
+import { getI18n } from "@i18n/microcopy";
+import type { FooterLogoProps } from "./types";
+
+type Props = FooterLogoProps;
+
+const { mainLogo, brandLogo, label, linkTo } = Astro.props;
+const { lang } = Astro.locals;
+const t = getI18n(lang);
+---
+
+<a
+  href={linkTo}
+  target="_blank"
+  rel="noreferrer"
+  class="d-block h6 fw-semibold text-decoration-none d-flex align-items-center"
+>
+  {mainLogo && <Icon icon={mainLogo} className="text-white me-3 icon-lg" />}
+  {brandLogo && <Icon icon={brandLogo} className="text-white me-3 icon-lg" />}
+  <div>
+    {label}
+    <span class="visually-hidden">
+      {t["link.external"]}
+    </span>
+  </div>
+</a>

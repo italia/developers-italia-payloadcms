@@ -1,0 +1,31 @@
+---
+import AccordionItem from "./AccordionItem.astro";
+import type { AccordionProps } from "./types";
+type Props = AccordionProps & { fullWidth?: boolean; allOpen?: boolean };
+const {
+  id,
+  items,
+  variant = "default",
+  fullWidth = true,
+  label,
+  allOpen = true,
+} = Astro.props;
+
+const className =
+  variant === "background-active" ? "accordion-background-active" : "";
+---
+
+{label && <p class="it-label">{label}</p>}
+<div class=`accordion ${className}` id={id}>
+  {
+    items.map((item, index) => (
+      <AccordionItem
+        idParent={id}
+        {...item}
+        fullWidth={fullWidth}
+        index={index}
+        allOpen={allOpen}
+      />
+    ))
+  }
+</div>

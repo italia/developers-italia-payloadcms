@@ -1,0 +1,88 @@
+---
+import { NewsFeed } from "@components/organisms/NewsFeed";
+import type { NewsFeedFragmentType } from "@graphql/fragment/sectionFragments";
+import type { SectionBackground } from "@utils/background";
+import { DatoBlockModel } from "@utils/cmsMapper";
+import { getLocaleValue } from "@utils/getLocaleValue";
+import { linkResolver } from "@utils/linkResolver";
+
+type Props = {
+  block: NewsFeedFragmentType;
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+
+const buttonLink =
+  block.cta?.linkTo?.id !== undefined
+    ? linkResolver(block.cta.linkTo.id, lang)
+    : undefined;
+const buttonLabel = block.cta?.label;
+---
+
+<NewsFeed
+  id={block.id}
+  title={block.title}
+  paragraph={block.paragraph}
+  labelButton={buttonLabel}
+  linkTo={buttonLink}
+  backgroundColor={block.backgroundColor as SectionBackground}
+  tabs={block.tabs.map((tab) => {
+    switch (tab.componentName) {
+      case DatoBlockModel.NewsTab:
+        return {
+          componentName: "CardEditorialNews",
+          title: tab.title,
+          news: tab.news.map((n) => {
+            const link = getLocaleValue(n.allLinkLocales, lang, "");
+            const topic = getLocaleValue(n.allTopicLocales, lang, null);
+            return {
+              id: n.id,
+              title: getLocaleValue(n.allTitleLocales, lang, ""),
+              description: getLocaleValue(n.allParagraphLocales, lang, ""),
+              image: n.image,
+              linkTo: link || "#",
+              category: getLocaleValue(topic?._allLabelLocales, lang, ""),
+              dateTime: n.publishedAt,
+              action: link ? new URL(link).host : "",
+            };
+          }),
+        };
+
+      case DatoBlockModel.StoryTab:
+        return {
+          componentName: "CardEditorialStory",
+          title: tab.title,
+          news: tab.news.map((n) => {
+            let allTopicLocales =
+              "allTopicLocales" in n ? n.allTopicLocales : [];
+            const topic = getLocaleValue(allTopicLocales, lang, null);
+            let publishedAt = "publishedAt" in n ? n.publishedAt : undefined;
+
+            const description = getLocaleValue(n.allParagraphLocales, lang, "");
+
+            return {
+              id: n.id,
+              title: getLocaleValue(n.allTitleLocales, lang, ""),
+              image: n.image || undefined,
+              linkTo: linkResolver(n.id, lang),
+              category: getLocaleValue(
+                topic?._allLabelLocales,
+                lang,
+                undefined,
+              ),
+              description: description || undefined,
+              dateTime: publishedAt || undefined,
+            };
+          }),
+        };
+
+      default:
+        return {
+          componentName: "CardEditorialNews",
+          title: tab.title,
+          news: [],
+        };
+    }
+  })}
+/>

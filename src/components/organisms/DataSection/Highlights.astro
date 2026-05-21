@@ -1,0 +1,35 @@
+---
+import { Image } from "@components/atoms/Image";
+import { StatisticsBox } from "@components/molecules/StatisticsBox";
+import { TextContainer } from "@components/molecules/TextContainer";
+import type { HighlightsProps } from "./types";
+
+type Props = HighlightsProps;
+const { title, paragraph, image, cards } = Astro.props;
+
+const colSize = cards?.length && cards.length % 3 === 0 ? 4 : 6;
+---
+
+<div class="row align-items-center justify-content-between">
+  <div class="col-lg-6 col-12">
+    <TextContainer title={title} paragraph={paragraph} variant="light" />
+  </div>
+  <div class="col-lg-5 col-12">
+    <div class="img-container">
+      <div class="ratio ratio-4x3">
+        <Image {...image} />
+      </div>
+    </div>
+  </div>
+</div>
+{
+  cards && cards.length > 0 && (
+    <div class="row align-item-center justify-content-between pt-5 mb-4">
+      {cards.map((card) => (
+        <div class={`col-12 mb-3 mb-md-4 col-lg-${colSize}`}>
+          <StatisticsBox {...card} />
+        </div>
+      ))}
+    </div>
+  )
+}

@@ -1,13 +1,14 @@
-import { AllInsightsRecordFragment } from "@graphql/fragment/insight";
+import { InsightPayloadFragment } from "@graphql/fragment/insight";
 import { graphql } from "@graphql/graphql";
 
-export const AllInsightsContentQuery = graphql(
+export const InsightsContentQuery = graphql(
   `
-    query AllInsightsContentQuery {
-      allInsights(first: 2500) {
-        ...AllInsightsRecordFragment
-      }
+  query InsightsContentQuery($locale: LocaleInputType, $limit: Int, $page: Int) {
+    Insights(locale: $locale, limit: $limit, page: $page) {
+      docs { ...InsightPayloadFragment }
+      hasNextPage
     }
-  `,
-  [AllInsightsRecordFragment],
+  }
+`,
+  [InsightPayloadFragment],
 );

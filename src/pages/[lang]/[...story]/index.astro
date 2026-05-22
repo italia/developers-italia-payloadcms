@@ -2,67 +2,36 @@
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
 import type { TagFragmentType } from "@graphql/fragment/commonFragments";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
-import type { StoryContentFragmentType } from "@graphql/fragment/story";
 import type { SiteLocale } from "@graphql/types";
 import Layout from "@layouts/Layout.astro";
-import { getLocaleValue } from "@utils/getLocaleValue";
 import { extractFaqItems, type JsonLdPageData } from "@utils/JsonLD/seoJsonLd";
 import { linkResolver } from "@utils/linkResolver";
 import { removeLang } from "@utils/pathHelper";
 import { getCollection, getEntry } from "astro:content";
 
 export async function getStaticPaths() {
-  type PathItem = {
-    params: {
-      story: string;
-      lang: SiteLocale;
-    };
-    props: {
-      seoMeta: TagFragmentType[];
-      seo: SeoFieldFragmentType | null;
-      content: StoryContentFragmentType[];
-      id: string;
-      publishedAt: string;
-      updatedAt: string;
-    };
-  };
-
   const response = await getCollection("story_content");
 
-  const pathsPromises =
-    response?.flatMap((item) => {
-      const page = item.data;
-      return page.locales.map(async (lang) => {
-        const seoResCollection = await getEntry(
-          "global_seo",
-          `${page.id}_${lang}`,
-        );
-        const seoRes = seoResCollection?.data;
+  const pathsPromises = (response ?? []).map(async (item) => {
+    const { docId, locale, content, publishedAt, updatedAt } = item.data;
+    const seoRes = (await getEntry("global_seo", `${docId}_${locale}`))?.data;
+    const fullPath = linkResolver(docId, locale);
+    const slug = removeLang(fullPath, locale);
 
-        const fullPath = linkResolver(page.id, lang);
+    return {
+      params: { story: slug, lang: locale as SiteLocale },
+      props: {
+        seoMeta: (seoRes?.metaTags ?? []) as TagFragmentType[],
+        seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
+        id: docId,
+        content,
+        publishedAt: publishedAt ?? "",
+        updatedAt: seoRes?.updatedAt ?? updatedAt ?? "",
+      },
+    };
+  });
 
-        const slug = removeLang(fullPath, lang);
-
-        return {
-          params: {
-            story: slug,
-            lang: lang,
-          },
-          props: {
-            seoMeta: seoRes?.metaTags || [],
-            seo: seoRes?.seo || null,
-            id: page.id,
-            content: getLocaleValue(page.allContentLocales, lang, null),
-            publishedAt: page.publishedAt,
-            updatedAt: seoRes?.updatedAt || page.updatedAt,
-          },
-        };
-      });
-    }) || [];
-
-  const paths = await Promise.all(pathsPromises);
-
-  return paths.filter((path): path is PathItem => !!path.params.lang);
+  return Promise.all(pathsPromises);
 }
 
 const { id, content, seo, seoMeta, publishedAt, updatedAt } = Astro.props;

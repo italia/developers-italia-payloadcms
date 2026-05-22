@@ -1,9 +1,3 @@
-import { AllArticlesContentQuery } from "@graphql/query/article";
-import {
-  AllCataloguesContentQuery,
-  LastItemsUpdateQuery,
-} from "@graphql/query/catalogue";
-import { ErrorPageQuery } from "@graphql/query/errorPage";
 import {
   ArticlesIdxQuery,
   CataloguesIdxQuery,
@@ -14,7 +8,6 @@ import {
   StoriesIdxQuery,
   WebinarsIdxQuery,
 } from "@graphql/query/indexing";
-import { AllInsightsContentQuery } from "@graphql/query/insight";
 import { LayoutQuery, SidebarQuery } from "@graphql/query/layout";
 import { AllNewsQuery } from "@graphql/query/news";
 import { AllResourcesQuery } from "@graphql/query/resource";
@@ -35,21 +28,30 @@ import {
   SiteMetaTagsQuery,
 } from "@graphql/query/settings";
 import {
-  AllStoriesContentQuery,
   AllStoryCardQuery,
-} from "@graphql/query/story";
-import {
   AllWebinarQuery,
-  AllWebinarsContentQuery,
-} from "@graphql/query/webinar";
+} from "@graphql/query/story";
+import { ArticlesContentQuery } from "@graphql/query/article";
+import { CataloguesContentQuery, LastItemsUpdateQuery } from "@graphql/query/catalogue";
+import { InsightsContentQuery } from "@graphql/query/insight";
+import { StoryItemsContentQuery } from "@graphql/query/story";
+import { WebinarItemsContentQuery } from "@graphql/query/webinar";
 import { executeAutoPagingQuery, executeQuery } from "@lib/datocms";
-import { payloadFetch } from "@lib/payloadcms";
+import {
+  executeAutoPagingQuery as payloadPagingQuery,
+  executeQuery as payloadQuery,
+  payloadFetch,
+} from "@lib/payloadcms";
+
+const LOCALES = ["it", "en"] as const;
+type Locale = (typeof LOCALES)[number];
 
 type PayloadPageDoc = {
   id: number;
   slug: string | null;
   title: string | null;
   content: unknown[] | null;
+  localizedSlugs: Record<string, string> | null;
   updatedAt: string | null;
   createdAt: string | null;
 };
@@ -59,14 +61,21 @@ type PayloadPageList = {
   hasNextPage: boolean;
 };
 
+// ─── Helper: extract docs from executeAutoPagingQuery result ─────────────────
+// executeAutoPagingQuery<Result> returns Result[] at runtime (the docs array)
+// but TypeScript types it as the full query result type. Cast where needed.
+function asDocs<T>(result: unknown): T[] {
+  return result as T[];
+}
+
+// ─── News / Stories / Webinars (DatoCMS card collections — unchanged) ─────────
+
 export const newsLoader = async () => {
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
   const dateLimit = oneYearAgo.toISOString();
   const response = await executeAutoPagingQuery(AllNewsQuery, {
-    variables: {
-      dateLimit: dateLimit,
-    },
+    variables: { dateLimit },
   });
   return response?.allNewsItems || [];
 };
@@ -81,9 +90,7 @@ export const webinarsLoader = async () => {
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
   const dateLimit = oneYearAgo.toISOString();
   const response = await executeAutoPagingQuery(AllWebinarQuery, {
-    variables: {
-      dateLimit: dateLimit,
-    },
+    variables: { dateLimit },
   });
   return response?.allWebinarItems || [];
 };
@@ -93,36 +100,315 @@ export const resourcesLoader = async () => {
   return response?.allResources || [];
 };
 
-export const globalSettingsLoader = async () => {
-  function transformGlobalSettings(data: any) {
-    const localesMap: Record<string, any> = {};
+// ─── Pages (PayloadCMS REST, per-locale entries) ──────────────────────────────
 
+export const pagesLoader = async () => {
+  const slugMap = new Map<string, Record<Locale, string>>();
+
+  // First pass: collect all slugs per locale to build localizedSlugs
+  const allLocalePages = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const docs: PayloadPageDoc[] = [];
+      let pageNum = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const qs = `locale=${locale}&depth=3&limit=100&page=${pageNum}&fallbackLocale=none`;
+        const res = await payloadFetch<PayloadPageList>("/pages", qs);
+        docs.push(...res.docs);
+        hasMore = res.hasNextPage;
+        pageNum++;
+      }
+      return { locale, docs };
+    }),
+  );
+
+  // Build slug map: id -> { it: slug, en: slug }
+  for (const { locale, docs } of allLocalePages) {
+    for (const doc of docs) {
+      if (!doc.slug) continue;
+      const id = String(doc.id);
+      if (!slugMap.has(id)) slugMap.set(id, {} as Record<Locale, string>);
+      const entry = slugMap.get(id);
+      if (entry) entry[locale] = doc.slug;
+    }
+  }
+
+  // Emit one entry per (document, locale)
+  const entries: {
+    id: string;
+    docId: string;
+    locale: Locale;
+    slug: string | null;
+    title: string | null;
+    content: unknown[];
+    localizedSlugs: Record<string, string> | null;
+    updatedAt: string | null;
+    publishedAt: string | null;
+  }[] = [];
+
+  for (const { locale, docs } of allLocalePages) {
+    for (const doc of docs) {
+      if (!doc.slug) continue;
+      const docId = String(doc.id);
+      entries.push({
+        id: `${docId}_${locale}`,
+        docId,
+        locale,
+        slug: doc.slug,
+        title: doc.title ?? null,
+        content: doc.content ?? [],
+        localizedSlugs: slugMap.get(docId) ?? null,
+        updatedAt: doc.updatedAt ?? null,
+        publishedAt: doc.updatedAt ?? doc.createdAt ?? null,
+      });
+    }
+  }
+
+  return entries;
+};
+
+// ─── Article content (PayloadCMS GraphQL, per-locale entries) ─────────────────
+
+export const articleContentLoader = async () => {
+  type ArticleDoc = {
+    id: number;
+    slug: string | null;
+    title: string | null;
+    paragraph: string | null;
+    content: unknown;
+    localizedSlugs: unknown;
+    updatedAt: string | null;
+    createdAt: string | null;
+  };
+
+  const entries = [];
+  for (const locale of LOCALES) {
+    const docs = asDocs<ArticleDoc>(
+      await payloadPagingQuery(ArticlesContentQuery, { variables: { locale } }),
+    );
+    for (const doc of docs) {
+      if (!doc.slug) continue;
+      entries.push({
+        id: `${doc.id}_${locale}`,
+        docId: String(doc.id),
+        locale,
+        slug: doc.slug,
+        title: doc.title ?? null,
+        paragraph: doc.paragraph ?? null,
+        content: doc.content ?? null,
+        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
+        updatedAt: doc.updatedAt ?? null,
+        publishedAt: doc.createdAt ?? null,
+      });
+    }
+  }
+  return entries;
+};
+
+// ─── Insight content ──────────────────────────────────────────────────────────
+
+export const insightContentLoader = async () => {
+  type InsightDoc = {
+    id: number;
+    slug: string | null;
+    title: string | null;
+    abstract: string | null;
+    content: unknown[] | null;
+    localizedSlugs: unknown;
+    updatedAt: string | null;
+    createdAt: string | null;
+  };
+
+  const entries = [];
+  for (const locale of LOCALES) {
+    const docs = asDocs<InsightDoc>(
+      await payloadPagingQuery(InsightsContentQuery, { variables: { locale } }),
+    );
+    for (const doc of docs) {
+      if (!doc.slug) continue;
+      entries.push({
+        id: `${doc.id}_${locale}`,
+        docId: String(doc.id),
+        locale,
+        slug: doc.slug,
+        title: doc.title ?? null,
+        abstract: doc.abstract ?? null,
+        content: doc.content ?? [],
+        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
+        updatedAt: doc.updatedAt ?? null,
+        publishedAt: doc.createdAt ?? null,
+      });
+    }
+  }
+  return entries;
+};
+
+// ─── Story content ────────────────────────────────────────────────────────────
+
+export const storyContentLoader = async () => {
+  type StoryDoc = {
+    id: number;
+    slug: string | null;
+    title: string | null;
+    content: unknown[] | null;
+    dateOfPublication: string | null;
+    localizedSlugs: unknown;
+    updatedAt: string | null;
+    createdAt: string | null;
+  };
+
+  const entries = [];
+  for (const locale of LOCALES) {
+    const docs = asDocs<StoryDoc>(
+      await payloadPagingQuery(StoryItemsContentQuery, { variables: { locale } }),
+    );
+    for (const doc of docs) {
+      if (!doc.slug) continue;
+      entries.push({
+        id: `${doc.id}_${locale}`,
+        docId: String(doc.id),
+        locale,
+        slug: doc.slug,
+        title: doc.title ?? null,
+        content: doc.content ?? [],
+        dateOfPublication: doc.dateOfPublication ?? null,
+        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
+        updatedAt: doc.updatedAt ?? null,
+        publishedAt: doc.createdAt ?? null,
+      });
+    }
+  }
+  return entries;
+};
+
+// ─── Webinar content ──────────────────────────────────────────────────────────
+
+export const webinarContentLoader = async () => {
+  type WebinarDoc = {
+    id: number;
+    slug: string | null;
+    title: string | null;
+    paragraph: string | null;
+    date: string | null;
+    content: unknown[] | null;
+    localizedSlugs: unknown;
+    updatedAt: string | null;
+    createdAt: string | null;
+  };
+
+  const entries = [];
+  for (const locale of LOCALES) {
+    const docs = asDocs<WebinarDoc>(
+      await payloadPagingQuery(WebinarItemsContentQuery, { variables: { locale } }),
+    );
+    for (const doc of docs) {
+      if (!doc.slug) continue;
+      entries.push({
+        id: `${doc.id}_${locale}`,
+        docId: String(doc.id),
+        locale,
+        slug: doc.slug,
+        title: doc.title ?? null,
+        paragraph: doc.paragraph ?? null,
+        date: doc.date ?? null,
+        content: doc.content ?? [],
+        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
+        updatedAt: doc.updatedAt ?? null,
+        publishedAt: doc.createdAt ?? null,
+      });
+    }
+  }
+  return entries;
+};
+
+// ─── Catalogues ───────────────────────────────────────────────────────────────
+
+export const cataloguesLoader = async () => {
+  type CatalogueDoc = {
+    id: number;
+    slug: string | null;
+    title: string | null;
+    content: unknown[] | null;
+    localizedSlugs: unknown;
+    updatedAt: string | null;
+    createdAt: string | null;
+  };
+
+  type UpdatesDocs = { docs: { createdAt: string }[] };
+  type UpdatesResult = {
+    NewsItems: UpdatesDocs;
+    StoryItems: UpdatesDocs;
+    WebinarItems: UpdatesDocs;
+    Resources: UpdatesDocs;
+  };
+
+  // Fetch last-update dates for catalogue feed badges (locale-independent)
+  const updatesData = (await payloadQuery(LastItemsUpdateQuery, {
+    variables: { locale: "it" },
+  })) as unknown as UpdatesResult;
+  const datesRegistry = {
+    news: updatesData?.NewsItems?.docs?.[0]?.createdAt,
+    story: updatesData?.StoryItems?.docs?.[0]?.createdAt,
+    webinar: updatesData?.WebinarItems?.docs?.[0]?.createdAt,
+    resource: updatesData?.Resources?.docs?.[0]?.createdAt,
+  };
+
+  const entries = [];
+  for (const locale of LOCALES) {
+    const docs = asDocs<CatalogueDoc>(
+      await payloadPagingQuery(CataloguesContentQuery, { variables: { locale } }),
+    );
+    for (const doc of docs) {
+      if (!doc.slug) continue;
+      entries.push({
+        id: `${doc.id}_${locale}`,
+        docId: String(doc.id),
+        locale,
+        slug: doc.slug,
+        title: doc.title ?? null,
+        content: doc.content ?? [],
+        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
+        updatedAt: doc.updatedAt ?? null,
+        publishedAt: doc.createdAt ?? null,
+        datesRegistry,
+      });
+    }
+  }
+  return entries;
+};
+
+// ─── Globals (DatoCMS — unchanged) ───────────────────────────────────────────
+
+export const globalSettingsLoader = async () => {
+  type LocaleValue = { locale: string; value: unknown };
+  type LinkValue = { locale: string; value: { label: string; url: string }[] };
+  type GlobalSettingRaw = {
+    globalSetting: Record<string, LocaleValue[] | LinkValue[]>;
+  };
+  type LocaleMap = Record<string, Record<string, unknown>>;
+
+  function transformGlobalSettings(data: GlobalSettingRaw) {
+    const localesMap: LocaleMap = {};
     const fieldMapping: Record<string, string> = {
       _allSiteNameLocales: "siteName",
       _allLastUpdateLabelLocales: "lastUpdateLabel",
       _allLinksLocales: "links",
     };
-
     Object.entries(fieldMapping).forEach(([datoKey, zodKey]) => {
-      const translations = data.globalSetting[datoKey] || [];
-
-      translations.forEach((item: { locale: string; value: any }) => {
-        if (!localesMap[item.locale]) {
-          localesMap[item.locale] = {};
-        }
+      const translations = (data.globalSetting[datoKey] || []) as LocaleValue[];
+      translations.forEach((item) => {
+        if (!localesMap[item.locale]) localesMap[item.locale] = {};
         if (zodKey === "links") {
-          localesMap[item.locale][zodKey] = (item.value || []).map(
-            (link: any) => ({
-              label: link.label,
-              url: link.url,
-            }),
-          );
+          const links = (item.value as { label: string; url: string }[]) || [];
+          localesMap[item.locale][zodKey] = links.map((link) => ({
+            label: link.label,
+            url: link.url,
+          }));
         } else {
           localesMap[item.locale][zodKey] = item.value;
         }
       });
     });
-
     return Object.entries(localesMap).map(([locale, values]) => ({
       id: locale,
       locale,
@@ -132,63 +418,10 @@ export const globalSettingsLoader = async () => {
 
   const response = await executeQuery(AllGlobalSettingsQuery);
   if (!response?.globalSetting) return [];
-
   return transformGlobalSettings(response);
 };
 
-export const pagesLoader = async () => {
-  const locales = ['it', 'en'] as const;
-
-  const allLocalePages = await Promise.all(
-    locales.map(async (locale) => {
-      const docs: PayloadPageDoc[] = [];
-      let pageNum = 1;
-      let hasMore = true;
-      while (hasMore) {
-        const qs = `locale=${locale}&depth=3&limit=100&page=${pageNum}&fallbackLocale=none`;
-        const res = await payloadFetch<PayloadPageList>('/pages', qs);
-        docs.push(...res.docs);
-        hasMore = res.hasNextPage;
-        pageNum++;
-      }
-      return { locale, docs };
-    }),
-  );
-
-  const pagesMap = new Map<string, {
-    id: string;
-    locales: string[];
-    publishedAt: string | null;
-    updatedAt: string | null;
-    allContentLocales: { locale: string; value: unknown[] }[];
-  }>();
-
-  for (const { locale, docs } of allLocalePages) {
-    for (const doc of docs) {
-      // Skip pages with no slug for this locale (not translated)
-      if (!doc.slug) continue;
-      const id = String(doc.id);
-      if (!pagesMap.has(id)) {
-        pagesMap.set(id, {
-          id,
-          locales: [],
-          publishedAt: doc.updatedAt || doc.createdAt,
-          updatedAt: doc.updatedAt || doc.createdAt,
-          allContentLocales: [],
-        });
-      }
-      const entry = pagesMap.get(id)!;
-      entry.locales.push(locale);
-      entry.allContentLocales.push({ locale, value: doc.content || [] });
-    }
-  }
-
-  return Array.from(pagesMap.values());
-};
-
 export const homepageLoader = async () => {
-  const locales = ['it', 'en'] as const;
-
   type HomepageGlobal = {
     id: number;
     title: string | null;
@@ -198,20 +431,22 @@ export const homepageLoader = async () => {
   };
 
   const results = await Promise.all(
-    locales.map((locale) =>
-      payloadFetch<HomepageGlobal>('/globals/homepage', `locale=${locale}&depth=3&fallbackLocale=none`),
+    LOCALES.map((locale) =>
+      payloadFetch<HomepageGlobal>(
+        "/globals/homepage",
+        `locale=${locale}&depth=3&fallbackLocale=none`,
+      ),
     ),
   );
 
   const base = results[0];
-
   return [
     {
       id: String(base.id),
       title: base.title,
       publishedAt: base.updatedAt || base.createdAt,
       updatedAt: base.updatedAt,
-      allContentLocales: locales.map((locale, i) => ({
+      allContentLocales: LOCALES.map((locale, i) => ({
         locale,
         value: results[i].content || [],
       })),
@@ -222,46 +457,6 @@ export const homepageLoader = async () => {
 export const searchLoader = async () => {
   const response = await executeQuery(SearchPageContentQuery);
   return response?.search ? [response.search] : [];
-};
-
-export const cataloguesLoader = async () => {
-  const [cataloguesData, updatesData] = await Promise.all([
-    executeAutoPagingQuery(AllCataloguesContentQuery),
-    executeQuery(LastItemsUpdateQuery),
-  ]);
-  const datesRegistry = {
-    news: updatesData?.lastNews?.[0]?.publishedAt,
-    story: updatesData?.lastStory?.[0]?.publishedAt,
-    webinar: updatesData?.lastWebinar?.[0]?.publishedAt,
-    resource: updatesData?.lastResource?.[0]?.publishedAt,
-  };
-
-  return (
-    cataloguesData?.allCatalogues.map((cat: any) => ({
-      ...cat,
-      datesRegistry: datesRegistry,
-    })) || []
-  );
-};
-
-export const webinarContentLoader = async () => {
-  const response = await executeAutoPagingQuery(AllWebinarsContentQuery);
-  return response?.allWebinarItems || [];
-};
-
-export const storyContentLoader = async () => {
-  const response = await executeAutoPagingQuery(AllStoriesContentQuery);
-  return response?.allStoryItems || [];
-};
-
-export const insightContentLoader = async () => {
-  const response = await executeAutoPagingQuery(AllInsightsContentQuery);
-  return response?.allInsights || [];
-};
-
-export const articleContentLoader = async () => {
-  const response = await executeAutoPagingQuery(AllArticlesContentQuery);
-  return response?.allArticles || [];
 };
 
 export const layoutLoader = async () => {
@@ -280,53 +475,30 @@ export const layoutLoader = async () => {
 export const sidebarLoader = async () => {
   const response = await executeQuery(SidebarQuery);
   if (!response?.sidebarForArticle) return [];
-
-  return [
-    {
-      ...response.sidebarForArticle,
-      id: "sidebar",
-    },
-  ];
+  return [{ ...response.sidebarForArticle, id: "sidebar" }];
 };
 
 export const localesLoader = async () => {
   const response = await executeQuery(LocalesQuery);
-
   if (!response?.site?.locales) return [];
-
-  return [
-    {
-      id: "site-locales",
-      locales: response.site.locales,
-    },
-  ];
+  return [{ id: "site-locales", locales: response.site.locales }];
 };
 
 export const errorPageLoader = async () => {
-  const response = await executeQuery(ErrorPageQuery);
-
+  const response = await executeQuery(AllGlobalSettingsQuery);
   if (!response?.globalSetting) return [];
-
   return [
     {
       id: "error-page",
       globalSetting: response.globalSetting,
-      homepageId: response.homepage?.id,
     },
   ];
 };
 
 export const siteMetaTagsLoader = async () => {
   const response = await executeQuery(SiteMetaTagsQuery);
-
   if (!response?.site?.faviconMetaTags) return [];
-
-  return [
-    {
-      id: "site-meta-tags",
-      faviconMetaTags: response.site.faviconMetaTags,
-    },
-  ];
+  return [{ id: "site-meta-tags", faviconMetaTags: response.site.faviconMetaTags }];
 };
 
 export const globalSeoLoader = async () => {
@@ -355,10 +527,16 @@ export const globalSeoLoader = async () => {
         executeAutoPagingQuery(SearchSeoQuery, { variables: { locale } }),
       ]);
 
-      const mapEntry = (record: any) => ({
+      type SeoRecord = {
+        id: string;
+        metaTags: unknown[];
+        seo: unknown;
+        updatedAt: string;
+      };
+      const mapEntry = (record: SeoRecord) => ({
         id: `${record.id}_${locale}`,
         recordId: record.id,
-        locale: locale,
+        locale,
         metaTags: record.metaTags,
         seo: record.seo,
         updatedAt: record.updatedAt,
@@ -380,38 +558,59 @@ export const globalSeoLoader = async () => {
   return allLocalesResults.flat();
 };
 
+// ─── Search index (all documents) ────────────────────────────────────────────
+
 export const allDocumentsLoader = async () => {
-  const [
-    articlesRes,
-    insightsRes,
-    storiesRes,
-    newsRes,
-    webinarsRes,
-    resourcesRes,
-    cataloguesRes,
-    pagesRes,
-  ] = await Promise.all([
-    executeAutoPagingQuery(ArticlesIdxQuery),
-    executeAutoPagingQuery(InsightsIdxQuery),
-    executeAutoPagingQuery(StoriesIdxQuery),
-    executeAutoPagingQuery(NewsIdxQuery),
-    executeAutoPagingQuery(WebinarsIdxQuery),
-    executeAutoPagingQuery(ResourcesIdxQuery),
-    executeAutoPagingQuery(CataloguesIdxQuery),
-    executeAutoPagingQuery(PagesIdxQuery),
-  ]);
+  // Query each locale and merge — the search index stores all locale variants.
+  const localeResults = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const [
+        articlesRes,
+        insightsRes,
+        storiesRes,
+        newsRes,
+        webinarsRes,
+        resourcesRes,
+        cataloguesRes,
+        pagesRes,
+      ] = await Promise.all([
+        payloadPagingQuery(ArticlesIdxQuery, { variables: { locale } }),
+        payloadPagingQuery(InsightsIdxQuery, { variables: { locale } }),
+        payloadPagingQuery(StoriesIdxQuery, { variables: { locale } }),
+        payloadPagingQuery(NewsIdxQuery, { variables: { locale } }),
+        payloadPagingQuery(WebinarsIdxQuery, { variables: { locale } }),
+        payloadPagingQuery(ResourcesIdxQuery),
+        payloadPagingQuery(CataloguesIdxQuery, { variables: { locale } }),
+        payloadPagingQuery(PagesIdxQuery, { variables: { locale } }),
+      ]);
+
+      const tag = (docs: unknown) =>
+        asDocs<{ id: number }>(docs).map((d) => ({ ...d, locale }));
+
+      return {
+        articles: tag(articlesRes),
+        insights: tag(insightsRes),
+        stories: tag(storiesRes),
+        news: tag(newsRes),
+        webinars: tag(webinarsRes),
+        resources: asDocs<unknown>(resourcesRes),
+        catalogues: tag(cataloguesRes),
+        pages: tag(pagesRes),
+      };
+    }),
+  );
 
   return [
     {
       id: "all-documents",
-      allArticles: articlesRes.allArticles || [],
-      allInsights: insightsRes.allInsights || [],
-      allStoryItems: storiesRes.allStoryItems || [],
-      allNewsItems: newsRes.allNewsItems || [],
-      allWebinarItems: webinarsRes.allWebinarItems || [],
-      allResources: resourcesRes.allResources || [],
-      allCatalogues: cataloguesRes.allCatalogues || [],
-      allPages: pagesRes.allPages || [],
+      allArticles: localeResults.flatMap((r) => r.articles),
+      allInsights: localeResults.flatMap((r) => r.insights),
+      allStoryItems: localeResults.flatMap((r) => r.stories),
+      allNewsItems: localeResults.flatMap((r) => r.news),
+      allWebinarItems: localeResults.flatMap((r) => r.webinars),
+      allResources: localeResults.flatMap((r) => r.resources),
+      allCatalogues: localeResults.flatMap((r) => r.catalogues),
+      allPages: localeResults.flatMap((r) => r.pages),
     },
   ];
 };

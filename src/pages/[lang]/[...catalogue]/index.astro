@@ -1,14 +1,10 @@
 ---
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
-
-import type { CatalogueContentFragmentType } from "@graphql/fragment/catalogue";
 import type { TagFragmentType } from "@graphql/fragment/commonFragments";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
-
 import type { SiteLocale } from "@graphql/types";
 import Layout from "@layouts/Layout.astro";
 import { getLastUpdateCollection } from "@utils/getLastUpdateCollection";
-import { getLocaleValue } from "@utils/getLocaleValue";
 import {
   extractFaqItems,
   extractListItems,
@@ -19,62 +15,29 @@ import { removeLang } from "@utils/pathHelper";
 import { getCollection, getEntry } from "astro:content";
 
 export async function getStaticPaths() {
-  type PathItem = {
-    params: {
-      catalogue: string;
-      lang: SiteLocale;
-    };
-    props: {
-      seoMeta: TagFragmentType[];
-      seo: SeoFieldFragmentType | null;
-      content: CatalogueContentFragmentType[];
-      id: string;
-      publishedAt: string;
-      updatedAt: string;
-    };
-  };
-
   const catalogues = await getCollection("catalogue");
 
-  const pathsPromises =
-    catalogues?.flatMap((item) => {
-      const page = item.data;
-      const datesRegistry = page.datesRegistry;
-      return page.locales.map(async (lang) => {
-        const content = getLocaleValue(page.allContentLocales, lang, undefined);
+  const pathsPromises = (catalogues ?? []).map(async (item) => {
+    const { docId, locale, content, updatedAt, datesRegistry } = item.data;
+    const seoRes = (await getEntry("global_seo", `${docId}_${locale}`))?.data;
+    const fullPath = linkResolver(docId, locale);
+    const slug = removeLang(fullPath, locale);
+    const finalUpdateDate = getLastUpdateCollection(content, datesRegistry);
 
-        const finalUpdateDate = getLastUpdateCollection(content, datesRegistry);
+    return {
+      params: { catalogue: slug, lang: locale as SiteLocale },
+      props: {
+        seoMeta: (seoRes?.metaTags ?? []) as TagFragmentType[],
+        seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
+        id: docId,
+        content,
+        publishedAt: finalUpdateDate ?? "",
+        updatedAt: seoRes?.updatedAt ?? updatedAt ?? "",
+      },
+    };
+  });
 
-        const seoResCollection = await getEntry(
-          "global_seo",
-          `${page.id}_${lang}`,
-        );
-        const seoRes = seoResCollection?.data;
-
-        const fullPath = linkResolver(page.id, lang);
-
-        const slug = removeLang(fullPath, lang);
-
-        return {
-          params: {
-            catalogue: slug,
-            lang: lang,
-          },
-          props: {
-            seoMeta: seoRes?.metaTags || [],
-            seo: seoRes?.seo || null,
-            id: page.id,
-            content: content,
-            publishedAt: finalUpdateDate,
-            updatedAt: seoRes?.updatedAt || page.updatedAt,
-          },
-        };
-      });
-    }) || [];
-
-  const paths = await Promise.all(pathsPromises);
-
-  return paths.filter((path): path is PathItem => !!path.params.lang);
+  return Promise.all(pathsPromises);
 }
 
 const { id, content, seo, seoMeta, publishedAt, updatedAt } = Astro.props;

@@ -1,121 +1,65 @@
-import { TagFragment } from "@graphql/fragment/commonFragments";
 import { graphql, type FragmentOf } from "@graphql/graphql";
 
-export const SeoMetaFragment = graphql(
-  `
-    fragment SeoMetaFragment on RecordInterface @_unmask {
-      seo: _seoMetaTags {
-        ...TagFragment
-      }
-    }
-  `,
-  [TagFragment],
-);
+// Payload collections expose localizedSlugs: JSON (e.g. { it: "slug-it", en: "slug-en" })
+// instead of DatoCMS _allSlugLocales arrays. These fragments request the fields
+// needed to resolve paths and hreflang links for each collection.
 
-export const PageLocalesFragment = graphql(
-  `
-    fragment PageLocalesFragment on PageRecord @_unmask {
-      allSlugLocales: _allSlugLocales {
-        locale
-        value
-      }
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-    }
-  `,
-  [],
-);
+export const PageLocalizedSlugsFragment = graphql(`
+  fragment PageLocalizedSlugsFragment on Page @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+  }
+`);
+export type PageLocalizedSlugsFragmentType = FragmentOf<typeof PageLocalizedSlugsFragment>;
 
-export type PageLocalesFragmentType = FragmentOf<typeof PageLocalesFragment>;
+export const ArticleLocalizedSlugsFragment = graphql(`
+  fragment ArticleLocalizedSlugsFragment on Article @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+  }
+`);
+export type ArticleLocalizedSlugsFragmentType = FragmentOf<typeof ArticleLocalizedSlugsFragment>;
 
-export const CatalogueLocalesFragment = graphql(
-  `
-    fragment CatalogueLocalesFragment on CatalogueRecord @_unmask {
-      allSlugLocales: _allSlugLocales {
-        locale
-        value
-      }
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-    }
-  `,
-  [],
-);
+export const InsightLocalizedSlugsFragment = graphql(`
+  fragment InsightLocalizedSlugsFragment on Insight @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+  }
+`);
+export type InsightLocalizedSlugsFragmentType = FragmentOf<typeof InsightLocalizedSlugsFragment>;
 
-export type CatalogueLocalesFragmentType = FragmentOf<
-  typeof CatalogueLocalesFragment
->;
+export const StoryItemLocalizedSlugsFragment = graphql(`
+  fragment StoryItemLocalizedSlugsFragment on StoryItem @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+  }
+`);
+export type StoryItemLocalizedSlugsFragmentType = FragmentOf<typeof StoryItemLocalizedSlugsFragment>;
 
-export const ArticleLocalesFragment = graphql(
-  `
-    fragment ArticleLocalesFragment on ArticleRecord @_unmask {
-      allSlugLocales: _allSlugLocales {
-        locale
-        value
-      }
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-    }
-  `,
-  [],
-);
+export const WebinarItemLocalizedSlugsFragment = graphql(`
+  fragment WebinarItemLocalizedSlugsFragment on WebinarItem @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+  }
+`);
+export type WebinarItemLocalizedSlugsFragmentType = FragmentOf<typeof WebinarItemLocalizedSlugsFragment>;
 
-export const InsightLocalesFragment = graphql(
-  `
-    fragment InsightLocalesFragment on InsightRecord @_unmask {
-      allSlugLocales: _allSlugLocales {
-        locale
-        value
-      }
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-      allTopicLocales: _allTopicLocales {
-        locale
-        value {
-          label
-        }
-      }
-    }
-  `,
-  [],
-);
-
-export const StoryItemLocalesFragment = graphql(
-  `
-    fragment StoryItemLocalesFragment on StoryItemRecord @_unmask {
-      allSlugLocales: _allSlugLocales {
-        locale
-        value
-      }
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-    }
-  `,
-  [],
-);
-
-export const WebinarItemLocalesFragment = graphql(
-  `
-    fragment WebinarItemLocalesFragment on WebinarItemRecord @_unmask {
-      allSlugLocales: _allSlugLocales {
-        locale
-        value
-      }
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-    }
-  `,
-  [],
-);
+export const CatalogueLocalizedSlugsFragment = graphql(`
+  fragment CatalogueLocalizedSlugsFragment on Catalogue @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+  }
+`);
+export type CatalogueLocalizedSlugsFragmentType = FragmentOf<typeof CatalogueLocalizedSlugsFragment>;

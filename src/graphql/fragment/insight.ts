@@ -1,131 +1,69 @@
 import {
-  CalloutFragment,
-  ListCollectionFragment,
-  TagFragment,
-} from "@graphql/fragment/commonFragments";
-import {
-  ArticleSTFragment,
-  CardLinkListFragment,
-  FaqSectionRecordFragment,
-  HeroFragment,
-  IntroArticleFragment,
-  SupportChannelsSectionFragment,
-  SupportCTASectionFragment,
-  TextAndAccordionFragment,
-  TextAndImageFragment,
-  TextAndStatisticsFragment,
-  TextAndUseCasesFragment,
-  TextOnlyFragment,
-} from "@graphql/fragment/sectionFragments";
-import { AllInsightsSlugFragment } from "@graphql/fragment/slugFragments";
+  PayloadCardLinkListFragment,
+  PayloadHeroFragment,
+  PayloadNewsFeedFragment,
+  PayloadSupportChannelsSectionFragment,
+  PayloadTextImageFragment,
+  PayloadTextOnlyFragment,
+  PayloadTextStatisticFragment,
+  PayloadTextUseCaseFragment,
+} from "@graphql/fragment/payloadBlocks";
 import { graphql, type FragmentOf } from "@graphql/graphql";
 
-export const InsightContentFragment = graphql(
+export const InsightPayloadFragment = graphql(
   `
-    fragment InsightContentFragment on InsightModelContentField @_unmask {
-      ... on RecordInterface {
-        id
-        componentName: __typename
-      }
-      ... on HeroRecord {
-        ...HeroFragment
-      }
-      ... on FaqSectionRecord {
-        ...FaqSectionRecordFragment
-      }
-      ... on StructuredTextRecord {
-        ...ArticleSTFragment
-      }
-      ... on ListCollectionRecord {
-        ...ListCollectionFragment
-      }
-      ... on SupportChannelsSectionRecord {
-        ...SupportChannelsSectionFragment
-      }
-      ... on SupportCtaSectionRecord {
-        ...SupportCTASectionFragment
-      }
-      ... on TextImageRecord {
-        ...TextAndImageFragment
-      }
-      ... on TextAccordionRecord {
-        ...TextAndAccordionFragment
-      }
-      ... on TextOnlyRecord {
-        ...TextOnlyFragment
-      }
-      ... on CardLinkListRecord {
-        ...CardLinkListFragment
-      }
-      ... on TextStatisticRecord {
-        ...TextAndStatisticsFragment
-      }
-      ... on TextUseCaseRecord {
-        ...TextAndUseCasesFragment
-      }
-      ... on IntroArticleRecord {
-        ...IntroArticleFragment
-      }
+  fragment InsightPayloadFragment on Insight @_unmask {
+    id
+    slug
+    title
+    abstract
+    localizedSlugs
+    updatedAt
+    createdAt
+    parent {
+      id
+      slug
+      localizedSlugs
     }
-  `,
+    seo {
+      title
+      description
+    }
+    content {
+      ... on Hero { ...PayloadHeroFragment }
+      ... on TextOnly { ...PayloadTextOnlyFragment }
+      ... on TextImage { ...PayloadTextImageFragment }
+      ... on NewsFeed { ...PayloadNewsFeedFragment }
+      ... on SupportChannelsSection { ...PayloadSupportChannelsSectionFragment }
+      ... on TextUseCase { ...PayloadTextUseCaseFragment }
+      ... on TextStatistic { ...PayloadTextStatisticFragment }
+      ... on CardLinkList { ...PayloadCardLinkListFragment }
+    }
+  }
+`,
   [
-    FaqSectionRecordFragment,
-    HeroFragment,
-    ListCollectionFragment,
-    CalloutFragment,
-    ArticleSTFragment,
-    SupportChannelsSectionFragment,
-    TextAndImageFragment,
-    TextAndAccordionFragment,
-    TextOnlyFragment,
-    CardLinkListFragment,
-    TextAndStatisticsFragment,
-    TextAndUseCasesFragment,
-    SupportCTASectionFragment,
-    IntroArticleFragment,
+    PayloadHeroFragment,
+    PayloadTextOnlyFragment,
+    PayloadTextImageFragment,
+    PayloadNewsFeedFragment,
+    PayloadSupportChannelsSectionFragment,
+    PayloadTextUseCaseFragment,
+    PayloadTextStatisticFragment,
+    PayloadCardLinkListFragment,
   ],
 );
 
-export type InsightContentFragmentType = FragmentOf<
-  typeof InsightContentFragment
->;
+export type InsightPayloadFragmentType = FragmentOf<typeof InsightPayloadFragment>;
 
-export const AllInsightsFragment = graphql(
-  `
-    fragment AllInsightsFragment on InsightRecord @_unmask {
-      id
-      allContentLocales: _allContentLocales {
-        locale
-        value {
-          ...InsightContentFragment
-        }
-      }
-      ...AllInsightsSlugFragment
-    }
-  `,
-  [TagFragment, InsightContentFragment, AllInsightsSlugFragment],
-);
+export const InsightIndexPayloadFragment = graphql(`
+  fragment InsightIndexPayloadFragment on Insight @_unmask {
+    id
+    slug
+    title
+    abstract
+    localizedSlugs
+    updatedAt
+  }
+`);
 
-export type AllInsightsFragmentType = FragmentOf<typeof AllInsightsFragment>;
-
-export const AllInsightsRecordFragment = graphql(
-  `
-    fragment AllInsightsRecordFragment on InsightRecord @_unmask {
-      id
-      locales: _locales
-      publishedAt: _publishedAt
-      updatedAt: _updatedAt
-      allContentLocales: _allContentLocales {
-        locale
-        value {
-          ...InsightContentFragment
-        }
-      }
-    }
-  `,
-  [InsightContentFragment],
-);
-
-export type AllInsightsRecordFragmentType = FragmentOf<
-  typeof AllInsightsRecordFragment
->;
+export type InsightIndexPayloadFragmentType = FragmentOf<typeof InsightIndexPayloadFragment>;

@@ -1,99 +1,101 @@
 import {
-  ArticleIndexingFragment,
-  CatalogueIndexingFragment,
-  InsightIndexingFragment,
-  NewsIndexingFragment,
-  PageIndexingFragment,
-  ResourseIndexingFragment,
-  StoryIndexingFragment,
-  WebinarIndexingFragment,
+  ArticleIndexPayloadFragment,
+  CatalogueIndexPayloadFragment,
+  InsightIndexPayloadFragment,
+  PageIndexPayloadFragment,
+  StoryIndexPayloadFragment,
+  WebinarIndexPayloadFragment,
 } from "@graphql/fragment/indexing";
 import { graphql } from "@graphql/graphql";
 
 export const ArticlesIdxQuery = graphql(
   `
-    query ArticlesIdx {
-      allArticles(first: 2500) {
-        ...ArticleIndexingFragment
-      }
+  query ArticlesIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
+    Articles(locale: $locale, limit: $limit, page: $page) {
+      docs { ...ArticleIndexPayloadFragment }
+      hasNextPage
     }
-  `,
-  [ArticleIndexingFragment],
+  }
+`,
+  [ArticleIndexPayloadFragment],
 );
 
 export const InsightsIdxQuery = graphql(
   `
-    query InsightsIdx {
-      allInsights(first: 2500) {
-        ...InsightIndexingFragment
-      }
+  query InsightsIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
+    Insights(locale: $locale, limit: $limit, page: $page) {
+      docs { ...InsightIndexPayloadFragment }
+      hasNextPage
     }
-  `,
-  [InsightIndexingFragment],
+  }
+`,
+  [InsightIndexPayloadFragment],
 );
 
 export const StoriesIdxQuery = graphql(
   `
-    query StoriesIdx {
-      allStoryItems(first: 2500) {
-        ...StoryIndexingFragment
-      }
+  query StoriesIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
+    StoryItems(locale: $locale, limit: $limit, page: $page) {
+      docs { ...StoryIndexPayloadFragment }
+      hasNextPage
     }
-  `,
-  [StoryIndexingFragment],
-);
-
-export const NewsIdxQuery = graphql(
-  `
-    query NewsIdx {
-      allNewsItems(first: 2500) {
-        ...NewsIndexingFragment
-      }
-    }
-  `,
-  [NewsIndexingFragment],
+  }
+`,
+  [StoryIndexPayloadFragment],
 );
 
 export const WebinarsIdxQuery = graphql(
   `
-    query WebinarsIdx {
-      allWebinarItems(first: 2500) {
-        ...WebinarIndexingFragment
-      }
+  query WebinarsIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
+    WebinarItems(locale: $locale, limit: $limit, page: $page) {
+      docs { ...WebinarIndexPayloadFragment }
+      hasNextPage
     }
-  `,
-  [WebinarIndexingFragment],
-);
-
-export const ResourcesIdxQuery = graphql(
-  `
-    query ResourcesIdx {
-      allResources(first: 2500) {
-        ...ResourseIndexingFragment
-      }
-    }
-  `,
-  [ResourseIndexingFragment],
+  }
+`,
+  [WebinarIndexPayloadFragment],
 );
 
 export const CataloguesIdxQuery = graphql(
   `
-    query CataloguesIdx {
-      allCatalogues(first: 2500) {
-        ...CatalogueIndexingFragment
-      }
+  query CataloguesIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
+    Catalogues(locale: $locale, limit: $limit, page: $page) {
+      docs { ...CatalogueIndexPayloadFragment }
+      hasNextPage
     }
-  `,
-  [CatalogueIndexingFragment],
+  }
+`,
+  [CatalogueIndexPayloadFragment],
 );
 
 export const PagesIdxQuery = graphql(
   `
-    query PagesIdx {
-      allPages(first: 2500) {
-        ...PageIndexingFragment
-      }
+  query PagesIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
+    Pages(locale: $locale, limit: $limit, page: $page) {
+      docs { ...PageIndexPayloadFragment }
+      hasNextPage
     }
-  `,
-  [PageIndexingFragment],
+  }
+`,
+  [PageIndexPayloadFragment],
 );
+
+// NewsItems have no localised slugs — index only metadata
+export const NewsIdxQuery = graphql(`
+  query NewsIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
+    NewsItems(locale: $locale, limit: $limit, page: $page) {
+      docs { id updatedAt createdAt }
+      hasNextPage
+    }
+  }
+`);
+
+// Resources are not locale-routed — index only metadata
+export const ResourcesIdxQuery = graphql(`
+  query ResourcesIdx($limit: Int, $page: Int) {
+    Resources(limit: $limit, page: $page) {
+      docs { id updatedAt createdAt }
+      hasNextPage
+    }
+  }
+`);

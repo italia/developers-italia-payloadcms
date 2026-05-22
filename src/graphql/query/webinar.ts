@@ -1,39 +1,14 @@
-import { WebinarItemFragment } from "@graphql/fragment/commonFragments";
-import {
-  AllWebinarItemsFragment,
-  AllWebinarRecordFragment,
-} from "@graphql/fragment/webinar";
+import { WebinarPayloadFragment } from "@graphql/fragment/webinar";
 import { graphql } from "@graphql/graphql";
 
-export const AllWebinarItemsQuery = graphql(
+export const WebinarItemsContentQuery = graphql(
   `
-    query allWebinarItems {
-      allWebinarItems {
-        ...AllWebinarItemsFragment
-      }
+  query WebinarItemsContentQuery($locale: LocaleInputType, $limit: Int, $page: Int) {
+    WebinarItems(locale: $locale, limit: $limit, page: $page) {
+      docs { ...WebinarPayloadFragment }
+      hasNextPage
     }
-  `,
-  [AllWebinarItemsFragment],
-);
-
-export const AllWebinarQuery = graphql(
-  `
-    query AllWebinar($dateLimit: Date) {
-      allWebinarItems(first: 2500, filter: { date: { gt: $dateLimit } }) {
-        ...WebinarItemFragment
-      }
-    }
-  `,
-  [WebinarItemFragment],
-);
-
-export const AllWebinarsContentQuery = graphql(
-  `
-    query AllWebinarsContentQuery {
-      allWebinarItems(first: 2500) {
-        ...AllWebinarRecordFragment
-      }
-    }
-  `,
-  [AllWebinarRecordFragment],
+  }
+`,
+  [WebinarPayloadFragment],
 );

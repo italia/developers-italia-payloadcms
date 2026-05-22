@@ -1,14 +1,45 @@
+import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
 
 import type { SiteLocale } from "@graphql/types";
-import { gqlFetch } from "@lib/payloadcms";
 import type { BreadcrumbStep, LocaleMap, SiteMap } from "@utils/linkMap/processItems";
+
+dotenv.config({ override: false });
+
+const BASE = process.env.PAYLOAD_URL;
+const KEY = process.env.PAYLOAD_API_KEY;
+
+if (!BASE || !KEY) {
+  console.error("Missing required env vars: PAYLOAD_URL and PAYLOAD_API_KEY");
+  process.exit(1);
+}
+
+async function gqlFetch<T>(
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<T> {
+  const res = await fetch(`${BASE}/api/graphql`, {
+    method: "POST",
+    headers: {
+      Authorization: `users API-Key ${KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error(`GraphQL HTTP ${res.status}`);
+  const { data, errors } = (await res.json()) as {
+    data: T;
+    errors?: { message: string }[];
+  };
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(", "));
+  return data;
+}
 
 const LOCALES: SiteLocale[] = ["en", "it"];
 const HOMEPAGE_ID = "homepage";
 const LIMIT = 100;
-const outputPath = `src/data/payload_linkMap.json`;
+const outputPath = `src/data/linkMap.json`;
 
 // ---------------------------------------------------------------------------
 // Raw GQL queries — Payload CMS schema

@@ -1,4 +1,3 @@
-import type { ArticleContentFragmentType } from "@graphql/fragment/article";
 import type {
   CalloutFragmentType,
   ExternalLinkFragmentType,
@@ -8,8 +7,6 @@ import type {
   ListCardInfoFragmentType,
   OrderedListFragmentType,
 } from "@graphql/fragment/commonFragments";
-import type { InsightContentFragmentType } from "@graphql/fragment/insight";
-import type { PageContentFragmentType } from "@graphql/fragment/page";
 import type {
   ActionCardFragmentType,
   DataSectionRecordFragmentType,
@@ -24,21 +21,13 @@ import type {
   TextAndImageFragmentType,
   WebinarDescriptionFragmentType,
 } from "@graphql/fragment/sectionFragments";
-import type { StoryContentFragmentType } from "@graphql/fragment/story";
-import type { WebinarContentFragmentType } from "@graphql/fragment/webinar";
 import { DatoBlockModel } from "@utils/cmsMapper";
 
 import { render } from "datocms-structured-text-to-plain-text";
 
-type BlockType =
-  | InsightContentFragmentType
-  | StoryContentFragmentType
-  | WebinarContentFragmentType
-  | PageContentFragmentType;
+type BlockType = unknown;
 
-type AllStructuredTextBlocks =
-  | ArticleContentFragmentType["blocks"][number]
-  | StructuredTextFragmentType["blocks"][number];
+type AllStructuredTextBlocks = StructuredTextFragmentType["blocks"][number];
 
 export const flattenBlocks = (blocks: BlockType[] | undefined | null) => {
   if (!blocks) return "";
@@ -205,9 +194,9 @@ const flattenWebinarDescription = (
   const parts: string[] = [];
 
   parts.push(record.text.title, record.text.paragraph);
-  record.subjects.items.forEach((item) =>
-    parts.push(item.title, item.paragraph),
-  );
+  record.subjects.items.forEach((item) => {
+    parts.push(item.title, item.paragraph);
+  });
 
   return cleanJoin(parts);
 };
@@ -228,7 +217,7 @@ const flattenIntroArticle = (record: IntroArticleFragmentType): string => {
   const parts: string[] = [];
 
   parts.push(record.text.title, record.text.paragraph);
-  record.list?.items?.items.forEach((item) => parts.push(item.label));
+  record.list?.items?.items.forEach((item) => { parts.push(item.label); });
 
   return cleanJoin(parts);
 };
@@ -237,9 +226,9 @@ const flattenFaqSection = (record: FaqSectionRecordFragmentType): string => {
   const parts: string[] = [];
 
   parts.push(record.title);
-  record.accordion.items.forEach((question) =>
-    parts.push(question.header, question.body),
-  );
+  record.accordion.items.forEach((question) => {
+    parts.push(question.header, question.body);
+  });
 
   return cleanJoin(parts);
 };
@@ -293,7 +282,7 @@ const flattenListCardEditorialWithIcon = (
 ): string => {
   const parts: string[] = [];
 
-  record.items?.forEach((item) => parts.push(item.title, item.description));
+  record.items?.forEach((item) => { parts.push(item.title, item.description); });
 
   return cleanJoin(parts);
 };

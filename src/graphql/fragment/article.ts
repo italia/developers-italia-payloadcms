@@ -1,120 +1,42 @@
-import {
-  CalloutFragment,
-  DownloadLinkFragment,
-  ExternalLinkFragment,
-  ImageBlockFragment,
-  InternalLinkFragment,
-  ListBlockquoteFragment,
-  ListCardEditorialWithIconFragment,
-  ListCardInfoFragment,
-  OrderedListFragment,
-  QuickLinkCardFragment,
-  RelatedArticleFragment,
-  TopicsBlockFragment,
-} from "@graphql/fragment/commonFragments";
-import { SupportCTASectionFragment } from "@graphql/fragment/sectionFragments";
 import { graphql, type FragmentOf } from "@graphql/graphql";
 
-export const ArticleContentFragment = graphql(
-  `
-    fragment ArticleContentFragment on ArticleModelContentField @_unmask {
-      value
-      blocks {
-        ... on RecordInterface {
-          id
-          __typename
-        }
-        ... on ListCardEditorialWithIconRecord {
-          ...ListCardEditorialWithIconFragment
-        }
-        ... on CardServiceRecord {
-          card {
-            ...ExternalLinkFragment
-          }
-        }
-        ... on OrderedListRecord {
-          ...OrderedListFragment
-        }
-        ... on CalloutRecord {
-          ...CalloutFragment
-        }
-        ... on QuickLinkCardRecord {
-          ...QuickLinkCardFragment
-        }
-        ... on SupportCtaSectionRecord {
-          ...SupportCTASectionFragment
-        }
-        ... on TopicsBlockRecord {
-          ...TopicsBlockFragment
-        }
-        ... on RelatedArticleRecord {
-          ...RelatedArticleFragment
-        }
-        ... on ImageBlockRecord {
-          ...ImageBlockFragment
-        }
-        ... on ListBlockquoteRecord {
-          ...ListBlockquoteFragment
-        }
-        ... on ListCardInfoRecord {
-          ...ListCardInfoFragment
-        }
-        ... on ExternalLinkRecord {
-          ...ExternalLinkFragment
-        }
-        ... on InternalLinkRecord {
-          ...InternalLinkFragment
-        }
-        ... on ListExternalLinkRecord {
-          links {
-            ...ExternalLinkFragment
-          }
-        }
-        ... on DownloadLinkRecord {
-          ...DownloadLinkFragment
-        }
-      }
-    }
-  `,
-  [
-    ListCardEditorialWithIconFragment,
-    InternalLinkFragment,
-    ExternalLinkFragment,
-    OrderedListFragment,
-    CalloutFragment,
-    QuickLinkCardFragment,
-    SupportCTASectionFragment,
-    TopicsBlockFragment,
-    RelatedArticleFragment,
-    ImageBlockFragment,
-    ListBlockquoteFragment,
-    ListCardInfoFragment,
-    DownloadLinkFragment,
-  ],
-);
-
-export type ArticleContentFragmentType = FragmentOf<
-  typeof ArticleContentFragment
->;
-
-export const AllArticlesRecordFragment = graphql(
-  `
-    fragment AllArticlesRecordFragment on ArticleRecord @_unmask {
+// Article.content is a JSON scalar (Lexical rich text) — no sub-selection needed.
+export const ArticlePayloadFragment = graphql(`
+  fragment ArticlePayloadFragment on Article @_unmask {
+    id
+    slug
+    title
+    paragraph
+    content
+    localizedSlugs
+    updatedAt
+    createdAt
+    parent {
       id
-      locales: _locales
-      updatedAt: _updatedAt
-      publishedAt: _publishedAt
-      allContentLocales: _allContentLocales {
-        locale
-        value {
-          ...ArticleContentFragment
-        }
-      }
+      slug
+      localizedSlugs
     }
-  `,
-  [ArticleContentFragment],
-);
+    seo {
+      title
+      description
+    }
+  }
+`);
 
-export type AllArticlesRecordFragmentType = FragmentOf<
-  typeof AllArticlesRecordFragment
->;
+export type ArticlePayloadFragmentType = FragmentOf<typeof ArticlePayloadFragment>;
+
+// ─── Indexing fragment (minimal fields for search index) ─────────────────────
+
+export const ArticleIndexPayloadFragment = graphql(`
+  fragment ArticleIndexPayloadFragment on Article @_unmask {
+    id
+    slug
+    title
+    paragraph
+    content
+    localizedSlugs
+    updatedAt
+  }
+`);
+
+export type ArticleIndexPayloadFragmentType = FragmentOf<typeof ArticleIndexPayloadFragment>;

@@ -1,24 +1,33 @@
-import type { CatalogueContentFragmentType } from "@graphql/fragment/catalogue";
 import { DatoBlockModel } from "./cmsMapper";
 
+type CatalogueFeedBlock = {
+  componentName: string;
+  tabs: { newsPageTabType: string }[];
+};
+
+function isCatalogueFeedBlock(c: unknown): c is CatalogueFeedBlock {
+  return (
+    typeof c === "object" &&
+    c !== null &&
+    (c as CatalogueFeedBlock).componentName === DatoBlockModel.CatalogueFeed
+  );
+}
+
 export const getLastUpdateCollection = (
-  content: CatalogueContentFragmentType[] | undefined,
-  datesRegistry: any,
+  content: unknown[] | undefined,
+  datesRegistry: Record<string, string>,
 ) => {
   if (!content) {
     return;
   }
 
-  const feedRecord = content?.find(
-    (c) => c.componentName === DatoBlockModel.CatalogueFeed,
-  );
+  const feedRecord = content.find(isCatalogueFeedBlock);
   let finalUpdateDate = null;
 
-  if (feedRecord && feedRecord.tabs) {
+  if (feedRecord?.tabs) {
     const allDates = feedRecord.tabs
       .map((tab) => {
-        const type = tab.newsPageTabType;
-        const dateString = datesRegistry[type as keyof typeof datesRegistry];
+        const dateString = datesRegistry[tab.newsPageTabType];
         return dateString ? new Date(dateString).getTime() : null;
       })
       .filter((time): time is number => time !== null);

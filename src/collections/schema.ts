@@ -1,5 +1,12 @@
-import type { AllArticlesRecordFragmentType } from "@graphql/fragment/article";
-import type { AllCataloguesRecordFragmentType } from "@graphql/fragment/catalogue";
+import type {
+  ArticleIndexPayloadFragmentType,
+  CatalogueIndexPayloadFragmentType,
+  InsightIndexPayloadFragmentType,
+  NewsIndexPayloadFragmentType,
+  PageIndexPayloadFragmentType,
+  StoryIndexPayloadFragmentType,
+  WebinarIndexPayloadFragmentType,
+} from "@graphql/fragment/indexing";
 import type {
   NewsItemFragmentType,
   ResourceFragmentType,
@@ -10,17 +17,6 @@ import type {
 import type { ErrorRecordFragmentType } from "@graphql/fragment/globalSettings";
 import type { HomepageRecordFragmentType } from "@graphql/fragment/homepage";
 import type {
-  ArticleIndexingFragmentType,
-  CatalogueIndexingFragmentType,
-  InsightIndexingFragmentType,
-  NewsIndexingFragmentType,
-  PageIndexingFragmentType,
-  ResourseIndexingFragmentType,
-  StoryIndexingFragmentType,
-  WebinarIndexingFragmentType,
-} from "@graphql/fragment/indexing";
-import type { AllInsightsRecordFragmentType } from "@graphql/fragment/insight";
-import type {
   FooterFragmentType,
   HeaderFragmentType,
   SidebarFragmentType,
@@ -28,43 +24,77 @@ import type {
 import type { SearchRecordFragmentType } from "@graphql/fragment/search";
 import type { SearchMenuFragmentType } from "@graphql/fragment/sectionFragments";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
-import type { AllStoriesRecordFragmentType } from "@graphql/fragment/story";
-import type { AllWebinarRecordFragmentType } from "@graphql/fragment/webinar";
 import type { SiteLocale } from "@graphql/types";
 import { z } from "astro:content";
 
-export const newsSchema = z.custom<NewsItemFragmentType>();
+// ─── Shared per-locale entry base ─────────────────────────────────────────────
+// Every content collection entry represents one locale of one Payload document.
 
-export const storySchema = z.custom<StoryCardFragmentType>();
+const localeEnum = z.enum(["it", "en"] as const);
 
-export const webinarSchema = z.custom<WebinarItemFragmentType>();
-
-export const resourceSchema = z.custom<ResourceFragmentType>();
-
-export const pageSchema = z.object({
-  id: z.string(),
-  locales: z.array(z.string()),
-  publishedAt: z.string().nullable().optional(),
-  updatedAt: z.string().nullable().optional(),
-  allContentLocales: z.array(
-    z.object({
-      locale: z.enum(['it', 'en']),
-      value: z.array(z.any()),
-    }),
-  ),
+const payloadLocaleEntryBase = z.object({
+  id: z.string(),                                    // "${docId}_${locale}"
+  docId: z.string(),                                 // Payload integer ID as string
+  locale: localeEnum,
+  slug: z.string().nullable(),
+  title: z.string().nullable(),
+  localizedSlugs: z.record(z.string()).nullable(),   // { it: "slug-it", en: "slug-en" }
+  updatedAt: z.string().nullable(),
+  publishedAt: z.string().nullable(),
 });
 
+// ─── Content collections ───────────────────────────────────────────────────────
+
+// Article.content is a JSON scalar (Lexical rich text), not a blocks array.
+export const articleSchema = payloadLocaleEntryBase.extend({
+  content: z.any(),
+  paragraph: z.string().nullable(),
+});
+
+// Insight / Story / WebinarItem / Catalogue all have typed block arrays.
+export const insightSchema = payloadLocaleEntryBase.extend({
+  content: z.array(z.any()),
+  abstract: z.string().nullable(),
+});
+
+export const storyContentSchema = payloadLocaleEntryBase.extend({
+  content: z.array(z.any()),
+  dateOfPublication: z.string().nullable(),
+});
+
+export const webinarContentSchema = payloadLocaleEntryBase.extend({
+  content: z.array(z.any()),
+  date: z.string().nullable(),
+  paragraph: z.string().nullable(),
+});
+
+export const catalogueSchema = payloadLocaleEntryBase
+  .extend({
+    content: z.array(z.any()),
+    datesRegistry: z.object({
+      news: z.string().optional(),
+      story: z.string().optional(),
+      webinar: z.string().optional(),
+      resource: z.string().optional(),
+    }),
+  });
+
+// Pages are loaded via REST per locale — same per-locale entry shape.
+export const pageSchema = payloadLocaleEntryBase.extend({
+  content: z.array(z.any()),
+});
+
+// ─── Card / list collections (still DatoCMS-sourced, unchanged) ───────────────
+
+export const newsSchema = z.custom<NewsItemFragmentType>();
+export const storySchema = z.custom<StoryCardFragmentType>();
+export const webinarSchema = z.custom<WebinarItemFragmentType>();
+export const resourceSchema = z.custom<ResourceFragmentType>();
+
+// ─── Globals ──────────────────────────────────────────────────────────────────
+
 export const homepageSchema = z.custom<HomepageRecordFragmentType>();
-
 export const searchSchema = z.custom<SearchRecordFragmentType>();
-
-export const webinarContentSchema = z.custom<AllWebinarRecordFragmentType>();
-
-export const storyContentSchema = z.custom<AllStoriesRecordFragmentType>();
-
-export const insightSchema = z.custom<AllInsightsRecordFragmentType>();
-
-export const articleSchema = z.custom<AllArticlesRecordFragmentType>();
 
 export const globalSettingsSchema = z.object({
   id: z.string(),
@@ -95,18 +125,6 @@ export const layoutSchema = z.object({
 
 export const sidebarSchema = z.custom<SidebarFragmentType>();
 
-export const catalogueSchema = z.intersection(
-  z.custom<AllCataloguesRecordFragmentType>(),
-  z.object({
-    datesRegistry: z.object({
-      news: z.string().optional(),
-      story: z.string().optional(),
-      webinar: z.string().optional(),
-      resource: z.string().optional(),
-    }),
-  }),
-);
-
 export const localesSchema = z.object({
   id: z.string(),
   locales: z.array(z.custom<SiteLocale>()),
@@ -132,14 +150,16 @@ export const globalSeoSchema = z.object({
   updatedAt: z.string(),
 });
 
+// ─── Search index ─────────────────────────────────────────────────────────────
+
 export const allDocumentsSchema = z.object({
   id: z.string(),
-  allArticles: z.array(z.custom<ArticleIndexingFragmentType>()),
-  allInsights: z.array(z.custom<InsightIndexingFragmentType>()),
-  allStoryItems: z.array(z.custom<StoryIndexingFragmentType>()),
-  allNewsItems: z.array(z.custom<NewsIndexingFragmentType>()),
-  allWebinarItems: z.array(z.custom<WebinarIndexingFragmentType>()),
-  allResources: z.array(z.custom<ResourseIndexingFragmentType>()),
-  allCatalogues: z.array(z.custom<CatalogueIndexingFragmentType>()),
-  allPages: z.array(z.custom<PageIndexingFragmentType>()),
+  allArticles: z.array(z.custom<ArticleIndexPayloadFragmentType>()),
+  allInsights: z.array(z.custom<InsightIndexPayloadFragmentType>()),
+  allStoryItems: z.array(z.custom<StoryIndexPayloadFragmentType>()),
+  allNewsItems: z.array(z.custom<NewsIndexPayloadFragmentType>()),
+  allWebinarItems: z.array(z.custom<WebinarIndexPayloadFragmentType>()),
+  allResources: z.array(z.any()),
+  allCatalogues: z.array(z.custom<CatalogueIndexPayloadFragmentType>()),
+  allPages: z.array(z.custom<PageIndexPayloadFragmentType>()),
 });

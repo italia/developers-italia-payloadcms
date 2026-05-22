@@ -1,57 +1,55 @@
 import {
-  CalloutLinkFragment,
-  CatalogueFeedFragment,
-  HeroFragment,
-  TextOnlyFragment,
-} from "@graphql/fragment/sectionFragments";
+  PayloadCalloutLinkFragment,
+  PayloadCatalogueFeedFragment,
+  PayloadHeroFragment,
+  PayloadTextOnlyFragment,
+} from "@graphql/fragment/payloadBlocks";
 import { graphql, type FragmentOf } from "@graphql/graphql";
 
-export const CatalogueContentFragment = graphql(
+export const CataloguePayloadFragment = graphql(
   `
-    fragment CatalogueContentFragment on CatalogueModelContentField @_unmask {
-      ... on RecordInterface {
-        id
-        componentName: __typename
-      }
-      ... on HeroRecord {
-        ...HeroFragment
-      }
-      ... on CatalogueFeedRecord {
-        ...CatalogueFeedFragment
-      }
-      ... on CalloutLinkRecord {
-        ...CalloutLinkFragment
-      }
-      ... on TextOnlyRecord {
-        ...TextOnlyFragment
-      }
-    }
-  `,
-  [HeroFragment, CatalogueFeedFragment, CalloutLinkFragment, TextOnlyFragment],
-);
-
-export type CatalogueContentFragmentType = FragmentOf<
-  typeof CatalogueContentFragment
->;
-
-export const AllCataloguesRecordFragment = graphql(
-  `
-    fragment AllCataloguesRecordFragment on CatalogueRecord @_unmask {
+  fragment CataloguePayloadFragment on Catalogue @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+    updatedAt
+    createdAt
+    parent {
       id
-      locales: _locales
-      publishedAt: _publishedAt
-      updatedAt: _updatedAt
-      allContentLocales: _allContentLocales {
-        locale
-        value {
-          ...CatalogueContentFragment
-        }
-      }
+      slug
+      localizedSlugs
     }
-  `,
-  [CatalogueContentFragment],
+    seo {
+      title
+      description
+    }
+    content {
+      ... on Hero { ...PayloadHeroFragment }
+      ... on TextOnly { ...PayloadTextOnlyFragment }
+      ... on CalloutLink { ...PayloadCalloutLinkFragment }
+      ... on CatalogueFeed { ...PayloadCatalogueFeedFragment }
+    }
+  }
+`,
+  [
+    PayloadHeroFragment,
+    PayloadTextOnlyFragment,
+    PayloadCalloutLinkFragment,
+    PayloadCatalogueFeedFragment,
+  ],
 );
 
-export type AllCataloguesRecordFragmentType = FragmentOf<
-  typeof AllCataloguesRecordFragment
->;
+export type CataloguePayloadFragmentType = FragmentOf<typeof CataloguePayloadFragment>;
+
+export const CatalogueIndexPayloadFragment = graphql(`
+  fragment CatalogueIndexPayloadFragment on Catalogue @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+    updatedAt
+  }
+`);
+
+export type CatalogueIndexPayloadFragmentType = FragmentOf<typeof CatalogueIndexPayloadFragment>;

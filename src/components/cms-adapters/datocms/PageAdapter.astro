@@ -22,26 +22,10 @@ import TextOnlyAdapter from "@components/cms-adapters/datocms/TextOnlyAdapter.as
 import TopicFilterAdapter from "@components/cms-adapters/datocms/TopicFilterAdapter.astro";
 import UseCaseContainerAdapter from "@components/cms-adapters/datocms/UseCaseContainerAdapter.astro";
 import WebinarDescriptionAdapter from "@components/cms-adapters/datocms/WebinarDescriptionAdapter.astro";
-import type { CatalogueContentFragmentType } from "@graphql/fragment/catalogue";
-import type { HomepageModelContentFragmentType } from "@graphql/fragment/homepage";
-import type { InsightContentFragmentType } from "@graphql/fragment/insight";
-import type { PageContentFragmentType } from "@graphql/fragment/page";
-import type { SearchPageContentFragmentType } from "@graphql/fragment/search";
-import type { StoryContentFragmentType } from "@graphql/fragment/story";
-import type { WebinarContentFragmentType } from "@graphql/fragment/webinar";
 import { DatoBlockModel } from "@utils/cmsMapper";
 
-type ContentType =
-  | HomepageModelContentFragmentType
-  | PageContentFragmentType
-  | InsightContentFragmentType
-  | CatalogueContentFragmentType
-  | StoryContentFragmentType
-  | WebinarContentFragmentType
-  | SearchPageContentFragmentType;
-
 type Props = {
-  content: ContentType[];
+  content: unknown[];
   isFontSerif?: boolean;
 };
 

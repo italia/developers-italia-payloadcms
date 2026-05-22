@@ -1,181 +1,63 @@
-import {
-  ArticleLocalesFragment,
-  CatalogueLocalesFragment,
-  InsightLocalesFragment,
-  PageLocalesFragment,
-  StoryItemLocalesFragment,
-  WebinarItemLocalesFragment,
-} from "@graphql/fragment/metaFragments";
 import { graphql, type FragmentOf } from "@graphql/graphql";
 
-export const AllArticlesSlugFragment = graphql(
-  `
-    fragment AllArticlesSlugFragment on ArticleRecord @_unmask {
-      id
-      locales: _locales
-      ...ArticleLocalesFragment
-      parent {
-        id
-      }
-      parentPage {
-        id
-        ...PageLocalesFragment
-      }
-    }
-  `,
-  [PageLocalesFragment, ArticleLocalesFragment],
-);
+// Payload routing uses localizedSlugs: JSON to know which locales a document
+// exists in, plus parent.id for path building via linkResolver / linkMap.json.
 
-export type AllArticlesSlugFragmentType = FragmentOf<
-  typeof AllArticlesSlugFragment
->;
+export const ArticleSlugPayloadFragment = graphql(`
+  fragment ArticleSlugPayloadFragment on Article @_unmask {
+    id
+    slug
+    localizedSlugs
+    parent { id slug localizedSlugs }
+  }
+`);
+export type ArticleSlugPayloadFragmentType = FragmentOf<typeof ArticleSlugPayloadFragment>;
 
-export const AllPagesSlugFragment = graphql(
-  `
-    fragment AllPagesSlugFragment on PageRecord @_unmask {
-      id
-      locales: _locales
-      ...PageLocalesFragment
-    }
-  `,
-  [PageLocalesFragment],
-);
+export const PageSlugPayloadFragment = graphql(`
+  fragment PageSlugPayloadFragment on Page @_unmask {
+    id
+    slug
+    localizedSlugs
+  }
+`);
+export type PageSlugPayloadFragmentType = FragmentOf<typeof PageSlugPayloadFragment>;
 
-export type AllPagesSlugFragmentType = FragmentOf<typeof AllPagesSlugFragment>;
+export const InsightSlugPayloadFragment = graphql(`
+  fragment InsightSlugPayloadFragment on Insight @_unmask {
+    id
+    slug
+    localizedSlugs
+    parent { id slug localizedSlugs }
+  }
+`);
+export type InsightSlugPayloadFragmentType = FragmentOf<typeof InsightSlugPayloadFragment>;
 
-export const AllInsightsSlugFragment = graphql(
-  `
-    fragment AllInsightsSlugFragment on InsightRecord @_unmask {
-      id
-      modelApiKey: _modelApiKey
-      locales: _locales
-      ...InsightLocalesFragment
-      parentPage {
-        id
-        ...PageLocalesFragment
-      }
-    }
-  `,
-  [PageLocalesFragment, InsightLocalesFragment],
-);
+export const StoryItemSlugPayloadFragment = graphql(`
+  fragment StoryItemSlugPayloadFragment on StoryItem @_unmask {
+    id
+    slug
+    localizedSlugs
+    parent { id slug localizedSlugs }
+  }
+`);
+export type StoryItemSlugPayloadFragmentType = FragmentOf<typeof StoryItemSlugPayloadFragment>;
 
-export type AllInsightsSlugFragmentType = FragmentOf<
-  typeof AllInsightsSlugFragment
->;
+export const WebinarItemSlugPayloadFragment = graphql(`
+  fragment WebinarItemSlugPayloadFragment on WebinarItem @_unmask {
+    id
+    slug
+    localizedSlugs
+    parent { id slug localizedSlugs }
+  }
+`);
+export type WebinarItemSlugPayloadFragmentType = FragmentOf<typeof WebinarItemSlugPayloadFragment>;
 
-export const AllStoryItemsSlugFragment = graphql(
-  `
-    fragment AllStoryItemsSlugFragment on StoryItemRecord @_unmask {
-      id
-      modelApiKey: _modelApiKey
-      locales: _locales
-      ...StoryItemLocalesFragment
-      parentPage {
-        ... on RecordInterface {
-          id
-        }
-        ... on CatalogueRecord {
-          ...CatalogueLocalesFragment
-          parentPage {
-            id
-            ...PageLocalesFragment
-          }
-        }
-        ... on PageRecord {
-          ...PageLocalesFragment
-        }
-      }
-    }
-  `,
-  [PageLocalesFragment, CatalogueLocalesFragment, StoryItemLocalesFragment],
-);
-
-export type AllStoryItemsSlugFragmentType = FragmentOf<
-  typeof AllStoryItemsSlugFragment
->;
-
-export const AllWebinarItemsSlugFragment = graphql(
-  `
-    fragment AllWebinarItemsSlugFragment on WebinarItemRecord @_unmask {
-      id
-      locales: _locales
-      modelApiKey: _modelApiKey
-      ...WebinarItemLocalesFragment
-      parentPage {
-        ... on RecordInterface {
-          id
-        }
-        ... on CatalogueRecord {
-          ...CatalogueLocalesFragment
-          parentPage {
-            id
-            ...PageLocalesFragment
-          }
-        }
-        ... on PageRecord {
-          ...PageLocalesFragment
-        }
-      }
-    }
-  `,
-  [PageLocalesFragment, CatalogueLocalesFragment, WebinarItemLocalesFragment],
-);
-
-export type AllWebinarItemsSlugFragmentType = FragmentOf<
-  typeof AllWebinarItemsSlugFragment
->;
-
-export const AllCataloguesSlugFragment = graphql(
-  `
-    fragment AllCataloguesSlugFragment on CatalogueRecord @_unmask {
-      id
-      locales: _locales
-      ...CatalogueLocalesFragment
-      parentPage {
-        id
-        ...PageLocalesFragment
-      }
-    }
-  `,
-  [CatalogueLocalesFragment, PageLocalesFragment],
-);
-
-export type AllCataloguesSlugFragmentType = FragmentOf<
-  typeof AllCataloguesSlugFragment
->;
-
-export const HomepageFragment = graphql(
-  `
-    fragment HomepageFragment on HomepageRecord @_unmask {
-      id
-      locales: _locales
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-    }
-  `,
-  [],
-);
-
-export type HomepageFragmentType = FragmentOf<typeof HomepageFragment>;
-
-export const SearchFragment = graphql(
-  `
-    fragment SearchFragment on SearchRecord @_unmask {
-      id
-      locales: _locales
-      allSlugLocales: _allSlugLocales {
-        locale
-        value
-      }
-      allTitleLocales: _allTitleLocales {
-        locale
-        value
-      }
-    }
-  `,
-  [],
-);
-
-export type SearchFragmentType = FragmentOf<typeof SearchFragment>;
+export const CatalogueSlugPayloadFragment = graphql(`
+  fragment CatalogueSlugPayloadFragment on Catalogue @_unmask {
+    id
+    slug
+    localizedSlugs
+    parent { id slug localizedSlugs }
+  }
+`);
+export type CatalogueSlugPayloadFragmentType = FragmentOf<typeof CatalogueSlugPayloadFragment>;

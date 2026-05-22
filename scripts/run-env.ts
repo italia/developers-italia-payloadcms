@@ -10,20 +10,14 @@ if (!mode || !command) {
 }
 
 const envFile = `.env.${mode}`;
-
 dotenv.config({ path: envFile, override: true });
 
-const envName = process.env.DATOCMS_ENVIRONMENT;
-let apiUrl = "https://graphql.datocms.com";
-if (envName) {
-  apiUrl = `${apiUrl}/environments/${envName}`;
-}
+const payloadUrl = process.env.PAYLOAD_URL;
+const payloadApiKey = process.env.PAYLOAD_API_KEY;
 
-const schemaToken =
-  process.env.DATOCMS_MANAGEMENT_API_TOKEN ?? process.env.DATOCMS_API_TOKEN;
-if (!schemaToken) {
+if (!payloadUrl || !payloadApiKey) {
   console.error(
-    "Missing token: set DATOCMS_MANAGEMENT_API_TOKEN or DATOCMS_API_TOKEN.",
+    `Missing required env vars: PAYLOAD_URL and PAYLOAD_API_KEY must be set in ${envFile}`,
   );
   process.exit(1);
 }
@@ -35,11 +29,9 @@ const schemaResult = spawnSync(
     "gql.tada",
     "generate",
     "schema",
-    apiUrl,
+    `${payloadUrl}/api/graphql`,
     "--header",
-    "X-Exclude-Invalid: true",
-    "--header",
-    `Authorization: ${schemaToken}`,
+    `Authorization: users API-Key ${payloadApiKey}`,
   ],
   { stdio: "inherit", env: process.env },
 );

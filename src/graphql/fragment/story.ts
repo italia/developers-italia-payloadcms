@@ -1,86 +1,80 @@
 import {
-  CalloutFragment,
-  TagFragment,
-} from "@graphql/fragment/commonFragments";
-import {
-  ArticleSTFragment,
-  HeroFragment,
-  IntroArticleFragment,
-  SupportCTASectionFragment,
-} from "@graphql/fragment/sectionFragments";
-import { AllStoryItemsSlugFragment } from "@graphql/fragment/slugFragments";
+  PayloadCardLinkListFragment,
+  PayloadFaqSectionFragment,
+  PayloadHeroFragment,
+  PayloadListCollectionFragment,
+  PayloadStructuredTextBlockFragment,
+  PayloadSupportChannelsSectionFragment,
+  PayloadSupportCtaSectionFragment,
+  PayloadTextAccordionFragment,
+  PayloadTextImageFragment,
+  PayloadTextOnlyFragment,
+  PayloadTextStatisticFragment,
+  PayloadTextUseCaseFragment,
+} from "@graphql/fragment/payloadBlocks";
 import { graphql, type FragmentOf } from "@graphql/graphql";
 
-export const StoryContentFragment = graphql(
+export const StoryPayloadFragment = graphql(
   `
-    fragment StoryContentFragment on StoryItemModelContentField @_unmask {
-      ... on RecordInterface {
-        id
-        componentName: __typename
-      }
-      ... on HeroRecord {
-        ...HeroFragment
-      }
-      ... on StructuredTextRecord {
-        ...ArticleSTFragment
-      }
-      ... on SupportCtaSectionRecord {
-        ...SupportCTASectionFragment
-      }
-      ... on IntroArticleRecord {
-        ...IntroArticleFragment
-      }
+  fragment StoryPayloadFragment on StoryItem @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+    updatedAt
+    createdAt
+    dateOfPublication
+    parent {
+      id
+      slug
+      localizedSlugs
     }
-  `,
+    seo {
+      title
+      description
+    }
+    content {
+      ... on Hero { ...PayloadHeroFragment }
+      ... on FaqSection { ...PayloadFaqSectionFragment }
+      ... on TextOnly { ...PayloadTextOnlyFragment }
+      ... on StructuredTextBlock { ...PayloadStructuredTextBlockFragment }
+      ... on TextImage { ...PayloadTextImageFragment }
+      ... on SupportChannelsSection { ...PayloadSupportChannelsSectionFragment }
+      ... on TextAccordion { ...PayloadTextAccordionFragment }
+      ... on ListCollection { ...PayloadListCollectionFragment }
+      ... on SupportCtaSection { ...PayloadSupportCtaSectionFragment }
+      ... on TextUseCase { ...PayloadTextUseCaseFragment }
+      ... on TextStatistic { ...PayloadTextStatisticFragment }
+      ... on CardLinkList { ...PayloadCardLinkListFragment }
+    }
+  }
+`,
   [
-    HeroFragment,
-    CalloutFragment,
-    ArticleSTFragment,
-    SupportCTASectionFragment,
-    IntroArticleFragment,
+    PayloadHeroFragment,
+    PayloadFaqSectionFragment,
+    PayloadTextOnlyFragment,
+    PayloadStructuredTextBlockFragment,
+    PayloadTextImageFragment,
+    PayloadSupportChannelsSectionFragment,
+    PayloadTextAccordionFragment,
+    PayloadListCollectionFragment,
+    PayloadSupportCtaSectionFragment,
+    PayloadTextUseCaseFragment,
+    PayloadTextStatisticFragment,
+    PayloadCardLinkListFragment,
   ],
 );
 
-export type StoryContentFragmentType = FragmentOf<typeof StoryContentFragment>;
+export type StoryPayloadFragmentType = FragmentOf<typeof StoryPayloadFragment>;
 
-export const AllStoryItemsFragment = graphql(
-  `
-    fragment AllStoryItemsFragment on StoryItemRecord @_unmask {
-      id
-      allContentLocales: _allContentLocales {
-        locale
-        value {
-          ...StoryContentFragment
-        }
-      }
-      ...AllStoryItemsSlugFragment
-    }
-  `,
-  [TagFragment, StoryContentFragment, AllStoryItemsSlugFragment],
-);
+export const StoryIndexPayloadFragment = graphql(`
+  fragment StoryIndexPayloadFragment on StoryItem @_unmask {
+    id
+    slug
+    title
+    localizedSlugs
+    updatedAt
+  }
+`);
 
-export type AllStoryItemsFragmentType = FragmentOf<
-  typeof AllStoryItemsFragment
->;
-
-export const AllStoriesRecordFragment = graphql(
-  `
-    fragment AllStoriesRecordFragment on StoryItemRecord @_unmask {
-      id
-      locales: _locales
-      publishedAt: _publishedAt
-      updatedAt: _updatedAt
-      allContentLocales: _allContentLocales {
-        locale
-        value {
-          ...StoryContentFragment
-        }
-      }
-    }
-  `,
-  [StoryContentFragment],
-);
-
-export type AllStoriesRecordFragmentType = FragmentOf<
-  typeof AllStoriesRecordFragment
->;
+export type StoryIndexPayloadFragmentType = FragmentOf<typeof StoryIndexPayloadFragment>;

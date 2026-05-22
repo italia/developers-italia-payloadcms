@@ -1,13 +1,14 @@
-import { AllArticlesRecordFragment } from "@graphql/fragment/article";
+import { ArticlePayloadFragment } from "@graphql/fragment/article";
 import { graphql } from "@graphql/graphql";
 
-export const AllArticlesContentQuery = graphql(
+export const ArticlesContentQuery = graphql(
   `
-    query AllArticlesContentQuery {
-      allArticles(first: 2500) {
-        ...AllArticlesRecordFragment
-      }
+  query ArticlesContentQuery($locale: LocaleInputType, $limit: Int, $page: Int) {
+    Articles(locale: $locale, limit: $limit, page: $page) {
+      docs { ...ArticlePayloadFragment }
+      hasNextPage
     }
-  `,
-  [AllArticlesRecordFragment],
+  }
+`,
+  [ArticlePayloadFragment],
 );

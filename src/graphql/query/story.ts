@@ -1,25 +1,14 @@
-import { StoryCardFragment } from "@graphql/fragment/commonFragments";
-import { AllStoriesRecordFragment } from "@graphql/fragment/story";
+import { StoryPayloadFragment } from "@graphql/fragment/story";
 import { graphql } from "@graphql/graphql";
 
-export const AllStoryCardQuery = graphql(
+export const StoryItemsContentQuery = graphql(
   `
-    query AllStory {
-      allStoryItems(first: 2500) {
-        ...StoryCardFragment
-      }
+  query StoryItemsContentQuery($locale: LocaleInputType, $limit: Int, $page: Int) {
+    StoryItems(locale: $locale, limit: $limit, page: $page) {
+      docs { ...StoryPayloadFragment }
+      hasNextPage
     }
-  `,
-  [StoryCardFragment],
-);
-
-export const AllStoriesContentQuery = graphql(
-  `
-    query AllStoriesContentQuery {
-      allStoryItems(first: 2500) {
-        ...AllStoriesRecordFragment
-      }
-    }
-  `,
-  [AllStoriesRecordFragment],
+  }
+`,
+  [StoryPayloadFragment],
 );

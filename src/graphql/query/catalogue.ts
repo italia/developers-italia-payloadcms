@@ -1,30 +1,32 @@
-import { AllCataloguesRecordFragment } from "@graphql/fragment/catalogue";
+import { CataloguePayloadFragment } from "@graphql/fragment/catalogue";
 import { graphql } from "@graphql/graphql";
 
-export const AllCataloguesContentQuery = graphql(
+export const CataloguesContentQuery = graphql(
   `
-    query AllCataloguesContentQuery {
-      allCatalogues(first: 2500) {
-        ...AllCataloguesRecordFragment
-      }
+  query CataloguesContentQuery($locale: LocaleInputType, $limit: Int, $page: Int) {
+    Catalogues(locale: $locale, limit: $limit, page: $page) {
+      docs { ...CataloguePayloadFragment }
+      hasNextPage
     }
-  `,
-  [AllCataloguesRecordFragment],
+  }
+`,
+  [CataloguePayloadFragment],
 );
 
+// Last-updated dates for catalogue feed badges (locale-independent, use first result)
 export const LastItemsUpdateQuery = graphql(`
-  query LastItemsUpdate {
-    lastNews: allNewsItems(orderBy: _createdAt_DESC, first: 1) {
-      publishedAt: _publishedAt
+  query LastItemsUpdate($locale: LocaleInputType) {
+    NewsItems(locale: $locale, limit: 1, sort: "-createdAt") {
+      docs { createdAt }
     }
-    lastStory: allStoryItems(orderBy: _createdAt_DESC, first: 1) {
-      publishedAt: _publishedAt
+    StoryItems(locale: $locale, limit: 1, sort: "-createdAt") {
+      docs { createdAt }
     }
-    lastWebinar: allWebinarItems(orderBy: _createdAt_DESC, first: 1) {
-      publishedAt: _publishedAt
+    WebinarItems(locale: $locale, limit: 1, sort: "-createdAt") {
+      docs { createdAt }
     }
-    lastResource: allResources(orderBy: _createdAt_DESC, first: 1) {
-      publishedAt: _publishedAt
+    Resources(locale: $locale, limit: 1, sort: "-createdAt") {
+      docs { createdAt }
     }
   }
 `);

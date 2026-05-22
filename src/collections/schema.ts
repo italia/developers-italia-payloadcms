@@ -16,13 +16,8 @@ import type {
 } from "@graphql/fragment/commonFragments";
 import type { ErrorRecordFragmentType } from "@graphql/fragment/globalSettings";
 import type { HomepageRecordFragmentType } from "@graphql/fragment/homepage";
-import type {
-  FooterFragmentType,
-  HeaderFragmentType,
-  SidebarFragmentType,
-} from "@graphql/fragment/layout";
+import type { SidebarFragmentType } from "@graphql/fragment/layout";
 import type { SearchRecordFragmentType } from "@graphql/fragment/search";
-import type { SearchMenuFragmentType } from "@graphql/fragment/sectionFragments";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
 import type { SiteLocale } from "@graphql/types";
 import { z } from "astro:content";
@@ -38,7 +33,7 @@ const payloadLocaleEntryBase = z.object({
   locale: localeEnum,
   slug: z.string().nullable(),
   title: z.string().nullable(),
-  localizedSlugs: z.record(z.string()).nullable(),   // { it: "slug-it", en: "slug-en" }
+  localizedSlugs: z.any(),   // JSON string from REST or object; not used by page routes
   updatedAt: z.string().nullable(),
   publishedAt: z.string().nullable(),
 });
@@ -100,8 +95,8 @@ export const globalSettingsSchema = z.object({
   id: z.string(),
   locale: z.string(),
   value: z.object({
-    siteName: z.string(),
-    lastUpdateLabel: z.string(),
+    siteName: z.string().optional().default(""),
+    lastUpdateLabel: z.string().optional().default(""),
     links: z
       .array(
         z.object({
@@ -115,12 +110,9 @@ export const globalSettingsSchema = z.object({
 
 export const layoutSchema = z.object({
   id: z.string(),
-  layout: z.intersection(
-    z.custom<HeaderFragmentType>(),
-    z.custom<FooterFragmentType>(),
-  ),
-  search: z.custom<SearchMenuFragmentType>(),
-  homepageId: z.string(),
+  layout: z.any(),
+  search: z.any().nullable(),
+  homepageId: z.string().optional(),
 });
 
 export const sidebarSchema = z.custom<SidebarFragmentType>();
@@ -132,7 +124,7 @@ export const localesSchema = z.object({
 
 export const errorPageSchema = z.object({
   id: z.string(),
-  globalSetting: z.custom<ErrorRecordFragmentType>(),
+  globalSetting: z.custom<ErrorRecordFragmentType>().nullable(),
   homepageId: z.string().optional(),
 });
 
@@ -146,8 +138,8 @@ export const globalSeoSchema = z.object({
   recordId: z.string(),
   locale: z.string(),
   metaTags: z.array(z.custom<TagFragmentType>()),
-  seo: z.custom<SeoFieldFragmentType>(),
-  updatedAt: z.string(),
+  seo: z.custom<SeoFieldFragmentType>().nullable(),
+  updatedAt: z.string().optional().default(""),
 });
 
 // ─── Search index ─────────────────────────────────────────────────────────────

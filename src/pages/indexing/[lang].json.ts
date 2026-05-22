@@ -1,12 +1,5 @@
 import type { SiteLocale } from "@graphql/types";
 import { getI18n } from "@i18n/microcopy";
-import {
-  getCataloguesMapCategory,
-  getCategoryName,
-  getTitleByTypeNews,
-  getTitleByTypeResourse,
-  resolveArticleCategory,
-} from "@utils/indexing/getCategory";
 import * as Mappers from "@utils/indexing/indexingMappers";
 import type { APIRoute } from "astro";
 import { getEntry } from "astro:content";
@@ -50,22 +43,21 @@ export const GET: APIRoute = async ({ params }) => {
   const resourses = response.allResources;
   const pages = response.allPages;
 
-  const cataloguesMapCategory = getCataloguesMapCategory(
-    response.allCatalogues,
-    lang,
-  );
+  // const cataloguesMapCategory = getCataloguesMapCategory(
+  //   response.allCatalogues,
+  //   lang,
+  // );
 
-  const articleCategory = resolveArticleCategory(articles, lang);
-  const insightCategory = getCategoryName(insights[0]?.parentPage, lang);
-  const storyCategory =
-    getTitleByTypeNews(cataloguesMapCategory, stories[0]?.modelApiKey) || "";
-  const newsCategory =
-    getTitleByTypeNews(cataloguesMapCategory, newsItems[0]?.modelApiKey) || "";
-  const webinarCategory =
-    getTitleByTypeNews(cataloguesMapCategory, webinars[0]?.modelApiKey) || "";
-  const resourseCategory =
-    getTitleByTypeResourse(cataloguesMapCategory, resourses[0]?.modelApiKey) ||
-    "";
+  const articleCategory = "";
+  const insightCategory = ""; //getCategoryName(insights[0]?.parentPage, lang);
+  const storyCategory = "";
+  // getTitleByTypeNews(cataloguesMapCategory, stories[0]?.modelApiKey) || "";
+  const newsCategory = "";
+  // getTitleByTypeNews(cataloguesMapCategory, newsItems[0]?.modelApiKey) || "";
+  const webinarCategory = "";
+  // getTitleByTypeNews(cataloguesMapCategory, webinars[0]?.modelApiKey) || "";
+  const resourseCategory = "";
+  // getTitleByTypeResourse(cataloguesMapCategory, resourses[0]?.modelApiKey) ||"";
 
   const allDocuments = [
     ...pages.map((item) => Mappers.getMapPages(item, lang)),

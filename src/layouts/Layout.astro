@@ -7,10 +7,6 @@ import HeaderAdapter from "@components/cms-adapters/datocms/HeaderAdapter.astro"
 import { LastUpdate } from "@components/molecules/LastUpdate";
 import Feedback from "@components/react/Feedback/Feedback";
 import { Seo, type TitleMetaLinkTag } from "@datocms/astro";
-import type {
-  FooterFragmentType,
-  HeaderFragmentType,
-} from "@graphql/fragment/layout";
 import { getGlobalSettings, getLayout } from "@lib/dataFetcher";
 import { isDraftModeEnabled } from "@lib/draftMode";
 import { type JsonLdPageData } from "@utils/JsonLD/seoJsonLd";
@@ -34,46 +30,45 @@ const { pageSeo = [], redirectUrl, datePublished, jsonLd } = Astro.props;
 const { lang } = Astro.locals;
 
 const result = await getCollection("site_meta");
-
-const siteMetaTag = result[0].data;
+const siteMetaTag = result[0]?.data;
 
 const layoutEntry = await getLayout(isPreview);
 
-const layout = layoutEntry?.data?.layout;
+// layout is always non-null: layoutLoader falls back to STATIC_LAYOUT_RECORD
+const layout = layoutEntry?.data?.layout ?? {};
 const { homepageId, search } = layoutEntry?.data || {};
 
 const globalSetting = await getGlobalSettings(lang);
 
-if (!layout) return;
-
-const headerLayout: HeaderFragmentType = {
-  _allTaglineLocales: layout._allTaglineLocales,
-  _allListNavbarBrandLocales: layout._allListNavbarBrandLocales,
-  siteName: layout.siteName,
-  allMainNavigation: layout.allMainNavigation,
-  allSecondaryNavigation: layout.allSecondaryNavigation,
-  allMetaNavigation: layout.allMetaNavigation,
-  locales: layout.locales,
-  logoSelect: layout.logoSelect,
-  variant: layout.variant,
+const headerLayout = {
+  _allTaglineLocales: layout._allTaglineLocales ?? [],
+  _allListNavbarBrandLocales: layout._allListNavbarBrandLocales ?? [],
+  siteName: layout.siteName ?? "",
+  allMainNavigation: layout.allMainNavigation ?? [],
+  allSecondaryNavigation: layout.allSecondaryNavigation ?? [],
+  allMetaNavigation: layout.allMetaNavigation ?? [],
+  locales: layout.locales ?? ["it", "en"],
+  logoSelect: layout.logoSelect ?? null,
+  variant: layout.variant ?? "light",
 };
 
-const footerLayout: FooterFragmentType = {
-  _allHeadingLocales: layout._allHeadingLocales,
-  _allOrganizationsLocales: layout._allOrganizationsLocales,
-  _allTopicTitleLocales: layout._allTopicTitleLocales,
-  _allTopicLinkLocales: layout._allTopicLinkLocales,
-  _allUtilityTitleLocales: layout._allUtilityTitleLocales,
-  _allUtilityLocales: layout._allUtilityLocales,
-  _allSmallPrintLocales: layout._allSmallPrintLocales,
-  _allMailingListFormLocales: layout._allMailingListFormLocales,
-  showSitemapLink: layout.showSitemapLink,
+const footerLayout = {
+  _allHeadingLocales: layout._allHeadingLocales ?? [],
+  _allOrganizationsLocales: layout._allOrganizationsLocales ?? [],
+  _allTopicTitleLocales: layout._allTopicTitleLocales ?? [],
+  _allTopicLinkLocales: layout._allTopicLinkLocales ?? [],
+  _allUtilityTitleLocales: layout._allUtilityTitleLocales ?? [],
+  _allUtilityLocales: layout._allUtilityLocales ?? [],
+  _allSmallPrintLocales: layout._allSmallPrintLocales ?? [],
+  _allMailingListFormLocales: layout._allMailingListFormLocales ?? [],
+  showSitemapLink: layout.showSitemapLink ?? false,
 };
 
 const linksPrefooter: LinkProps[] =
-  globalSetting?.links?.map((link) => {
-    return { url: link.url, label: link.label };
-  }) || [];
+  globalSetting?.links?.map((link: { url: string; label: string }) => ({
+    url: link.url,
+    label: link.label,
+  })) || [];
 
 const isShowingPreviewBar = isPreview && redirectUrl;
 const isProd = import.meta.env.PROD;
@@ -117,11 +112,11 @@ const isProd = import.meta.env.PROD;
 
     <link rel="preconnect" href="https://www.datocms-assets.com" crossorigin />
 
-    <Seo data={[...siteMetaTag.faviconMetaTags, ...pageSeo]} />
+    <Seo data={[...(siteMetaTag?.faviconMetaTags ?? []), ...pageSeo]} />
 
     <JsonLDScripts jsonLd={jsonLd} />
     {isProd && <WAI />}
-    <SeoHreflang locales={layout.locales} />
+    <SeoHreflang locales={headerLayout.locales} />
   </head>
   <body>
     {isShowingPreviewBar && <PreviewBar redirectUrl={redirectUrl} />}

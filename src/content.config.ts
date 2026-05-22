@@ -44,6 +44,8 @@ import {
 } from "@collections/schema";
 import { defineCollection } from "astro:content";
 
+
+
 export const collections = {
   news_item: defineCollection({
     schema: newsSchema,

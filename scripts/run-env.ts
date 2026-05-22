@@ -22,23 +22,6 @@ if (!payloadUrl || !payloadApiKey) {
   process.exit(1);
 }
 
-const schemaResult = spawnSync(
-  "bun",
-  [
-    "x",
-    "gql.tada",
-    "generate",
-    "schema",
-    `${payloadUrl}/api/graphql`,
-    "--header",
-    `Authorization: users API-Key ${payloadApiKey}`,
-  ],
-  { stdio: "inherit", env: process.env },
-);
-if (schemaResult.status !== 0) {
-  process.exit(schemaResult.status ?? 1);
-}
-
 const linksResult = spawnSync("bun", ["./scripts/generate-link-map.ts"], {
   stdio: "inherit",
   env: process.env,

@@ -24,24 +24,22 @@ import {
 } from "@graphql/query/seo";
 import {
   AllGlobalSettingsQuery,
-  LocalesQuery,
   SiteMetaTagsQuery,
 } from "@graphql/query/settings";
-import {
-  AllStoryCardQuery,
-  AllWebinarQuery,
-} from "@graphql/query/story";
-import { ArticlesContentQuery } from "@graphql/query/article";
-import { CataloguesContentQuery, LastItemsUpdateQuery } from "@graphql/query/catalogue";
-import { InsightsContentQuery } from "@graphql/query/insight";
-import { StoryItemsContentQuery } from "@graphql/query/story";
-import { WebinarItemsContentQuery } from "@graphql/query/webinar";
+import { ErrorPageQuery } from "@graphql/query/errorPage";
+import { AllStoryCardQuery } from "@graphql/query/story";
+import { AllWebinarQuery } from "@graphql/query/webinar";
+import { LastItemsUpdateQuery } from "@graphql/query/catalogue";
 import { executeAutoPagingQuery, executeQuery } from "@lib/datocms";
 import {
   executeAutoPagingQuery as payloadPagingQuery,
   executeQuery as payloadQuery,
   payloadFetch,
 } from "@lib/payloadcms";
+import {
+  STATIC_GLOBAL_SETTINGS_VALUE,
+  STATIC_LAYOUT_RECORD,
+} from "@data/staticLayout";
 
 const LOCALES = ["it", "en"] as const;
 type Locale = (typeof LOCALES)[number];
@@ -167,7 +165,7 @@ export const pagesLoader = async () => {
   return entries;
 };
 
-// ─── Article content (PayloadCMS GraphQL, per-locale entries) ─────────────────
+// ─── Article content (PayloadCMS REST, per-locale entries) ────────────────────
 
 export const articleContentLoader = async () => {
   type ArticleDoc = {
@@ -176,36 +174,42 @@ export const articleContentLoader = async () => {
     title: string | null;
     paragraph: string | null;
     content: unknown;
-    localizedSlugs: unknown;
+    localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
   };
+  type ArticleList = { docs: ArticleDoc[]; hasNextPage: boolean };
 
   const entries = [];
   for (const locale of LOCALES) {
-    const docs = asDocs<ArticleDoc>(
-      await payloadPagingQuery(ArticlesContentQuery, { variables: { locale } }),
-    );
-    for (const doc of docs) {
-      if (!doc.slug) continue;
-      entries.push({
-        id: `${doc.id}_${locale}`,
-        docId: String(doc.id),
-        locale,
-        slug: doc.slug,
-        title: doc.title ?? null,
-        paragraph: doc.paragraph ?? null,
-        content: doc.content ?? null,
-        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
-        updatedAt: doc.updatedAt ?? null,
-        publishedAt: doc.createdAt ?? null,
-      });
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
+      const res = await payloadFetch<ArticleList>("/articles", qs);
+      for (const doc of res.docs) {
+        if (!doc.slug) continue;
+        entries.push({
+          id: `${doc.id}_${locale}`,
+          docId: String(doc.id),
+          locale,
+          slug: doc.slug,
+          title: doc.title ?? null,
+          paragraph: doc.paragraph ?? null,
+          content: doc.content ?? null,
+          localizedSlugs: doc.localizedSlugs ?? null,
+          updatedAt: doc.updatedAt ?? null,
+          publishedAt: doc.createdAt ?? null,
+        });
+      }
+      hasMore = res.hasNextPage;
+      page++;
     }
   }
   return entries;
 };
 
-// ─── Insight content ──────────────────────────────────────────────────────────
+// ─── Insight content (PayloadCMS REST, per-locale entries) ────────────────────
 
 export const insightContentLoader = async () => {
   type InsightDoc = {
@@ -214,36 +218,42 @@ export const insightContentLoader = async () => {
     title: string | null;
     abstract: string | null;
     content: unknown[] | null;
-    localizedSlugs: unknown;
+    localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
   };
+  type InsightList = { docs: InsightDoc[]; hasNextPage: boolean };
 
   const entries = [];
   for (const locale of LOCALES) {
-    const docs = asDocs<InsightDoc>(
-      await payloadPagingQuery(InsightsContentQuery, { variables: { locale } }),
-    );
-    for (const doc of docs) {
-      if (!doc.slug) continue;
-      entries.push({
-        id: `${doc.id}_${locale}`,
-        docId: String(doc.id),
-        locale,
-        slug: doc.slug,
-        title: doc.title ?? null,
-        abstract: doc.abstract ?? null,
-        content: doc.content ?? [],
-        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
-        updatedAt: doc.updatedAt ?? null,
-        publishedAt: doc.createdAt ?? null,
-      });
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
+      const res = await payloadFetch<InsightList>("/insights", qs);
+      for (const doc of res.docs) {
+        if (!doc.slug) continue;
+        entries.push({
+          id: `${doc.id}_${locale}`,
+          docId: String(doc.id),
+          locale,
+          slug: doc.slug,
+          title: doc.title ?? null,
+          abstract: doc.abstract ?? null,
+          content: doc.content ?? [],
+          localizedSlugs: doc.localizedSlugs ?? null,
+          updatedAt: doc.updatedAt ?? null,
+          publishedAt: doc.createdAt ?? null,
+        });
+      }
+      hasMore = res.hasNextPage;
+      page++;
     }
   }
   return entries;
 };
 
-// ─── Story content ────────────────────────────────────────────────────────────
+// ─── Story content (PayloadCMS REST, per-locale entries) ──────────────────────
 
 export const storyContentLoader = async () => {
   type StoryDoc = {
@@ -252,36 +262,42 @@ export const storyContentLoader = async () => {
     title: string | null;
     content: unknown[] | null;
     dateOfPublication: string | null;
-    localizedSlugs: unknown;
+    localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
   };
+  type StoryList = { docs: StoryDoc[]; hasNextPage: boolean };
 
   const entries = [];
   for (const locale of LOCALES) {
-    const docs = asDocs<StoryDoc>(
-      await payloadPagingQuery(StoryItemsContentQuery, { variables: { locale } }),
-    );
-    for (const doc of docs) {
-      if (!doc.slug) continue;
-      entries.push({
-        id: `${doc.id}_${locale}`,
-        docId: String(doc.id),
-        locale,
-        slug: doc.slug,
-        title: doc.title ?? null,
-        content: doc.content ?? [],
-        dateOfPublication: doc.dateOfPublication ?? null,
-        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
-        updatedAt: doc.updatedAt ?? null,
-        publishedAt: doc.createdAt ?? null,
-      });
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
+      const res = await payloadFetch<StoryList>("/story-items", qs);
+      for (const doc of res.docs) {
+        if (!doc.slug) continue;
+        entries.push({
+          id: `${doc.id}_${locale}`,
+          docId: String(doc.id),
+          locale,
+          slug: doc.slug,
+          title: doc.title ?? null,
+          content: doc.content ?? [],
+          dateOfPublication: doc.dateOfPublication ?? null,
+          localizedSlugs: doc.localizedSlugs ?? null,
+          updatedAt: doc.updatedAt ?? null,
+          publishedAt: doc.createdAt ?? null,
+        });
+      }
+      hasMore = res.hasNextPage;
+      page++;
     }
   }
   return entries;
 };
 
-// ─── Webinar content ──────────────────────────────────────────────────────────
+// ─── Webinar content (PayloadCMS REST, per-locale entries) ────────────────────
 
 export const webinarContentLoader = async () => {
   type WebinarDoc = {
@@ -291,37 +307,43 @@ export const webinarContentLoader = async () => {
     paragraph: string | null;
     date: string | null;
     content: unknown[] | null;
-    localizedSlugs: unknown;
+    localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
   };
+  type WebinarList = { docs: WebinarDoc[]; hasNextPage: boolean };
 
   const entries = [];
   for (const locale of LOCALES) {
-    const docs = asDocs<WebinarDoc>(
-      await payloadPagingQuery(WebinarItemsContentQuery, { variables: { locale } }),
-    );
-    for (const doc of docs) {
-      if (!doc.slug) continue;
-      entries.push({
-        id: `${doc.id}_${locale}`,
-        docId: String(doc.id),
-        locale,
-        slug: doc.slug,
-        title: doc.title ?? null,
-        paragraph: doc.paragraph ?? null,
-        date: doc.date ?? null,
-        content: doc.content ?? [],
-        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
-        updatedAt: doc.updatedAt ?? null,
-        publishedAt: doc.createdAt ?? null,
-      });
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
+      const res = await payloadFetch<WebinarList>("/webinar-items", qs);
+      for (const doc of res.docs) {
+        if (!doc.slug) continue;
+        entries.push({
+          id: `${doc.id}_${locale}`,
+          docId: String(doc.id),
+          locale,
+          slug: doc.slug,
+          title: doc.title ?? null,
+          paragraph: doc.paragraph ?? null,
+          date: doc.date ?? null,
+          content: doc.content ?? [],
+          localizedSlugs: doc.localizedSlugs ?? null,
+          updatedAt: doc.updatedAt ?? null,
+          publishedAt: doc.createdAt ?? null,
+        });
+      }
+      hasMore = res.hasNextPage;
+      page++;
     }
   }
   return entries;
 };
 
-// ─── Catalogues ───────────────────────────────────────────────────────────────
+// ─── Catalogues (PayloadCMS REST, per-locale entries) ─────────────────────────
 
 export const cataloguesLoader = async () => {
   type CatalogueDoc = {
@@ -329,10 +351,11 @@ export const cataloguesLoader = async () => {
     slug: string | null;
     title: string | null;
     content: unknown[] | null;
-    localizedSlugs: unknown;
+    localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
   };
+  type CatalogueList = { docs: CatalogueDoc[]; hasNextPage: boolean };
 
   type UpdatesDocs = { docs: { createdAt: string }[] };
   type UpdatesResult = {
@@ -355,23 +378,28 @@ export const cataloguesLoader = async () => {
 
   const entries = [];
   for (const locale of LOCALES) {
-    const docs = asDocs<CatalogueDoc>(
-      await payloadPagingQuery(CataloguesContentQuery, { variables: { locale } }),
-    );
-    for (const doc of docs) {
-      if (!doc.slug) continue;
-      entries.push({
-        id: `${doc.id}_${locale}`,
-        docId: String(doc.id),
-        locale,
-        slug: doc.slug,
-        title: doc.title ?? null,
-        content: doc.content ?? [],
-        localizedSlugs: (doc.localizedSlugs as Record<string, string>) ?? null,
-        updatedAt: doc.updatedAt ?? null,
-        publishedAt: doc.createdAt ?? null,
-        datesRegistry,
-      });
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
+      const res = await payloadFetch<CatalogueList>("/catalogues", qs);
+      for (const doc of res.docs) {
+        if (!doc.slug) continue;
+        entries.push({
+          id: `${doc.id}_${locale}`,
+          docId: String(doc.id),
+          locale,
+          slug: doc.slug,
+          title: doc.title ?? null,
+          content: doc.content ?? [],
+          localizedSlugs: doc.localizedSlugs ?? null,
+          updatedAt: doc.updatedAt ?? null,
+          publishedAt: doc.createdAt ?? null,
+          datesRegistry,
+        });
+      }
+      hasMore = res.hasNextPage;
+      page++;
     }
   }
   return entries;
@@ -417,7 +445,9 @@ export const globalSettingsLoader = async () => {
   }
 
   const response = await executeQuery(AllGlobalSettingsQuery);
-  if (!response?.globalSetting) return [];
+  if (!response?.globalSetting) {
+    return LOCALES.map((locale) => ({ id: locale, locale, value: STATIC_GLOBAL_SETTINGS_VALUE }));
+  }
   return transformGlobalSettings(response);
 };
 
@@ -456,54 +486,52 @@ export const homepageLoader = async () => {
 
 export const searchLoader = async () => {
   const response = await executeQuery(SearchPageContentQuery);
-  return response?.search ? [response.search] : [];
+  return response?.search
+    ? [response.search]
+    : [{ id: "search-empty", locales: [], allContentLocales: [] }];
 };
 
 export const layoutLoader = async () => {
   const response = await executeQuery(LayoutQuery);
-  if (!response?.homepage?.id) return [];
   return [
     {
       id: "layout",
-      layout: response?.layout,
-      search: response?.search,
-      homepageId: response?.homepage?.id,
+      layout: response?.layout ?? STATIC_LAYOUT_RECORD,
+      search: response?.search ?? null,
+      homepageId: response?.homepage?.id ?? "homepage",
     },
   ];
 };
 
 export const sidebarLoader = async () => {
   const response = await executeQuery(SidebarQuery);
-  if (!response?.sidebarForArticle) return [];
-  return [{ ...response.sidebarForArticle, id: "sidebar" }];
+  return response?.sidebarForArticle
+    ? [{ ...response.sidebarForArticle, id: "sidebar" }]
+    : [{ id: "sidebar" }];
 };
 
 export const localesLoader = async () => {
-  const response = await executeQuery(LocalesQuery);
-  if (!response?.site?.locales) return [];
-  return [{ id: "site-locales", locales: response.site.locales }];
+  return [{ id: "site-locales", locales: ["it", "en"] as const }];
 };
 
 export const errorPageLoader = async () => {
-  const response = await executeQuery(AllGlobalSettingsQuery);
-  if (!response?.globalSetting) return [];
+  const response = await executeQuery(ErrorPageQuery);
   return [
     {
       id: "error-page",
-      globalSetting: response.globalSetting,
+      globalSetting: response?.globalSetting ?? null,
+      homepageId: response?.homepage?.id ?? undefined,
     },
   ];
 };
 
 export const siteMetaTagsLoader = async () => {
   const response = await executeQuery(SiteMetaTagsQuery);
-  if (!response?.site?.faviconMetaTags) return [];
-  return [{ id: "site-meta-tags", faviconMetaTags: response.site.faviconMetaTags }];
+  return [{ id: "site-meta-tags", faviconMetaTags: response?.site?.faviconMetaTags ?? [] }];
 };
 
 export const globalSeoLoader = async () => {
-  const localesRes = await executeQuery(LocalesQuery);
-  const locales = localesRes?.site?.locales || ["it"];
+  const locales = LOCALES;
 
   const allLocalesResults = await Promise.all(
     locales.map(async (locale) => {
@@ -555,7 +583,11 @@ export const globalSeoLoader = async () => {
     }),
   );
 
-  return allLocalesResults.flat();
+  const flat = allLocalesResults.flat();
+  if (flat.length === 0) {
+    return [{ id: "_empty", recordId: "_empty", locale: "it", metaTags: [], seo: null, updatedAt: "" }];
+  }
+  return flat;
 };
 
 // ─── Search index (all documents) ────────────────────────────────────────────

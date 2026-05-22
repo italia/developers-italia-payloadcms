@@ -52,7 +52,7 @@ export async function getStaticPaths() {
     }),
   );
 
-  return paths;
+  return paths.filter((p): p is PathItem => p !== null);
 }
 
 const { lang } = Astro.params;

@@ -6,11 +6,11 @@ import FooterAdapter from "@components/cms-adapters/datocms/FooterAdapter.astro"
 import HeaderAdapter from "@components/cms-adapters/datocms/HeaderAdapter.astro";
 import { LastUpdate } from "@components/molecules/LastUpdate";
 import Feedback from "@components/react/Feedback/Feedback";
-import { Seo, type TitleMetaLinkTag } from "@datocms/astro";
+import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
 import { getGlobalSettings, getLayout } from "@lib/dataFetcher";
 import { isDraftModeEnabled } from "@lib/draftMode";
 import { type JsonLdPageData } from "@utils/JsonLD/seoJsonLd";
-import { getCollection } from "astro:content";
+import { getEntry } from "astro:content";
 import bsi from "bootstrap-italia/dist/js/bootstrap-italia.bundle.min.js?url";
 import "../styles/global.scss";
 import JsonLDScripts from "./JsonLDScripts.astro";
@@ -18,19 +18,16 @@ import SeoHreflang from "./SeoHreflang.astro";
 import WAI from "./WAI.astro";
 
 type Props = {
-  pageSeo?: TitleMetaLinkTag[];
+  seo?: SeoFieldFragmentType | null;
   redirectUrl?: string;
   datePublished?: string;
   jsonLd?: JsonLdPageData;
 };
 
 const isPreview = isDraftModeEnabled(Astro.cookies);
-const { pageSeo = [], redirectUrl, datePublished, jsonLd } = Astro.props;
+const { seo, redirectUrl, datePublished, jsonLd } = Astro.props;
 
 const { lang } = Astro.locals;
-
-const result = await getCollection("site_meta");
-const siteMetaTag = result[0]?.data;
 
 const layoutEntry = await getLayout(isPreview);
 
@@ -39,6 +36,18 @@ const layout = layoutEntry?.data?.layout ?? {};
 const { homepageId, search } = layoutEntry?.data || {};
 
 const globalSetting = await getGlobalSettings(lang);
+
+// ── SEO default (per-locale fallbacks) ──────────────────────────────────────
+const seoDefaultEntry = await getEntry("seo_default", lang);
+const seoDefault = seoDefaultEntry?.data;
+
+const pageTitle = (seo?.title || seoDefault?.fallbackTitle || "")
+  + (seoDefault?.titleSuffix || "");
+const pageDescription = seo?.description || seoDefault?.fallbackDescription || "";
+const ogImageUrl = (seo?.image as { url?: string } | null)?.url ?? seoDefault?.ogImage?.url ?? "";
+const siteName = seoDefault?.siteName ?? "";
+const faviconUrl = seoDefault?.favicon?.url ?? "";
+// ─────────────────────────────────────────────────────────────────────────────
 
 const headerLayout = {
   _allTaglineLocales: layout._allTaglineLocales ?? [],
@@ -72,47 +81,41 @@ const linksPrefooter: LinkProps[] =
 
 const isShowingPreviewBar = isPreview && redirectUrl;
 const isProd = import.meta.env.PROD;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
 ---
 
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-    <link
-      rel="preload"
-      href="/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-600.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-700.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/Lora/lora-v20-latin-ext_latin-regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-    <link rel="preconnect" href="https://www.datocms-assets.com" crossorigin />
+    <!-- Primary meta -->
+    {pageTitle && <title>{pageTitle}</title>}
+    {pageDescription && <meta name="description" content={pageDescription} />}
+    <link rel="canonical" href={canonicalUrl} />
 
-    <Seo data={[...(siteMetaTag?.faviconMetaTags ?? []), ...pageSeo]} />
+    <!-- Open Graph -->
+    {pageTitle && <meta property="og:title" content={pageTitle} />}
+    {pageDescription && <meta property="og:description" content={pageDescription} />}
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    {siteName && <meta property="og:site_name" content={siteName} />}
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    {pageTitle && <meta name="twitter:title" content={pageTitle} />}
+    {pageDescription && <meta name="twitter:description" content={pageDescription} />}
+    {ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
+
+    <!-- Favicon -->
+    {faviconUrl && <link rel="icon" href={faviconUrl} />}
+
+    <!-- Font preloads -->
+    <link rel="preload" href="/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-600.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Lora/lora-v20-latin-ext_latin-regular.woff2" as="font" type="font/woff2" crossorigin />
 
     <JsonLDScripts jsonLd={jsonLd} />
     {isProd && <WAI />}
@@ -137,12 +140,12 @@ const isProd = import.meta.env.PROD;
         />
       )
     }
-    <Feedback client:visible lang={lang}>
+    <!-- <Feedback client:visible lang={lang}>
       <div slot="fallback">
         <Loader />
       </div>
-    </Feedback>
+    </Feedback> -->
     <FooterAdapter {...footerLayout} />
+    <script src={bsi} defer is:inline></script>
   </body>
 </html>
-<script src={bsi} defer is:inline></script>

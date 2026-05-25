@@ -155,3 +155,16 @@ export const allDocumentsSchema = z.object({
   allCatalogues: z.array(z.custom<CatalogueIndexPayloadFragmentType>()),
   allPages: z.array(z.custom<PageIndexPayloadFragmentType>()),
 });
+
+// ─── SEO Default ─────────────────────────────────────────────────────────────
+
+export const seoDefaultSchema = z.object({
+  id: z.string(),
+  locale: z.string(),
+  siteName: z.string(),
+  fallbackTitle: z.string(),
+  fallbackDescription: z.string(),
+  titleSuffix: z.string().optional().default(""),
+  ogImage: z.object({ url: z.string(), alt: z.string().optional() }).nullable(),
+  favicon: z.object({ url: z.string() }).nullable(),
+});

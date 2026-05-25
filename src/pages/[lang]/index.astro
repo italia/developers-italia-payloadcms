@@ -1,6 +1,5 @@
 ---
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
-import type { TagFragmentType } from "@graphql/fragment/commonFragments";
 import type { HomepageModelContentFragmentType } from "@graphql/fragment/homepage";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
 import type { SiteLocale } from "@graphql/types";
@@ -10,12 +9,8 @@ import { getCollection, getEntry } from "astro:content";
 
 export async function getStaticPaths() {
   type PathItem = {
-    params: {
-      slug: string;
-      lang: SiteLocale;
-    };
+    params: { lang: SiteLocale };
     props: {
-      seoMeta: TagFragmentType[];
       seo: SeoFieldFragmentType | null;
       content: HomepageModelContentFragmentType[];
       publishedAt: string;
@@ -33,12 +28,7 @@ export async function getStaticPaths() {
   }
 
   const pathsPromises = locales.map(async (lang) => {
-    const seoResCollection = await getEntry(
-      "global_seo",
-      `${homepage.id}_${lang}`,
-    );
-    const seoRes = seoResCollection?.data;
-
+    const seoRes = (await getEntry("global_seo", `${homepage.id}_${lang}`))?.data;
     const content = getLocaleValue(homepage.data.allContentLocales, lang, null);
 
     if (!content) return null;
@@ -47,10 +37,9 @@ export async function getStaticPaths() {
       params: { lang },
       props: {
         id: homepage.id,
-        content: content,
-        seoMeta: seoRes?.metaTags || [],
-        seo: seoRes?.seo || null,
-        publishedAt: homepage.data.publishedAt,
+        content,
+        seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
+        publishedAt: (homepage.data as { publishedAt?: string })?.publishedAt ?? "",
       },
     };
   });
@@ -60,13 +49,13 @@ export async function getStaticPaths() {
   return paths.filter((path): path is PathItem => path !== null);
 }
 
-const { id, content, seoMeta, publishedAt } = Astro.props;
+const { id, content, seo, publishedAt } = Astro.props;
 const { lang } = Astro.params;
 
 Astro.locals.lang = lang;
 Astro.locals.recordId = id;
 ---
 
-<Layout pageSeo={seoMeta} datePublished={publishedAt}>
+<Layout seo={seo} datePublished={publishedAt}>
   <PageAdapter content={content} />
 </Layout>

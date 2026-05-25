@@ -11,7 +11,7 @@ type Props = {
   backgroundColor?: UseCaseCardBackgroundColor;
 };
 
-const { items, label, backgroundColor } = Astro.props;
+const { items=[], label, backgroundColor } = Astro.props;
 ---
 
 <style>
@@ -21,7 +21,7 @@ const { items, label, backgroundColor } = Astro.props;
 <h3 class="it-label">{label}</h3>
 <div class="usecase-container">
   {
-    items.map((useCase) => (
+    items?.map((useCase) => (
       <UseCaseCard {...useCase} backgroundColor={backgroundColor} />
     ))
   }

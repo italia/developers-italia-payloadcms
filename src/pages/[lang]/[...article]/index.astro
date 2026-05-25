@@ -1,6 +1,5 @@
 ---
 import SidebarLayoutAdapter from "@components/cms-adapters/datocms/SidebarLayoutAdapter.astro";
-import type { TagFragmentType } from "@graphql/fragment/commonFragments";
 import type { SidebarFragmentType } from "@graphql/fragment/layout";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
 import type { SiteLocale } from "@graphql/types";
@@ -25,7 +24,7 @@ export async function getStaticPaths() {
     return {
       params: { article: slug, lang: locale as SiteLocale },
       props: {
-        seoMeta: (seoRes?.metaTags ?? []) as TagFragmentType[],
+        
         seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
         id: docId,
         sidebar: Object.assign({}, sidebarForArticle, { id: `sidebar_${docId}` }) as SidebarFragmentType,
@@ -39,7 +38,7 @@ export async function getStaticPaths() {
   return Promise.all(pathsPromises);
 }
 
-const { seo, seoMeta, content, id, sidebar, publishedAt, updatedAt } = Astro.props;
+const { seo,  content, id, sidebar, publishedAt, updatedAt } = Astro.props;
 const { lang } = Astro.params;
 
 Astro.locals.lang = lang;
@@ -54,6 +53,6 @@ const jsonLd: JsonLdPageData = {
 };
 ---
 
-<Layout pageSeo={seoMeta} datePublished={publishedAt} jsonLd={jsonLd}>
+<Layout seo={seo} datePublished={publishedAt} jsonLd={jsonLd}>
   <SidebarLayoutAdapter sidebar={sidebar} content={content} />
 </Layout>

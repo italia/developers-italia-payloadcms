@@ -13,7 +13,7 @@ type Props = {
 const { block } = Astro.props;
 const { lang } = Astro.locals;
 
-const useCases: UseCaseCardProps[] = block.useCases.map((useCase) => {
+const useCases: UseCaseCardProps[] = block.useCases?.map((useCase) => {
   const listTopics = getLocaleValue(useCase.allTopicsLocales, lang, undefined);
 
   return {

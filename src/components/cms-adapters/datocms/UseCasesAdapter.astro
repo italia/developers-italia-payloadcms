@@ -16,7 +16,7 @@ type Props = {
 const { block, backgroundColor = "light" } = Astro.props;
 const { lang } = Astro.locals;
 
-const usecases: UseCaseCardProps[] = block.useCases.map((usecase) => {
+const usecases: UseCaseCardProps[] = block.useCases?.map((usecase) => {
   let paragraphData =
     "allParagraphLocales" in usecase ? usecase.allParagraphLocales : [];
 

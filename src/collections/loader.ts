@@ -8,20 +8,10 @@ import {
   StoriesIdxQuery,
   WebinarsIdxQuery,
 } from "@graphql/query/indexing";
-import { LayoutQuery, SidebarQuery } from "@graphql/query/layout";
+import { SidebarQuery } from "@graphql/query/layout";
 import { AllNewsQuery } from "@graphql/query/news";
 import { AllResourcesQuery } from "@graphql/query/resource";
 import { SearchPageContentQuery } from "@graphql/query/search";
-import {
-  ArticlesSeoQuery,
-  CataloguesSeoQuery,
-  HomepageSeoQuery,
-  InsightsSeoQuery,
-  PagesSeoQuery,
-  SearchSeoQuery,
-  StoriesSeoQuery,
-  WebinarsSeoQuery,
-} from "@graphql/query/seo";
 import {
   AllGlobalSettingsQuery,
   SiteMetaTagsQuery,
@@ -38,11 +28,116 @@ import {
 } from "@lib/payloadcms";
 import {
   STATIC_GLOBAL_SETTINGS_VALUE,
-  STATIC_LAYOUT_RECORD,
 } from "@data/staticLayout";
 
 const LOCALES = ["it", "en"] as const;
 type Locale = (typeof LOCALES)[number];
+
+const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
+  "hero": "HeroRecord",
+  "news-feed": "NewsFeedRecord",
+  "support-channels-section": "SupportChannelsSectionRecord",
+  "faq-section": "FaqSectionRecord",
+  "data-section": "DataSectionRecord",
+  "use-case-container": "UseCaseContainerRecord",
+  "topic-filter": "TopicFilterRecord",
+  "support-cta-section": "SupportCtaSectionRecord",
+  "structured-text-block": "StructuredTextRecord",
+  "list-collection": "ListCollectionRecord",
+  "catalogue-feed": "CatalogueFeedRecord",
+  "action-card": "ActionCardRecord",
+  "search-bar": "SearchBarRecord",
+  "text-image": "TextImageRecord",
+  "text-statistic": "TextStatisticRecord",
+  "text-use-case": "TextUseCaseRecord",
+  "text-accordion": "TextAccordionRecord",
+  "webinar-description": "WebinarDescriptionRecord",
+  "speaker": "SpeakerRecord",
+  "intro-article": "IntroArticleRecord",
+  "callout-link": "CalloutLinkRecord",
+  "text-only": "TextOnlyRecord",
+  "card-link-list": "CardLinkListRecord",
+  "list-card-editorial-with-icon": "ListCardEditorialWithIconRecord",
+  "ordered-list": "OrderedListRecord",
+  "callout": "CalloutRecord",
+  "quick-link-card": "QuickLinkCardRecord",
+  "topics-block": "TopicsBlockRecord",
+  "list-card-info": "ListCardInfoRecord",
+  "list-blockquote": "ListBlockquoteRecord",
+  "related-article": "RelatedArticleRecord",
+  "image-block": "ImageBlockRecord",
+  "news-tab": "NewsTabRecord",
+  "story-tab": "StoryTabRecord",
+  "article-navigation": "ArticleNavigationRecord",
+  "article-list": "ArticleListRecord",
+  "internal-link": "InternalLinkRecord",
+  "download-link": "DownloadLinkRecord",
+  "author-list": "AuthorListRecord",
+  "icon-list-block": "IconListBlockRecord",
+  "accordion-block": "AccordionBlockRecord",
+  "statistic-block": "StatisticBlockRecord",
+  "use-case-block": "UseCaseBlockRecord",
+  "text-block": "TextBlockRecord",
+  "card-link": "CardLinkRecord",
+  "link-block": "LinkBlockRecord",
+  "external-link": "ExternalLinkRecord",
+  "supporting-brand": "SupportingBrandRecord",
+  "menu-item": "MenuItemRecord",
+  "mega-menu-item": "MegaMenuItemRecord",
+  "brand": "BrandRecord",
+  "brand-header": "BrandHeaderRecord",
+  "menu-article-item": "MenuArticleItemRecord",
+  "accordion-menu": "AccordionMenuRecord",
+  "list-external-link": "ListExternalLinkRecord",
+};
+
+// Fields defined as blocks with maxRows:1 in Payload — adapters expect a single object, not an array
+const SINGLE_BLOCK_FIELDS = new Set([
+  "cta",
+  "text",
+  "additionalContent",
+  "link",
+  "privacyPolicy",
+]);
+
+function normalizePayloadBlock(block: Record<string, unknown>): Record<string, unknown> {
+  const { blockType, bg, ...rest } = block;
+  const result: Record<string, unknown> = {
+    ...rest,
+    ...(blockType !== undefined && {
+      componentName: PAYLOAD_BLOCK_TYPE_MAP[blockType as string] ?? blockType,
+    }),
+    ...(bg !== undefined && { backgroundColor: bg }),
+  };
+
+  for (const [key, val] of Object.entries(result)) {
+    if (
+      Array.isArray(val) &&
+      val.length > 0 &&
+      typeof val[0] === "object" &&
+      val[0] !== null &&
+      "blockType" in (val[0] as object)
+    ) {
+      // Blocks array — recurse and optionally unwrap to single item
+      const normalized = (val as Record<string, unknown>[]).map(normalizePayloadBlock);
+      result[key] = SINGLE_BLOCK_FIELDS.has(key) ? (normalized[0] ?? null) : normalized;
+    } else if (Array.isArray(val) && val.length === 0 && SINGLE_BLOCK_FIELDS.has(key)) {
+      result[key] = null;
+    } else if (
+      val !== null &&
+      typeof val === "object" &&
+      !Array.isArray(val) &&
+      "value" in (val as object) &&
+      "relationTo" in (val as object)
+    ) {
+      // Polymorphic relationship { value: doc, relationTo: collection } → { id }
+      const rel = val as { value: { id: unknown } | null; relationTo: string };
+      result[key] = rel.value ? { id: rel.value.id } : null;
+    }
+  }
+
+  return result;
+}
 
 type PayloadPageDoc = {
   id: number;
@@ -154,7 +249,7 @@ export const pagesLoader = async () => {
         locale,
         slug: doc.slug,
         title: doc.title ?? null,
-        content: doc.content ?? [],
+        content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
         localizedSlugs: slugMap.get(docId) ?? null,
         updatedAt: doc.updatedAt ?? null,
         publishedAt: doc.updatedAt ?? doc.createdAt ?? null,
@@ -240,7 +335,7 @@ export const insightContentLoader = async () => {
           slug: doc.slug,
           title: doc.title ?? null,
           abstract: doc.abstract ?? null,
-          content: doc.content ?? [],
+          content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
           publishedAt: doc.createdAt ?? null,
@@ -283,7 +378,7 @@ export const storyContentLoader = async () => {
           locale,
           slug: doc.slug,
           title: doc.title ?? null,
-          content: doc.content ?? [],
+          content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           dateOfPublication: doc.dateOfPublication ?? null,
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
@@ -330,7 +425,7 @@ export const webinarContentLoader = async () => {
           title: doc.title ?? null,
           paragraph: doc.paragraph ?? null,
           date: doc.date ?? null,
-          content: doc.content ?? [],
+          content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
           publishedAt: doc.createdAt ?? null,
@@ -391,7 +486,7 @@ export const cataloguesLoader = async () => {
           locale,
           slug: doc.slug,
           title: doc.title ?? null,
-          content: doc.content ?? [],
+          content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
           publishedAt: doc.createdAt ?? null,
@@ -478,7 +573,9 @@ export const homepageLoader = async () => {
       updatedAt: base.updatedAt,
       allContentLocales: LOCALES.map((locale, i) => ({
         locale,
-        value: results[i].content || [],
+        value: (results[i].content || []).map((b) =>
+          normalizePayloadBlock(b as Record<string, unknown>),
+        ),
       })),
     },
   ];
@@ -492,13 +589,87 @@ export const searchLoader = async () => {
 };
 
 export const layoutLoader = async () => {
-  const response = await executeQuery(LayoutQuery);
+  type LayoutGlobal = {
+    variant: string;
+    heading: string | null;
+    logoSelect: string;
+    organizations: unknown[] | null;
+    listNavbarBrand: unknown[] | null;
+    topicTitle: string | null;
+    metaNavigation: unknown[] | null;
+    topicLink: unknown[] | null;
+    siteName: string;
+    utilityTitle: string | null;
+    tagline: string | null;
+    utility: unknown[] | null;
+    mailingListForm: unknown[] | null;
+    navigationBar: unknown[] | null;
+    navigationBarSecondary: unknown[] | null;
+    showSitemapLink: boolean;
+    smallPrint: unknown[] | null;
+  };
+
+  const results = await Promise.all(
+    LOCALES.map((locale) =>
+      payloadFetch<LayoutGlobal>(
+        "/globals/layout",
+        `locale=${locale}&depth=3&fallbackLocale=none`,
+      ),
+    ),
+  );
+
+  const base = results[0];
+
+  const buildTextLocales = (getter: (r: LayoutGlobal) => string | null) =>
+    LOCALES.map((locale, i) => ({ locale, value: getter(results[i]) ?? "" }));
+
+  const buildBlocksLocales = (getter: (r: LayoutGlobal) => unknown[] | null) =>
+    LOCALES.map((locale, i) => ({
+      locale,
+      value: (getter(results[i]) ?? []).map((b) =>
+        normalizePayloadBlock(b as Record<string, unknown>),
+      ),
+    }));
+
+  const buildSingleBlockLocales = (getter: (r: LayoutGlobal) => unknown[] | null) =>
+    LOCALES.map((locale, i) => {
+      const arr = getter(results[i]) ?? [];
+      return {
+        locale,
+        value: arr[0] ? normalizePayloadBlock(arr[0] as Record<string, unknown>) : null,
+      };
+    });
+
+  const layout = {
+    variant: base.variant,
+    siteName: base.siteName,
+    logoSelect: base.logoSelect,
+    showSitemapLink: base.showSitemapLink ?? false,
+    locales: [...LOCALES],
+
+    _allTaglineLocales: buildTextLocales((r) => r.tagline),
+    _allHeadingLocales: buildTextLocales((r) => r.heading),
+    _allTopicTitleLocales: buildTextLocales((r) => r.topicTitle),
+    _allUtilityTitleLocales: buildTextLocales((r) => r.utilityTitle),
+
+    _allListNavbarBrandLocales: buildBlocksLocales((r) => r.listNavbarBrand),
+    allMainNavigation: buildBlocksLocales((r) => r.navigationBar),
+    allSecondaryNavigation: buildBlocksLocales((r) => r.navigationBarSecondary),
+    allMetaNavigation: buildBlocksLocales((r) => r.metaNavigation),
+    _allOrganizationsLocales: buildBlocksLocales((r) => r.organizations),
+    _allTopicLinkLocales: buildBlocksLocales((r) => r.topicLink),
+    _allUtilityLocales: buildBlocksLocales((r) => r.utility),
+    _allSmallPrintLocales: buildBlocksLocales((r) => r.smallPrint),
+
+    _allMailingListFormLocales: buildSingleBlockLocales((r) => r.mailingListForm),
+  };
+
   return [
     {
       id: "layout",
-      layout: response?.layout ?? STATIC_LAYOUT_RECORD,
-      search: response?.search ?? null,
-      homepageId: response?.homepage?.id ?? "homepage",
+      layout,
+      search: null,
+      homepageId: "homepage",
     },
   ];
 };
@@ -531,54 +702,73 @@ export const siteMetaTagsLoader = async () => {
 };
 
 export const globalSeoLoader = async () => {
-  const locales = LOCALES;
+  type PayloadSeoDoc = {
+    id: number;
+    seo: {
+      title?: string | null;
+      description?: string | null;
+      image?: { url?: string; alt?: string; width?: number; height?: number } | null;
+    } | null;
+    updatedAt: string;
+    createdAt: string;
+  };
+
+  type PayloadSeoList = {
+    docs: PayloadSeoDoc[];
+    hasNextPage: boolean;
+  };
+
+  type HomepageSeoGlobal = Omit<PayloadSeoDoc, "id">;
+
+  const mapDoc = (id: string, locale: string, doc: Partial<PayloadSeoDoc>) => ({
+    id: `${id}_${locale}`,
+    recordId: id,
+    locale,
+    metaTags: [] as unknown[],
+    seo: doc.seo ?? null,
+    updatedAt: doc.updatedAt ?? doc.createdAt ?? "",
+  });
+
+  const fetchAllSeo = async (endpoint: string, locale: string): Promise<PayloadSeoDoc[]> => {
+    const docs: PayloadSeoDoc[] = [];
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const res = await payloadFetch<PayloadSeoList>(
+        endpoint,
+        `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none`,
+      );
+      docs.push(...res.docs);
+      hasMore = res.hasNextPage;
+      page++;
+    }
+    return docs;
+  };
 
   const allLocalesResults = await Promise.all(
-    locales.map(async (locale) => {
-      const [
-        homepageRes,
-        articlesRes,
-        insightsRes,
-        cataloguesRes,
-        pagesRes,
-        storiesRes,
-        webinarsRes,
-        searchRes,
-      ] = await Promise.all([
-        executeQuery(HomepageSeoQuery, { variables: { locale } }),
-        executeAutoPagingQuery(ArticlesSeoQuery, { variables: { locale } }),
-        executeAutoPagingQuery(InsightsSeoQuery, { variables: { locale } }),
-        executeAutoPagingQuery(CataloguesSeoQuery, { variables: { locale } }),
-        executeAutoPagingQuery(PagesSeoQuery, { variables: { locale } }),
-        executeAutoPagingQuery(StoriesSeoQuery, { variables: { locale } }),
-        executeAutoPagingQuery(WebinarsSeoQuery, { variables: { locale } }),
-        executeAutoPagingQuery(SearchSeoQuery, { variables: { locale } }),
-      ]);
-
-      type SeoRecord = {
-        id: string;
-        metaTags: unknown[];
-        seo: unknown;
-        updatedAt: string;
-      };
-      const mapEntry = (record: SeoRecord) => ({
-        id: `${record.id}_${locale}`,
-        recordId: record.id,
-        locale,
-        metaTags: record.metaTags,
-        seo: record.seo,
-        updatedAt: record.updatedAt,
-      });
+    LOCALES.map(async (locale) => {
+      const [homepageRes, pagesRes, articlesRes, insightsRes, cataloguesRes, storiesRes, webinarsRes] =
+        await Promise.all([
+          payloadFetch<HomepageSeoGlobal>(
+            "/globals/homepage",
+            `locale=${locale}&depth=1&fallbackLocale=none`,
+          ),
+          fetchAllSeo("/pages", locale),
+          fetchAllSeo("/articles", locale),
+          fetchAllSeo("/insights", locale),
+          fetchAllSeo("/catalogues", locale),
+          fetchAllSeo("/story-items", locale),
+          fetchAllSeo("/webinar-items", locale),
+        ]);
 
       return [
-        ...(homepageRes?.homepage ? [mapEntry(homepageRes.homepage)] : []),
-        ...(articlesRes?.allArticles?.map(mapEntry) || []),
-        ...(insightsRes?.allInsights?.map(mapEntry) || []),
-        ...(cataloguesRes?.allCatalogues?.map(mapEntry) || []),
-        ...(pagesRes?.allPages?.map(mapEntry) || []),
-        ...(storiesRes?.allStoryItems?.map(mapEntry) || []),
-        ...(webinarsRes?.allWebinarItems?.map(mapEntry) || []),
-        ...(searchRes?.search ? [mapEntry(searchRes.search)] : []),
+        mapDoc("homepage", locale, homepageRes),
+        ...pagesRes.map((doc) => mapDoc(String(doc.id), locale, doc)),
+        ...articlesRes.map((doc) => mapDoc(String(doc.id), locale, doc)),
+        ...insightsRes.map((doc) => mapDoc(String(doc.id), locale, doc)),
+        ...cataloguesRes.map((doc) => mapDoc(String(doc.id), locale, doc)),
+        ...storiesRes.map((doc) => mapDoc(String(doc.id), locale, doc)),
+        ...webinarsRes.map((doc) => mapDoc(String(doc.id), locale, doc)),
       ];
     }),
   );
@@ -645,4 +835,36 @@ export const allDocumentsLoader = async () => {
       allPages: localeResults.flatMap((r) => r.pages),
     },
   ];
+};
+
+// ─── SEO Default (per-locale fallbacks + site-wide fields) ───────────────────
+
+export const seoDefaultLoader = async () => {
+  type SeoDefaultGlobal = {
+    siteName: string | null;
+    fallbackTitle: string | null;
+    fallbackDescription: string | null;
+    titleSuffix: string | null;
+    ogImage: { url: string; alt?: string } | null;
+    favicon: { url: string } | null;
+  };
+
+  return Promise.all(
+    LOCALES.map(async (locale) => {
+      const res = await payloadFetch<SeoDefaultGlobal>(
+        "/globals/seo-default",
+        `locale=${locale}&depth=1&fallbackLocale=none`,
+      );
+      return {
+        id: locale,
+        locale,
+        siteName: res.siteName ?? "",
+        fallbackTitle: res.fallbackTitle ?? "",
+        fallbackDescription: res.fallbackDescription ?? "",
+        titleSuffix: res.titleSuffix ?? "",
+        ogImage: res.ogImage ?? null,
+        favicon: res.favicon ?? null,
+      };
+    }),
+  );
 };

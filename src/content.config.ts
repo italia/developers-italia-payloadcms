@@ -13,6 +13,7 @@ import {
   pagesLoader,
   resourcesLoader,
   searchLoader,
+  seoDefaultLoader,
   sidebarLoader,
   siteMetaTagsLoader,
   storiesLoader,
@@ -35,6 +36,7 @@ import {
   pageSchema,
   resourceSchema,
   searchSchema,
+  seoDefaultSchema,
   sidebarSchema,
   siteMetaTagsSchema,
   storyContentSchema,
@@ -126,5 +128,9 @@ export const collections = {
   documents: defineCollection({
     loader: allDocumentsLoader,
     schema: allDocumentsSchema,
+  }),
+  seo_default: defineCollection({
+    schema: seoDefaultSchema,
+    loader: seoDefaultLoader,
   }),
 };

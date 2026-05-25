@@ -130,7 +130,7 @@ if (slugProduction !== "#") {
 
 {
   type === "article" && sidebarData && (
-    <Layout redirectUrl={redirectUrl} pageSeo={dataRecord?.seo}>
+    <Layout redirectUrl={redirectUrl} seo={dataRecord?.seo}>
       <SidebarLayoutAdapter sidebar={sidebarData} content={content as any} />
     </Layout>
   )
@@ -144,7 +144,7 @@ if (slugProduction !== "#") {
     type === "story_item" ||
     type === "insight" ||
     type === "catalogue") && (
-    <Layout redirectUrl={redirectUrl} pageSeo={dataRecord?.seo}>
+    <Layout redirectUrl={redirectUrl} seo={dataRecord?.seo}>
       <PageAdapter content={content as any} />
     </Layout>
   )

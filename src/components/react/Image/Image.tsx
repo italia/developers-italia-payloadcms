@@ -5,6 +5,11 @@ export function Image({ url, alt, title, width, height }: ImageProps) {
     return null;
   }
 
+  const resolvedUrl =
+    url?.startsWith("/")
+      ? `${import.meta.env.PAYLOAD_URL}${url}`
+      : url;
+
   const targetWidths = [480, 720, 1024];
   const responsiveWidths = targetWidths.filter((w) => w <= width);
 
@@ -13,12 +18,12 @@ export function Image({ url, alt, title, width, height }: ImageProps) {
   }
 
   const srcset = responsiveWidths
-    .map((w) => `${url}?w=${w}&auto=format&fit=max ${w}w`)
+    .map((w) => `${resolvedUrl}?w=${w}&auto=format&fit=max ${w}w`)
     .join(", ");
 
   return (
     <img
-      src={`${url}?w=${width}&auto=format`}
+      src={`${resolvedUrl}?w=${width}&auto=format`}
       srcSet={srcset}
       sizes="(max-width: 1024px) 100vw, 1024px"
       alt={alt || ""}

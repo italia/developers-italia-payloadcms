@@ -17,10 +17,14 @@ const targetWidths = [480, 800, width];
 const responsiveWidths = targetWidths.filter((w) => w <= width);
 
 const isHero = loading === "eager";
+const resolvedUrl =
+    url?.startsWith("/")
+      ? `${import.meta.env.PAYLOAD_URL}${url}`
+      : url;
 ---
 
 <ImageAstro
-  src={url}
+  src={resolvedUrl}
   title={title}
   alt={alt || ""}
   widths={responsiveWidths}

@@ -1,37 +1,101 @@
 ---
 import { TopicFilter } from "@components/organisms/TopicFilter";
 import type { ContentCollectionProps } from "@components/organisms/TopicFilter/types";
-import type { TopicFilterFragmentType } from "@graphql/fragment/sectionFragments";
 import { getLocaleValue } from "@utils/getLocaleValue";
 import { linkResolver } from "@utils/linkResolver";
 
+// Accepts both DatoCMS TopicFilterRecord and PayloadCMS normalized shape.
+type LocaleValue<T> = { locale: string | null; value: T }[];
+
+type ContentItem = {
+  id: string;
+  // PayloadCMS: flat, locale-resolved fields
+  title?: string | null;
+  paragraph?: string | null;
+  abstract?: string | null;
+  image?: unknown;
+  // DatoCMS: per-locale arrays
+  allTitleLocales?: LocaleValue<string> | null;
+  allParagraphLocales?: LocaleValue<string> | null;
+  allTopicLocales?: LocaleValue<{
+    _allLabelLocales?: LocaleValue<string> | null;
+  } | null> | null;
+};
+
+type ListCollectionBlock = {
+  title?: string | null;
+  paragraph?: string | null;
+  content?: ContentItem[];
+};
+
+type BlockShape = {
+  title?: string | null;
+  titleFilter?: string | null;
+  paragraph?: string | null;
+  labelForAll?: string | null;
+  content?: ListCollectionBlock[];
+};
+
 type Props = {
-  block: TopicFilterFragmentType;
+  block: BlockShape;
 };
 
 const { block } = Astro.props;
 const { lang } = Astro.locals;
 
-const contentCollection: ContentCollectionProps[] = block.content.map(
+const contentCollection: ContentCollectionProps[] = (block.content ?? []).map(
   (content) => {
-    const topicSlug = getLocaleValue(
-      content.content[0].allTopicLocales,
-      lang,
-      null,
-    );
+    // PayloadCMS: the ListCollection's `title` IS the topic group label — use it directly.
+    // DatoCMS fallback: derive topic label from first item's allTopicLocales locale array.
+    const firstItem = content.content?.[0];
+    const datoCmsTopicRecord = firstItem
+      ? getLocaleValue(firstItem.allTopicLocales ?? null, lang, null)
+      : null;
+    const topicSlug =
+      content.title ||
+      getLocaleValue(datoCmsTopicRecord?._allLabelLocales ?? null, lang, "") ||
+      "";
+
     return {
-      title: content.title,
-      topicSlug: getLocaleValue(topicSlug?._allLabelLocales, lang, ""),
+      title: content.title ?? "",
+      topicSlug,
       paragraph: content.paragraph || undefined,
-      items: content.content.map((item) => {
-        const topicRecord = getLocaleValue(item.allTopicLocales, lang, null);
+      items: (content.content ?? []).map((item) => {
+        // PayloadCMS: flat locale-resolved fields from normalizePayloadBlock's hasMany expansion
+        const payloadTitle = item.title;
+        const payloadDescription = item.paragraph ?? item.abstract;
+
+        // DatoCMS: per-locale arrays
+        const datoCmsTitle = getLocaleValue(
+          item.allTitleLocales ?? null,
+          lang,
+          "",
+        );
+        const datoCmsDescription = getLocaleValue(
+          item.allParagraphLocales ?? null,
+          lang,
+          "",
+        );
+        const topicRecord = getLocaleValue(
+          item.allTopicLocales ?? null,
+          lang,
+          null,
+        );
+        const datoCmsCategory = getLocaleValue(
+          topicRecord?._allLabelLocales ?? null,
+          lang,
+          "",
+        );
+
         return {
           id: item.id,
-          title: getLocaleValue(item.allTitleLocales, lang, ""),
-          description: getLocaleValue(item.allParagraphLocales, lang, ""),
+          title: payloadTitle ?? datoCmsTitle,
+          description: payloadDescription ?? datoCmsDescription,
           image: item.image,
           linkTo: linkResolver(item.id, lang),
-          category: getLocaleValue(topicRecord?._allLabelLocales, lang, ""),
+          // For PayloadCMS items the per-item topic isn't fetched inline; fall back to the
+          // group title (content.title) which acts as the category for all items in the group.
+          category: datoCmsCategory || content.title || "",
           isExternal: false,
         };
       }),
@@ -41,9 +105,9 @@ const contentCollection: ContentCollectionProps[] = block.content.map(
 ---
 
 <TopicFilter
-  title={block.title}
-  filterTitle={block.titleFilter}
-  labelForAll={block.labelForAll}
-  paragraph={block.paragraph}
+  title={block.title ?? ""}
+  filterTitle={block.titleFilter ?? ""}
+  labelForAll={block.labelForAll ?? ""}
+  paragraph={block.paragraph ?? ""}
   contentCollection={contentCollection}
 />

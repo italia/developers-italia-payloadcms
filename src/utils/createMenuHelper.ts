@@ -10,22 +10,38 @@ import type {
 import { linkResolver } from "@utils/linkResolver";
 
 /**
- * Extracts the document ID from a Payload polymorphic relationship.
+ * Extracts the prefixed linkMap key from a menu item's pointsTo field.
  *
- * DatoCMS shape (old):  item.pointsTo.id          → flat record with id: string
- * Payload shape (new):  item.pointsTo?.value?.id  → { relationTo, value: Page | Article | … }
+ * At runtime the value comes from normalizePayloadBlock which emits the flat shape:
+ *   { id: "pages:13" }  (pre-computed "collection:numericId" key — preferred path)
  *
- * Payload IDs are numbers in generated TS types (even though GraphQL serialises
- * them as strings), so we stringify here for linkResolver compatibility.
+ * The TypeScript type is still the raw GraphQL fragment shape:
+ *   { relationTo: string, value: { id: number } | null }
+ *
+ * We handle both so TypeScript is happy and runtime works correctly.
  */
 function resolvePointsToId(
   pointsTo:
-    | { value?: { id?: string | number | null } | null }
+    | { id?: string | number | null }                                                          // normalized (runtime)
+    | { value?: { id?: string | number | null } | null; relationTo?: string | null }           // GraphQL fragment (TS type)
     | null
     | undefined,
 ): string | undefined {
-  const raw = pointsTo?.value?.id;
-  return raw != null ? String(raw) : undefined;
+  if (!pointsTo) return undefined;
+
+  // Normalized shape emitted by normalizePayloadBlock: { id: "pages:13" }
+  if ("id" in pointsTo) {
+    const raw = (pointsTo as { id?: string | number | null }).id;
+    return raw != null ? String(raw) : undefined;
+  }
+
+  // GraphQL shape (TypeScript type satisfaction / fallback):
+  // { value: { id: N }, relationTo: "pages" }
+  const rel = pointsTo as { value?: { id?: string | number | null } | null; relationTo?: string | null };
+  const raw = rel.value?.id;
+  if (raw == null) return undefined;
+  const id = String(raw);
+  return rel.relationTo ? `${rel.relationTo}:${id}` : id;
 }
 
 function menuItemAdapter(

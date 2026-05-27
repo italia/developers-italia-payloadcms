@@ -15,6 +15,12 @@ import {
   mapStoryToCardEditorialStoryProps,
   mapWebinarToCardEditorialNewsProps,
 } from "@utils/mappers";
+import type {
+  NewsItemFragmentType,
+  ResourceFragmentType,
+  StoryCardFragmentType,
+  WebinarItemFragmentType,
+} from "@graphql/fragment/commonFragments";
 import type { ElementType, UpdateTabSectionProps } from "./types";
 
 type Props = UpdateTabSectionProps;
@@ -38,8 +44,11 @@ const resources = await getResources(isPreview);
 
 function isValidTabType(val: string): val is ElementType {
   return (
+    val === "news" ||
     val === "news_item" ||
+    val === "story" ||
     val === "story_item" ||
+    val === "webinar" ||
     val === "webinar_item" ||
     val === "resource"
   );
@@ -47,8 +56,10 @@ function isValidTabType(val: string): val is ElementType {
 
 function getFilteredItems(tabType: ElementType, tabCategoryReference?: string) {
   switch (tabType) {
-    case "story_item":
-      const filteredStoryByLang = stories.filter((s) =>
+    case "story":
+    case "story_item": {
+      const storyData = stories as { data: StoryCardFragmentType }[];
+      const filteredStoryByLang = storyData.filter((s) =>
         s.data.allTitleLocales?.some((item) => item.locale === lang),
       );
 
@@ -61,26 +72,36 @@ function getFilteredItems(tabType: ElementType, tabCategoryReference?: string) {
       return filteredStories.map((s) =>
         mapStoryToCardEditorialStoryProps(s.data, lang),
       );
+    }
 
-    case "news_item":
-      const filteredNews = news.filter((n) =>
+    case "news":
+    case "news_item": {
+      const newsData = news as { data: NewsItemFragmentType }[];
+      const filteredNews = newsData.filter((n) =>
         n.data.allTitleLocales?.some((item) => item.locale === lang),
       );
 
       return filteredNews.map((n) =>
         mapNewsToCardEditorialNewsProps(n.data, lang),
       );
+    }
 
-    case "webinar_item":
-      const filteredWebinars = webinars.filter((w) =>
+    case "webinar":
+    case "webinar_item": {
+      const webinarData = webinars as { data: WebinarItemFragmentType }[];
+      const filteredWebinars = webinarData.filter((w) =>
         w.data.allTitleLocales?.some((item) => item.locale === lang),
       );
       return filteredWebinars.map((w) =>
         mapWebinarToCardEditorialNewsProps(w.data, lang),
       );
+    }
 
-    case "resource":
-      return resources.map((r) => mapResourceToResourceProps(r.data, lang));
+    case "resource": {
+      const resourceData = resources as { data: ResourceFragmentType }[];
+      return resourceData.map((r) => mapResourceToResourceProps(r.data, lang));
+    }
+
     default:
       return [];
   }

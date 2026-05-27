@@ -15,8 +15,8 @@ type Props = {
 const { block, variant = "dark", showInline = false } = Astro.props;
 let items: DataContainerProps[] = [];
 
-if (block.statistics.length > 0) {
-  items = block.statistics.map((item) => {
+if (block.statistics?.length > 0) {
+  items = block.statistics?.map((item) => {
     return {
       info: item.info,
       title: item.title,
@@ -25,7 +25,7 @@ if (block.statistics.length > 0) {
   });
 }
 
-if (block.kpiElement.length > 0) {
+if (block.kpiElement?.length > 0) {
   items = block.kpiElement.map((item) => {
     return {
       info: `${item.valuePrefix} ${item.value}`,

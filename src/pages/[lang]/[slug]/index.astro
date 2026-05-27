@@ -14,7 +14,7 @@ export async function getStaticPaths() {
   const pathsPromises = (allPages ?? []).map(async (item) => {
     const { docId, locale, content, publishedAt, updatedAt } = item.data;
     const seoRes = (await getEntry("global_seo", `${docId}_${locale}`))?.data;
-    const fullPath = linkResolver(docId, locale);
+    const fullPath = linkResolver(`pages:${docId}`, locale);
     const slug = removeLang(fullPath, locale);
 
     return {
@@ -39,7 +39,7 @@ console.log(`Rendering page with id ${id} and lang ${lang}...`);
 console.log("content: ",`${JSON.stringify(content, null, 2)}`);
 
 Astro.locals.lang = lang;
-Astro.locals.recordId = id;
+Astro.locals.recordId = `pages:${id}`;
 
 const jsonLd: JsonLdPageData = {
   pageType: ["collection"],

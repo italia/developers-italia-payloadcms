@@ -18,7 +18,7 @@ const className =
 {label && <p class="it-label">{label}</p>}
 <div class=`accordion ${className}` id={id}>
   {
-    items.map((item, index) => (
+    items?.map((item, index) => (
       <AccordionItem
         idParent={id}
         {...item}

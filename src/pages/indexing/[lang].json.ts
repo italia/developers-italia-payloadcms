@@ -60,22 +60,21 @@ export const GET: APIRoute = async ({ params }) => {
   // getTitleByTypeResourse(cataloguesMapCategory, resourses[0]?.modelApiKey) ||"";
 
   const allDocuments = [
-    ...pages.map((item) => Mappers.getMapPages(item, lang)),
-    ...newsItems.map((item) => Mappers.getMapNews(item, lang, newsCategory)),
-    ...articles.flatMap((item) =>
-      Mappers.getMapArticle(item, lang, articleCategory),
+    ...pages.map((item) => Mappers.getMapPages(item as any, lang)),
+    ...newsItems.map((item) => Mappers.getMapNews(item as any, lang, newsCategory)),
+    ...articles.map((item) =>
+      Mappers.getMapArticle(item as any, lang, articleCategory),
     ),
     ...insights.map((item) =>
-      Mappers.getMapInsight(item, lang, insightCategory),
+      Mappers.getMapInsight(item as any, lang, insightCategory),
     ),
-    ...stories.map((item) => Mappers.getMapStory(item, lang, storyCategory)),
+    ...stories.map((item) => Mappers.getMapStory(item as any, lang, storyCategory)),
     ...webinars.map((item) =>
-      Mappers.getMapWebinar(item, lang, webinarCategory),
+      Mappers.getMapWebinar(item as any, lang, webinarCategory),
     ),
     ...resourses
-      .map((item) => Mappers.getMapResourse(item, lang, resourseCategory))
-      .filter(Boolean),
-  ];
+      .map((item) => Mappers.getMapResourse(item, lang, resourseCategory)),
+  ].filter(Boolean);
 
   return new Response(
     JSON.stringify({

@@ -19,7 +19,7 @@ export async function getStaticPaths() {
   const pathsPromises = (catalogues ?? []).map(async (item) => {
     const { docId, locale, content, updatedAt, datesRegistry } = item.data;
     const seoRes = (await getEntry("global_seo", `${docId}_${locale}`))?.data;
-    const fullPath = linkResolver(docId, locale);
+    const fullPath = linkResolver(`catalogues:${docId}`, locale);
     const slug = removeLang(fullPath, locale);
     const finalUpdateDate = getLastUpdateCollection(content, datesRegistry);
 
@@ -43,7 +43,7 @@ const { id, content, seo,  publishedAt, updatedAt } = Astro.props;
 const { lang } = Astro.params;
 
 Astro.locals.lang = lang;
-Astro.locals.recordId = id;
+Astro.locals.recordId = `catalogues:${id}`;
 
 const jsonLd: JsonLdPageData = {
   pageType: ["list"],

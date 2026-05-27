@@ -207,15 +207,21 @@ function itemLocales(item: NormalizedItem): SiteLocale[] {
  * Write linkMap entries for a collection whose items live under a parent page.
  * Path:       /${locale}/${parentSlug}/${itemSlug}
  * Breadcrumb: [home, parentPage, item]
+ *
+ * All linkMap keys and breadcrumb step IDs are prefixed with the collection slug
+ * to avoid collisions across collections that share the same numeric ID space.
+ * e.g.  "pages:13", "story-items:4", "articles:7", "insights:2", …
  */
 function addCollectionEntries(
   items: NormalizedItem[],
+  collectionPrefix: string,
   linkMap: SiteMap,
   pageById: Map<string, NormalizedItem>,
   homeTitleByLocale: Record<SiteLocale, string>,
 ) {
   for (const item of items) {
-    linkMap[item.id] = {} as LocaleMap;
+    const key = `${collectionPrefix}:${item.id}`;
+    linkMap[key] = {} as LocaleMap;
 
     for (const locale of itemLocales(item)) {
       const slug = item.slugByLocale[locale] ?? "";
@@ -228,11 +234,12 @@ function addCollectionEntries(
         { title: homeTitleByLocale[locale], id: HOMEPAGE_ID },
       ];
       if (parent) {
-        breadcrumb.push({ title: parent.titleByLocale[locale] ?? "", id: parent.id });
+        // Parent is always a page — use "pages:" prefix for its breadcrumb step ID
+        breadcrumb.push({ title: parent.titleByLocale[locale] ?? "", id: `pages:${parentId}` });
       }
-      breadcrumb.push({ title: item.titleByLocale[locale] ?? "", id: item.id });
+      breadcrumb.push({ title: item.titleByLocale[locale] ?? "", id: key });
 
-      linkMap[item.id][locale] = { path: `/${locale}/${fullPath}`, breadcrumb };
+      linkMap[key][locale] = { path: `/${locale}/${fullPath}`, breadcrumb };
     }
   }
 }
@@ -294,23 +301,28 @@ async function generateLinkMap() {
   }
 
   // Pages — top-level, no parent
+  // Keys are prefixed "pages:<id>" to avoid collisions with other collections.
   for (const page of pages) {
-    linkMap[page.id] = {} as LocaleMap;
+    const key = `pages:${page.id}`;
+    linkMap[key] = {} as LocaleMap;
     for (const locale of itemLocales(page)) {
-      linkMap[page.id][locale] = {
+      linkMap[key][locale] = {
         path: `/${locale}/${page.slugByLocale[locale]}`,
         breadcrumb: [
           { title: homeTitleByLocale[locale], id: HOMEPAGE_ID },
-          { title: page.titleByLocale[locale] ?? "", id: page.id },
+          { title: page.titleByLocale[locale] ?? "", id: key },
         ],
       };
     }
   }
 
   // All other collections: path = /locale/parentSlug/itemSlug
-  for (const collection of [articles, insights, catalogues, stories, webinars]) {
-    addCollectionEntries(collection, linkMap, pageById, homeTitleByLocale);
-  }
+  // Each collection gets its own prefix to avoid cross-collection ID collisions.
+  addCollectionEntries(articles,   "articles",      linkMap, pageById, homeTitleByLocale);
+  addCollectionEntries(insights,   "insights",      linkMap, pageById, homeTitleByLocale);
+  addCollectionEntries(catalogues, "catalogues",    linkMap, pageById, homeTitleByLocale);
+  addCollectionEntries(stories,    "story-items",   linkMap, pageById, homeTitleByLocale);
+  addCollectionEntries(webinars,   "webinar-items", linkMap, pageById, homeTitleByLocale);
 
   const fullOutputPath = path.resolve(outputPath);
   if (!fs.existsSync(path.dirname(fullOutputPath))) {

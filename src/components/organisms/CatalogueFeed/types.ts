@@ -16,8 +16,13 @@ export type UpdateTabSectionProps = {
   tabs: PageNewsTab[];
 };
 
+// PayloadCMS stores short form values; DatoCMS used the _item suffix.
+// Accept both so the component works during and after migration.
 export type ElementType =
+  | "news"
   | "news_item"
+  | "story"
   | "story_item"
+  | "webinar"
   | "webinar_item"
   | "resource";

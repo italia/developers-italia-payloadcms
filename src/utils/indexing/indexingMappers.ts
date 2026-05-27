@@ -1,166 +1,140 @@
 import type {
-  ArticleIndexingFragmentType,
-  InsightIndexingFragmentType,
-  NewsIndexingFragmentType,
-  PageIndexingFragmentType,
-  ResourseIndexingFragmentType,
-  StoryIndexingFragmentType,
-  WebinarIndexingFragmentType,
+  ArticleIndexPayloadFragmentType,
+  InsightIndexPayloadFragmentType,
+  NewsIndexPayloadFragmentType,
+  PageIndexPayloadFragmentType,
+  StoryIndexPayloadFragmentType,
+  WebinarIndexPayloadFragmentType,
 } from "@graphql/fragment/indexing";
 import type { SiteLocale } from "@graphql/types";
-import { DatoBlockModel } from "@utils/cmsMapper";
-import { createDownloadUrl } from "@utils/createDownloadUrl";
-import { getLocaleValue } from "@utils/getLocaleValue";
-import {
-  flattenBlocks,
-  getSearchRenderOptions,
-} from "@utils/indexing/blockContentMappers";
 import { linkResolver } from "@utils/linkResolver";
-import { render } from "datocms-structured-text-to-plain-text";
+
+// PayloadCMS docs are already locale-resolved (fetched with ?locale=xx).
+// Each doc carries a `locale` tag added by allDocumentsLoader.
+type WithLocale<T> = T & { locale: string };
+
+// ─── Articles ────────────────────────────────────────────────────────────────
 
 export const getMapArticle = (
-  article: ArticleIndexingFragmentType,
+  article: WithLocale<ArticleIndexPayloadFragmentType>,
   lang: SiteLocale,
   category: string,
 ) => {
-  const structuredText = getLocaleValue(article.allContentLocales, lang, null);
-
-  const stOptions = getSearchRenderOptions();
+  if (article.locale !== lang) return null;
 
   return {
     type: "article",
     id: article.id,
     category,
-    internalLink: linkResolver(article.id, lang),
-    title: getLocaleValue(article.allTitleLocales, lang, ""),
-    description: getLocaleValue(article.allParagraphLocales, lang, ""),
-    content: render(structuredText, stOptions),
+    internalLink: linkResolver(`articles:${article.id}`, lang),
+    title: article.title ?? "",
+    description: (article as any).paragraph ?? "",
+    content: (article as any).paragraph ?? "",
   };
 };
 
+// ─── Insights ────────────────────────────────────────────────────────────────
+
 export const getMapInsight = (
-  insight: InsightIndexingFragmentType,
+  insight: WithLocale<InsightIndexPayloadFragmentType>,
   lang: SiteLocale,
   category: string,
 ) => {
-  const contentData = getLocaleValue(insight.allContentLocales, lang, null);
+  if (insight.locale !== lang) return null;
 
-  const content = flattenBlocks(contentData ?? []);
   return {
     type: "insight",
     id: insight.id,
     category,
-    internalLink: linkResolver(insight.id, lang),
-    title: getLocaleValue(insight.allTitleLocales, lang, ""),
-    description: getLocaleValue(insight.allAbstractLocales, lang, ""),
-    content: content,
+    internalLink: linkResolver(`insights:${insight.id}`, lang),
+    title: insight.title ?? "",
+    description: (insight as any).abstract ?? "",
+    content: (insight as any).abstract ?? "",
   };
 };
 
+// ─── Stories ─────────────────────────────────────────────────────────────────
+
 export const getMapStory = (
-  story: StoryIndexingFragmentType,
+  story: WithLocale<StoryIndexPayloadFragmentType>,
   lang: SiteLocale,
   category: string,
 ) => {
-  const contentData = getLocaleValue(story.allContentLocales, lang, null);
-
-  const content = flattenBlocks(contentData ?? []);
+  if (story.locale !== lang) return null;
 
   return {
     type: "story",
     id: story.id,
     category,
-    internalLink: linkResolver(story.id, lang),
-    title: getLocaleValue(story.allTitleLocales, lang, ""),
+    internalLink: linkResolver(`story-items:${story.id}`, lang),
+    title: story.title ?? "",
     description: "",
-    content: content,
+    content: "",
   };
 };
 
+// ─── Webinars ─────────────────────────────────────────────────────────────────
+
 export const getMapWebinar = (
-  webinar: WebinarIndexingFragmentType,
+  webinar: WithLocale<WebinarIndexPayloadFragmentType>,
   lang: SiteLocale,
   category: string,
 ) => {
-  const contentData = getLocaleValue(webinar.allContentLocales, lang, null);
-  const content = flattenBlocks(contentData ?? []);
+  if (webinar.locale !== lang) return null;
 
   return {
     type: "webinar",
     id: webinar.id,
     category,
-    internalLink: linkResolver(webinar.id, lang),
-    title: getLocaleValue(webinar.allTitleLocales, lang, ""),
-    description: getLocaleValue(webinar.allParagraphLocales, lang, ""),
-    content: content,
+    internalLink: linkResolver(`webinar-items:${webinar.id}`, lang),
+    title: (webinar as any).title ?? "",
+    description: (webinar as any).paragraph ?? "",
+    content: (webinar as any).paragraph ?? "",
   };
 };
+
+// ─── News ─────────────────────────────────────────────────────────────────────
+// NewsItems are external links — only id/dates are indexed from PayloadCMS.
+// Skip entries with no title to avoid polluting the search index.
 
 export const getMapNews = (
-  news: NewsIndexingFragmentType,
+  news: WithLocale<NewsIndexPayloadFragmentType>,
   lang: SiteLocale,
-  category: string,
+  _category: string,
 ) => {
-  return {
-    type: "news",
-    id: news.id,
-    category,
-    externalLink: getLocaleValue(news.allLinkLocales, lang, ""),
-    title: getLocaleValue(news.allTitleLocales, lang, ""),
-    description: getLocaleValue(news.allParagraphLocales, lang, ""),
-    content: getLocaleValue(news.allParagraphLocales, lang, ""),
-  };
+  if (news.locale !== lang) return null;
+  // NewsIndexPayloadFragment only exposes id + timestamps — no title/link available.
+  return null;
 };
+
+// ─── Resources ────────────────────────────────────────────────────────────────
+// Resources are not locale-routed — index is locale-independent; skip nulls.
 
 export const getMapResourse = (
-  resourse: ResourseIndexingFragmentType,
-  lang: SiteLocale,
-  category: string,
+  resourse: any,
+  _lang: SiteLocale,
+  _category: string,
 ) => {
-  const block = getLocaleValue(resourse.allResourseLocales, lang, null);
-
-  if (!block) return null;
-
-  switch (block.componentName) {
-    case DatoBlockModel.ExternalLink:
-      return {
-        type: "resourse",
-        id: resourse.id,
-        category,
-        externalLink: block.url,
-        title: block.label,
-        description: block.description,
-        content: block.description,
-      };
-    case DatoBlockModel.DownloadLink:
-      return {
-        type: "resourse",
-        id: resourse.id,
-        category,
-        downloadLink: createDownloadUrl(block.doc),
-        title: block.label,
-        description: block.description,
-        content: block.description,
-      };
-    default:
-      return null;
-  }
+  // Resource index only has id + timestamps from PayloadCMS.
+  // Full resource data is available through the `resource` collection (DatoCMS).
+  return null;
 };
 
+// ─── Pages ────────────────────────────────────────────────────────────────────
+
 export const getMapPages = (
-  page: PageIndexingFragmentType,
+  page: WithLocale<PageIndexPayloadFragmentType>,
   lang: SiteLocale,
 ) => {
-  const contentData = getLocaleValue(page.allContentLocales, lang, []);
+  if (page.locale !== lang) return null;
 
-  const content = flattenBlocks(contentData);
   return {
     type: "page",
     id: page.id,
     category: "",
-    internalLink: linkResolver(page.id, lang),
-    title: getLocaleValue(page.allTitleLocales, lang, ""),
+    internalLink: linkResolver(`pages:${page.id}`, lang),
+    title: page.title ?? "",
     description: "",
-    content: content,
+    content: "",
   };
 };

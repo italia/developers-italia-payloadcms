@@ -12,10 +12,7 @@ import { SidebarQuery } from "@graphql/query/layout";
 import { AllNewsQuery } from "@graphql/query/news";
 import { AllResourcesQuery } from "@graphql/query/resource";
 import { SearchPageContentQuery } from "@graphql/query/search";
-import {
-  AllGlobalSettingsQuery,
-  SiteMetaTagsQuery,
-} from "@graphql/query/settings";
+import { SiteMetaTagsQuery } from "@graphql/query/settings";
 import { ErrorPageQuery } from "@graphql/query/errorPage";
 import { AllStoryCardQuery } from "@graphql/query/story";
 import { AllWebinarQuery } from "@graphql/query/webinar";
@@ -124,15 +121,40 @@ function normalizePayloadBlock(block: Record<string, unknown>): Record<string, u
     } else if (Array.isArray(val) && val.length === 0 && SINGLE_BLOCK_FIELDS.has(key)) {
       result[key] = null;
     } else if (
+      Array.isArray(val) &&
+      val.length > 0 &&
+      typeof val[0] === "object" &&
+      val[0] !== null &&
+      "value" in (val[0] as object) &&
+      "relationTo" in (val[0] as object) &&
+      !("blockType" in (val[0] as object))
+    ) {
+      // hasMany polymorphic relationship array: [{ value: doc, relationTo: "collection" }, …]
+      // Flatten each item to the doc itself with a prefixed id ("articles:1", "story-items:4", …)
+      // so that adapters can call linkResolver(item.id, locale) and access flat fields like item.title.
+      type PolyRel = { value: Record<string, unknown> | null; relationTo: string };
+      result[key] = (val as PolyRel[])
+        .filter((rel) => rel.value != null)
+        .map((rel) => ({
+          ...(rel.value as Record<string, unknown>),
+          id: `${rel.relationTo}:${(rel.value as Record<string, unknown>).id}`,
+        }));
+    } else if (
       val !== null &&
       typeof val === "object" &&
       !Array.isArray(val) &&
       "value" in (val as object) &&
       "relationTo" in (val as object)
     ) {
-      // Polymorphic relationship { value: doc, relationTo: collection } → { id }
+      // Polymorphic relationship { value: doc, relationTo: collection }
+      // Pre-compute the collection-prefixed linkMap key ("pages:13", "story-items:4", …)
+      // and surface it as a flat { id } object — the same shape DatoCMS uses.
+      // All adapters that call linkResolver(pointsTo.id, locale) will automatically
+      // receive the correct prefixed key without any per-adapter changes.
       const rel = val as { value: { id: unknown } | null; relationTo: string };
-      result[key] = rel.value ? { id: rel.value.id } : null;
+      result[key] = rel.value != null
+        ? { id: `${rel.relationTo}:${rel.value.id}` }
+        : null;
     }
   }
 
@@ -161,36 +183,286 @@ function asDocs<T>(result: unknown): T[] {
   return result as T[];
 }
 
-// ─── News / Stories / Webinars (DatoCMS card collections — unchanged) ─────────
+// ─── Card collections (PayloadCMS REST) ──────────────────────────────────────
+// Each loader fetches per locale then merges into one entry per document with
+// allTitleLocales / allTopicLocales / … arrays — the same shape the DatoCMS
+// mappers (mapNewsToCardEditorialNewsProps etc.) already expect.
+
+type TopicDoc = { id: number | string; label?: string } | null;
+
+function buildLocaleArray<T>(locale: string, value: T) {
+  return [{ locale, value }];
+}
+
+function topicToLocaleArray(locale: string, topic: TopicDoc) {
+  if (!topic) return [{ locale, value: null }];
+  return [
+    {
+      locale,
+      value: {
+        id: String(topic.id),
+        _allLabelLocales: [{ locale, value: topic.label ?? "" }],
+      },
+    },
+  ];
+}
+
+// Merge per-locale doc arrays into one entry per document ID.
+// The callback maps a locale + REST doc to the fields we need per locale.
+function mergeByDocId<Raw extends { id: number | string }>(
+  localeResults: { locale: string; docs: Raw[] }[],
+  mapLocale: (locale: string, doc: Raw) => Record<string, unknown>,
+  baseFrom?: (doc: Raw) => Record<string, unknown>,
+): Record<string, unknown>[] {
+  const byId = new Map<string, Record<string, unknown>>();
+
+  for (const { locale, docs } of localeResults) {
+    for (const doc of docs) {
+      const id = String(doc.id);
+      if (!byId.has(id)) {
+        byId.set(id, { id, ...(baseFrom ? baseFrom(doc) : {}) });
+      }
+      const entry = byId.get(id)!;
+      const localePatch = mapLocale(locale, doc);
+      for (const [k, v] of Object.entries(localePatch)) {
+        const existing = entry[k] as unknown[];
+        if (Array.isArray(existing) && Array.isArray(v)) {
+          entry[k] = [...existing, ...(v as unknown[])];
+        } else {
+          entry[k] = v;
+        }
+      }
+    }
+  }
+
+  return [...byId.values()];
+}
+
+// ─── News ─────────────────────────────────────────────────────────────────────
 
 export const newsLoader = async () => {
+  type NewsDoc = {
+    id: number;
+    title: string | null;
+    link: string | null;
+    paragraph: string | null;
+    topic: TopicDoc;
+    dateOfPublication: string | null;
+    image: Record<string, unknown> | null;
+    hasNextPage?: boolean;
+  };
+  type NewsList = { docs: NewsDoc[]; hasNextPage: boolean };
+
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const dateLimit = oneYearAgo.toISOString();
-  const response = await executeAutoPagingQuery(AllNewsQuery, {
-    variables: { dateLimit },
-  });
-  return response?.allNewsItems || [];
+  const dateLimit = oneYearAgo.toISOString().split("T")[0]; // YYYY-MM-DD
+
+  const localeResults = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const docs: NewsDoc[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const qs = `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none&where[dateOfPublication][greater_than]=${dateLimit}`;
+        const res = await payloadFetch<NewsList>("/news-items", qs).catch(() => ({ docs: [], hasNextPage: false }));
+        docs.push(...res.docs);
+        hasMore = res.hasNextPage;
+        page++;
+      }
+      return { locale, docs };
+    }),
+  );
+
+  return mergeByDocId(
+    localeResults,
+    (locale, doc) => ({
+      allTitleLocales: buildLocaleArray(locale, doc.title ?? ""),
+      allParagraphLocales: buildLocaleArray(locale, doc.paragraph ?? ""),
+      allLinkLocales: buildLocaleArray(locale, doc.link ?? ""),
+      allTopicLocales: topicToLocaleArray(locale, doc.topic),
+    }),
+    (doc) => ({
+      publishedAt: doc.dateOfPublication ?? null,
+      image: doc.image ?? null,
+    }),
+  );
 };
+
+// ─── Stories ──────────────────────────────────────────────────────────────────
 
 export const storiesLoader = async () => {
-  const response = await executeAutoPagingQuery(AllStoryCardQuery);
-  return response?.allStoryItems || [];
+  type StoryDoc = {
+    id: number;
+    title: string | null;
+    topic: TopicDoc;
+    articleClassification: TopicDoc;
+    dateOfPublication: string | null;
+    image: Record<string, unknown> | null;
+  };
+  type StoryList = { docs: StoryDoc[]; hasNextPage: boolean };
+
+  const localeResults = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const docs: StoryDoc[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const qs = `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none`;
+        const res = await payloadFetch<StoryList>("/story-items", qs).catch(() => ({ docs: [], hasNextPage: false }));
+        docs.push(...res.docs);
+        hasMore = res.hasNextPage;
+        page++;
+      }
+      return { locale, docs };
+    }),
+  );
+
+  return mergeByDocId(
+    localeResults,
+    (locale, doc) => ({
+      allTitleLocales: buildLocaleArray(locale, doc.title ?? ""),
+      allParagraphLocales: buildLocaleArray(locale, ""),
+      allTopicLocales: topicToLocaleArray(locale, doc.topic),
+    }),
+    (doc) => ({
+      publishedAt: doc.dateOfPublication ?? null,
+      image: doc.image ?? null,
+      articleClassification: doc.articleClassification
+        ? { id: String((doc.articleClassification as { id: number | string }).id) }
+        : null,
+    }),
+  );
 };
+
+// ─── Webinars ─────────────────────────────────────────────────────────────────
 
 export const webinarsLoader = async () => {
+  type WebinarDoc = {
+    id: number;
+    title: string | null;
+    paragraph: string | null;
+    date: string | null;
+    topic: TopicDoc;
+    image: Record<string, unknown> | null;
+  };
+  type WebinarList = { docs: WebinarDoc[]; hasNextPage: boolean };
+
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const dateLimit = oneYearAgo.toISOString();
-  const response = await executeAutoPagingQuery(AllWebinarQuery, {
-    variables: { dateLimit },
-  });
-  return response?.allWebinarItems || [];
+  const dateLimit = oneYearAgo.toISOString().split("T")[0];
+
+  const localeResults = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const docs: WebinarDoc[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const qs = `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none&where[date][greater_than_equal]=${dateLimit}`;
+        const res = await payloadFetch<WebinarList>("/webinar-items", qs).catch(() => ({ docs: [], hasNextPage: false }));
+        docs.push(...res.docs);
+        hasMore = res.hasNextPage;
+        page++;
+      }
+      return { locale, docs };
+    }),
+  );
+
+  return mergeByDocId(
+    localeResults,
+    (locale, doc) => ({
+      allTitleLocales: buildLocaleArray(locale, doc.title ?? ""),
+      allParagraphLocales: buildLocaleArray(locale, doc.paragraph ?? ""),
+      allTopicLocales: topicToLocaleArray(locale, doc.topic),
+    }),
+    (doc) => ({
+      publishedAt: doc.date ?? null,
+      image: doc.image ?? null,
+    }),
+  );
 };
 
+// ─── Resources ────────────────────────────────────────────────────────────────
+
 export const resourcesLoader = async () => {
-  const response = await executeAutoPagingQuery(AllResourcesQuery);
-  return response?.allResources || [];
+  type ResourceBlock = {
+    blockType: string;
+    label?: string;
+    url?: string;
+    description?: string;
+    doc?: { url?: string; filename?: string; format?: string };
+  };
+  type CategoryDoc = { id: number | string; label?: string };
+  type ResourceDoc = {
+    id: number;
+    resource: ResourceBlock[] | ResourceBlock | null;
+    category: CategoryDoc[] | null;
+    typeResource: CategoryDoc | null;
+  };
+  type ResourceList = { docs: ResourceDoc[]; hasNextPage: boolean };
+
+  const localeResults = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const docs: ResourceDoc[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const qs = `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none`;
+        const res = await payloadFetch<ResourceList>("/resources", qs).catch(() => ({ docs: [], hasNextPage: false }));
+        docs.push(...res.docs);
+        hasMore = res.hasNextPage;
+        page++;
+      }
+      return { locale, docs };
+    }),
+  );
+
+  return mergeByDocId(
+    localeResults,
+    (locale, doc) => {
+      const block = Array.isArray(doc.resource)
+        ? doc.resource[0]
+        : doc.resource;
+
+      const resourceValue = block
+        ? block.blockType === "external-link"
+          ? {
+              id: block.label ?? "",
+              componentName: "ExternalLinkRecord",
+              label: block.label ?? "",
+              url: block.url ?? "",
+              description: block.description ?? null,
+            }
+          : {
+              id: block.label ?? "",
+              componentName: "DownloadLinkRecord",
+              label: block.label ?? "",
+              description: block.description ?? null,
+              doc: block.doc ?? null,
+            }
+        : undefined;
+
+      const categories = (doc.category ?? []).map((cat) => ({
+        id: String(cat.id),
+        _allLabelLocales: [{ locale, value: cat.label ?? "" }],
+      }));
+
+      return {
+        allResourceLocales: [{ locale, value: resourceValue }],
+        allCategoryLocales: [{ locale, value: categories }],
+        allTypeResourceLocales: [
+          {
+            locale,
+            value: doc.typeResource
+              ? {
+                  _allLabelLocales: [{ locale, value: (doc.typeResource as CategoryDoc).label ?? "" }],
+                }
+              : null,
+          },
+        ],
+      };
+    },
+    () => ({}),
+  );
 };
 
 // ─── Pages (PayloadCMS REST, per-locale entries) ──────────────────────────────
@@ -500,50 +772,42 @@ export const cataloguesLoader = async () => {
   return entries;
 };
 
-// ─── Globals (DatoCMS — unchanged) ───────────────────────────────────────────
+// ─── Globals (PayloadCMS REST) ────────────────────────────────────────────────
 
 export const globalSettingsLoader = async () => {
-  type LocaleValue = { locale: string; value: unknown };
-  type LinkValue = { locale: string; value: { label: string; url: string }[] };
-  type GlobalSettingRaw = {
-    globalSetting: Record<string, LocaleValue[] | LinkValue[]>;
+  type GlobalSettingDoc = {
+    lastUpdateLabel: string | null;
+    siteName: string | null;
+    links: { blockType: string; label: string; url: string }[] | null;
   };
-  type LocaleMap = Record<string, Record<string, unknown>>;
 
-  function transformGlobalSettings(data: GlobalSettingRaw) {
-    const localesMap: LocaleMap = {};
-    const fieldMapping: Record<string, string> = {
-      _allSiteNameLocales: "siteName",
-      _allLastUpdateLabelLocales: "lastUpdateLabel",
-      _allLinksLocales: "links",
-    };
-    Object.entries(fieldMapping).forEach(([datoKey, zodKey]) => {
-      const translations = (data.globalSetting[datoKey] || []) as LocaleValue[];
-      translations.forEach((item) => {
-        if (!localesMap[item.locale]) localesMap[item.locale] = {};
-        if (zodKey === "links") {
-          const links = (item.value as { label: string; url: string }[]) || [];
-          localesMap[item.locale][zodKey] = links.map((link) => ({
-            label: link.label,
-            url: link.url,
-          }));
-        } else {
-          localesMap[item.locale][zodKey] = item.value;
-        }
-      });
-    });
-    return Object.entries(localesMap).map(([locale, values]) => ({
+  const results = await Promise.all(
+    LOCALES.map((locale) =>
+      payloadFetch<GlobalSettingDoc>(
+        "/globals/global-setting",
+        `locale=${locale}&depth=1&fallbackLocale=none`,
+      ).catch(() => null),
+    ),
+  );
+
+  return LOCALES.map((locale, i) => {
+    const doc = results[i];
+    if (!doc) {
+      return { id: locale, locale, value: STATIC_GLOBAL_SETTINGS_VALUE };
+    }
+    return {
       id: locale,
       locale,
-      value: values,
-    }));
-  }
-
-  const response = await executeQuery(AllGlobalSettingsQuery);
-  if (!response?.globalSetting) {
-    return LOCALES.map((locale) => ({ id: locale, locale, value: STATIC_GLOBAL_SETTINGS_VALUE }));
-  }
-  return transformGlobalSettings(response);
+      value: {
+        siteName: doc.siteName ?? "",
+        lastUpdateLabel: doc.lastUpdateLabel ?? "",
+        links: (doc.links ?? []).map((link) => ({
+          label: link.label,
+          url: link.url,
+        })),
+      },
+    };
+  });
 };
 
 export const homepageLoader = async () => {

@@ -1,29 +1,53 @@
 ---
 import type { CardEditorialNewsProps } from "@components/molecules/CardEditorialNews/types";
 import { ListCollection } from "@components/organisms/ListCollection";
-import type { ListCollectionFragmentType } from "@graphql/fragment/commonFragments";
 import { getLocaleValue } from "@utils/getLocaleValue";
 import { linkResolver } from "@utils/linkResolver";
 
+// Accepts both DatoCMS ListCollectionRecord and PayloadCMS normalized shape.
+type ContentItem = {
+  id?: string;
+  title?: string;
+  paragraph?: string;
+  image?: unknown;
+  allTitleLocales?: { locale: string | null; value: string }[];
+  allParagraphLocales?: { locale: string | null; value: string }[];
+  allTopicLocales?: { locale: string | null; value: { _allLabelLocales?: { locale: string | null; value: string }[] } | null }[];
+};
+
+type BlockShape = {
+  title?: string;
+  content?: ContentItem[];
+};
+
 type Props = {
-  block: ListCollectionFragmentType;
+  block: BlockShape;
 };
 
 const { block } = Astro.props;
 const { lang } = Astro.locals;
 
-const items: CardEditorialNewsProps[] = block.content.map((item) => {
-  const topicRecord = getLocaleValue(item.allTopicLocales, lang, null);
+const items: CardEditorialNewsProps[] = (block.content ?? []).map((item) => {
+  // PayloadCMS: normalizePayloadBlock flattens hasMany polymorphic rels to docs with prefixed
+  // id ("articles:1") and locale-resolved flat fields (title, paragraph).
+  // DatoCMS: allTitleLocales / allParagraphLocales / allTopicLocales locale arrays.
+  const topicRecord = getLocaleValue(item.allTopicLocales ?? null, lang, null);
+  const title: string =
+    item.title ?? getLocaleValue(item.allTitleLocales ?? null, lang, "");
+  const description: string =
+    item.paragraph ?? getLocaleValue(item.allParagraphLocales ?? null, lang, "");
+  const category: string = getLocaleValue(topicRecord?._allLabelLocales ?? null, lang, "");
+
   return {
-    id: item.id,
-    title: getLocaleValue(item.allTitleLocales, lang, ""),
-    description: getLocaleValue(item.allParagraphLocales, lang, ""),
-    image: item.image,
-    linkTo: linkResolver(item.id, lang),
-    category: getLocaleValue(topicRecord?._allLabelLocales, lang, ""),
+    id: item.id ?? "",
+    title,
+    description,
+    image: (item.image as any) ?? null,
+    linkTo: linkResolver(item.id ?? "", lang),
+    category,
     isExternal: false,
   };
 });
 ---
 
-<ListCollection title={block.title} items={items} />
+<ListCollection title={block.title ?? ""} items={items} />

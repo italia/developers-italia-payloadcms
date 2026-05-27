@@ -3,6 +3,7 @@ import { getI18n } from "@i18n/microcopy";
 import * as Mappers from "@utils/indexing/indexingMappers";
 import type { APIRoute } from "astro";
 import { getEntry } from "astro:content";
+import { getCataloguesMapCategory, getCategoryName, getTitleByTypeNews, getTitleByTypeResourse } from "@utils/indexing/getCategory";
 
 export async function getStaticPaths() {
   const response = await getEntry("locales", "site-locales");
@@ -32,6 +33,8 @@ export const GET: APIRoute = async ({ params }) => {
   const responseCollection = await getEntry("documents", "all-documents");
   const response = responseCollection?.data;
 
+  console.log("response", response);
+
   if (!response)
     return new Response("No documents to indexing", { status: 400 });
 
@@ -43,21 +46,19 @@ export const GET: APIRoute = async ({ params }) => {
   const resourses = response.allResources;
   const pages = response.allPages;
 
-  // const cataloguesMapCategory = getCataloguesMapCategory(
-  //   response.allCatalogues,
-  //   lang,
-  // );
+  const cataloguesMapCategory = getCataloguesMapCategory(
+    response.allCatalogues,
+    lang,
+  );
 
-  const articleCategory = "";
-  const insightCategory = ""; //getCategoryName(insights[0]?.parentPage, lang);
-  const storyCategory = "";
-  // getTitleByTypeNews(cataloguesMapCategory, stories[0]?.modelApiKey) || "";
-  const newsCategory = "";
-  // getTitleByTypeNews(cataloguesMapCategory, newsItems[0]?.modelApiKey) || "";
-  const webinarCategory = "";
-  // getTitleByTypeNews(cataloguesMapCategory, webinars[0]?.modelApiKey) || "";
-  const resourseCategory = "";
-  // getTitleByTypeResourse(cataloguesMapCategory, resourses[0]?.modelApiKey) ||"";
+  // The type strings below must match the `newsPageTabType` values saved in the
+  // Payload CMS CatalogueTab blocks (typically the collection slug).
+  const articleCategory = getTitleByTypeNews(cataloguesMapCategory, "articles") || "";
+  const insightCategory = getCategoryName((insights[0] as any)?.parent);
+  const storyCategory = getTitleByTypeNews(cataloguesMapCategory, "story-items") || "";
+  const newsCategory = getTitleByTypeNews(cataloguesMapCategory, "news-items") || "";
+  const webinarCategory = getTitleByTypeNews(cataloguesMapCategory, "webinar-items") || "";
+  const resourseCategory = getTitleByTypeResourse(cataloguesMapCategory, "resources") || "";
 
   const allDocuments = [
     ...pages.map((item) => Mappers.getMapPages(item as any, lang)),

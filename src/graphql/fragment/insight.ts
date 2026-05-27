@@ -63,6 +63,10 @@ export const InsightIndexPayloadFragment = graphql(`
     abstract
     localizedSlugs
     updatedAt
+    parent {
+      id
+      title
+    }
   }
 `);
 

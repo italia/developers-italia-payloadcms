@@ -49,6 +49,16 @@ export const CatalogueIndexPayloadFragment = graphql(`
     title
     localizedSlugs
     updatedAt
+    content {
+      ... on CatalogueFeed {
+        tabs {
+          ... on CatalogueTab {
+            title
+            newsPageTabType
+          }
+        }
+      }
+    }
   }
 `);
 

@@ -5,7 +5,23 @@ type Props = {
 };
 
 const { className, icon } = Astro.props;
+
+// Resolve the icon to an absolute URL when it comes from the Payload CMS server.
+//
+// Three cases:
+//   1. Already an absolute URL ("https://…")  → use as-is.
+//   2. Root-relative Payload path ("/api/media/file/…") → prepend PAYLOAD_URL.
+//      (same logic as Image.astro for Payload media urls)
+//   3. Bare filename ("it-logo-white.svg", no leading slash, no protocol)
+//      → treat as a Payload media filename → PAYLOAD_URL + /api/media/file/ + filename.
+const resolvedIcon = !icon
+  ? icon
+  : icon.startsWith("http://") || icon.startsWith("https://")
+    ? icon
+    : icon.startsWith("/")
+      ? `${import.meta.env.PAYLOAD_URL}${icon}`
+      : `${import.meta.env.PAYLOAD_URL}/api/media/file/${icon}`;
 ---
 
-<span class=`dynamic-icon icon ${className}` style=`--icon-url: url(${icon});`>
+<span class=`dynamic-icon icon ${className}` style=`--icon-url: url(${resolvedIcon});`>
 </span>

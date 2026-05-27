@@ -560,3 +560,56 @@ export const PayloadCatalogueFeedFragment = graphql(`
   }
 `);
 export type PayloadCatalogueFeedFragmentType = FragmentOf<typeof PayloadCatalogueFeedFragment>;
+
+// ─── Navigation / Menu ───────────────────────────────────────────────────────
+
+export const PayloadMenuItemFragment = graphql(`
+  fragment PayloadMenuItemFragment on MenuItem @_unmask {
+    id
+    blockType
+    title
+    pointsTo {
+      relationTo
+      value {
+        ... on Page { id }
+        ... on Article { id }
+        ... on Insight { id }
+        ... on WebinarItem { id }
+        ... on StoryItem { id }
+        ... on Catalogue { id }
+      }
+    }
+  }
+`);
+export type PayloadMenuItemFragmentType = FragmentOf<typeof PayloadMenuItemFragment>;
+
+export const PayloadMegaMenuItemFragment = graphql(
+  `
+  fragment PayloadMegaMenuItemFragment on MegaMenuItem @_unmask {
+    id
+    blockType
+    title
+    subtitle
+    caption
+    image { ...PayloadMediaFragment }
+    pointsTo {
+      relationTo
+      value {
+        ... on Page { id }
+        ... on Article { id }
+        ... on Insight { id }
+        ... on WebinarItem { id }
+        ... on StoryItem { id }
+        ... on Catalogue { id }
+      }
+    }
+    subMenu {
+      ... on MenuItem {
+        ...PayloadMenuItemFragment
+      }
+    }
+  }
+`,
+  [PayloadMediaFragment, PayloadMenuItemFragment],
+);
+export type PayloadMegaMenuItemFragmentType = FragmentOf<typeof PayloadMegaMenuItemFragment>;

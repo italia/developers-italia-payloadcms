@@ -3,19 +3,37 @@ import type {
   MenuItemProps,
 } from "@components/organisms/Header/types";
 import type {
-  ExternalLinkFragmentType,
-  MegaMenuItemFragmentType,
-  MenuItemFragmentType,
-} from "@graphql/fragment/commonFragments";
-import type { SiteLocale } from "@graphql/types";
+  PayloadExternalLinkFragmentType,
+  PayloadMegaMenuItemFragmentType,
+  PayloadMenuItemFragmentType,
+} from "@graphql/fragment/payloadBlocks";
 import { linkResolver } from "@utils/linkResolver";
 
+/**
+ * Extracts the document ID from a Payload polymorphic relationship.
+ *
+ * DatoCMS shape (old):  item.pointsTo.id          → flat record with id: string
+ * Payload shape (new):  item.pointsTo?.value?.id  → { relationTo, value: Page | Article | … }
+ *
+ * Payload IDs are numbers in generated TS types (even though GraphQL serialises
+ * them as strings), so we stringify here for linkResolver compatibility.
+ */
+function resolvePointsToId(
+  pointsTo:
+    | { value?: { id?: string | number | null } | null }
+    | null
+    | undefined,
+): string | undefined {
+  const raw = pointsTo?.value?.id;
+  return raw != null ? String(raw) : undefined;
+}
+
 function menuItemAdapter(
-  item: MenuItemFragmentType | MegaMenuItemFragmentType,
+  item: PayloadMenuItemFragmentType | PayloadMegaMenuItemFragmentType,
   currentPath: string,
-  locale: SiteLocale,
+  locale: string,
 ): MenuItemProps {
-  const pageId = item.pointsTo.id;
+  const pageId = resolvePointsToId(item.pointsTo);
   const finalHref = linkResolver(pageId, locale);
 
   const normalizedCurrent = currentPath.replace(/\/$/, "") || "/";
@@ -27,26 +45,39 @@ function menuItemAdapter(
       : normalizedCurrent.startsWith(normalizedMenu);
 
   const result: MenuItemProps = {
-    id: item.id,
+    id: item.id ?? "",
     title: item.title,
     url: finalHref,
     active: isActive,
   };
 
   if ("subMenu" in item) {
-    result.image = item.image;
-    result.caption = item.caption;
-    result.subtitle = item.subtitle;
-    result.subMenuItems = item.subMenu?.map((menu) =>
-      menuItemAdapter(menu, currentPath, locale),
-    );
+    const mega = item as PayloadMegaMenuItemFragmentType;
+
+    result.image = mega.image?.url
+      ? {
+          url: mega.image.url,
+          width: mega.image.width ?? null,
+          height: mega.image.height ?? null,
+          alt: mega.image.alt ?? null,
+        }
+      : undefined;
+    result.caption = mega.caption;
+    result.subtitle = mega.subtitle;
+    result.subMenuItems = (mega.subMenu ?? [])
+      .map((sub) =>
+        "title" in sub
+          ? menuItemAdapter(sub as PayloadMenuItemFragmentType, currentPath, locale)
+          : null,
+      )
+      .filter((s): s is MenuItemProps => s !== null);
   }
 
   return result;
 }
 
 function metaMenuItemAdapter(
-  item: ExternalLinkFragmentType,
+  item: PayloadExternalLinkFragmentType,
   currentPath: string,
 ): MenuItemProps {
   const finalHref = item.url;
@@ -60,7 +91,7 @@ function metaMenuItemAdapter(
       : normalizedCurrent.startsWith(normalizedMenu);
 
   return {
-    id: item.id,
+    id: item.id ?? "",
     title: item.label,
     url: finalHref,
     active: isActive,
@@ -68,10 +99,10 @@ function metaMenuItemAdapter(
 }
 
 export function createMenu(
-  mainItems: (MegaMenuItemFragmentType | MenuItemFragmentType)[] = [],
-  secondaryItems: (MegaMenuItemFragmentType | MenuItemFragmentType)[] = [],
+  mainItems: (PayloadMegaMenuItemFragmentType | PayloadMenuItemFragmentType)[] = [],
+  secondaryItems: (PayloadMegaMenuItemFragmentType | PayloadMenuItemFragmentType)[] = [],
   currentPathname: string,
-  currentLocale: SiteLocale,
+  currentLocale: string,
 ): HeaderNavbarProps {
   return {
     left: mainItems.map((item) =>
@@ -84,7 +115,7 @@ export function createMenu(
 }
 
 export function createMetaMenu(
-  metaNavigation: ExternalLinkFragmentType[] = [],
+  metaNavigation: PayloadExternalLinkFragmentType[] = [],
   currentPathname: string,
 ): MenuItemProps[] {
   return metaNavigation.map((item) =>

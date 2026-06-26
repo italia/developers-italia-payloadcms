@@ -26,6 +26,7 @@ import {
 import {
   STATIC_GLOBAL_SETTINGS_VALUE,
 } from "@data/staticLayout";
+import { lexicalToHtml, lexicalToPlainText } from "@utils/lexicalUtils";
 
 const LOCALES = ["it", "en"] as const;
 type Locale = (typeof LOCALES)[number];
@@ -158,6 +159,27 @@ function normalizePayloadBlock(block: Record<string, unknown>): Record<string, u
     }
   }
 
+  // Auto-convert Lexical richText JSON objects to HTML strings.
+  // Excludes content/textContent (main rich body — deferred to Lexical renderer).
+  const LEXICAL_KEEP_RAW = new Set(["content", "textContent"]);
+  for (const [key, val] of Object.entries(result)) {
+    if (
+      !LEXICAL_KEEP_RAW.has(key) &&
+      val !== null &&
+      typeof val === "object" &&
+      !Array.isArray(val) &&
+      (val as Record<string, unknown>)?.root &&
+      ((val as Record<string, unknown>).root as Record<string, unknown>)?.type === "root"
+    ) {
+      result[key] = lexicalToHtml(val);
+    }
+  }
+
+  // StructuredTextBlock: DatoCMS aliases "content" → "textContent"
+  if (blockType === "structured-text-block" && "content" in result && !("textContent" in result)) {
+    result.textContent = result.content;
+  }
+
   return result;
 }
 
@@ -245,7 +267,7 @@ export const newsLoader = async () => {
     id: number;
     title: string | null;
     link: string | null;
-    paragraph: string | null;
+    paragraph: unknown;
     topic: TopicDoc;
     dateOfPublication: string | null;
     image: Record<string, unknown> | null;
@@ -277,7 +299,7 @@ export const newsLoader = async () => {
     localeResults,
     (locale, doc) => ({
       allTitleLocales: buildLocaleArray(locale, doc.title ?? ""),
-      allParagraphLocales: buildLocaleArray(locale, doc.paragraph ?? ""),
+      allParagraphLocales: buildLocaleArray(locale, lexicalToHtml(doc.paragraph) ?? ""),
       allLinkLocales: buildLocaleArray(locale, doc.link ?? ""),
       allTopicLocales: topicToLocaleArray(locale, doc.topic),
     }),
@@ -294,6 +316,7 @@ export const storiesLoader = async () => {
   type StoryDoc = {
     id: number;
     title: string | null;
+    paragraph: unknown;
     topic: TopicDoc;
     articleClassification: TopicDoc;
     dateOfPublication: string | null;
@@ -321,7 +344,7 @@ export const storiesLoader = async () => {
     localeResults,
     (locale, doc) => ({
       allTitleLocales: buildLocaleArray(locale, doc.title ?? ""),
-      allParagraphLocales: buildLocaleArray(locale, ""),
+      allParagraphLocales: buildLocaleArray(locale, lexicalToHtml(doc.paragraph) ?? ""),
       allTopicLocales: topicToLocaleArray(locale, doc.topic),
     }),
     (doc) => ({
@@ -340,7 +363,7 @@ export const webinarsLoader = async () => {
   type WebinarDoc = {
     id: number;
     title: string | null;
-    paragraph: string | null;
+    paragraph: unknown;
     date: string | null;
     topic: TopicDoc;
     image: Record<string, unknown> | null;
@@ -371,7 +394,7 @@ export const webinarsLoader = async () => {
     localeResults,
     (locale, doc) => ({
       allTitleLocales: buildLocaleArray(locale, doc.title ?? ""),
-      allParagraphLocales: buildLocaleArray(locale, doc.paragraph ?? ""),
+      allParagraphLocales: buildLocaleArray(locale, lexicalToHtml(doc.paragraph) ?? ""),
       allTopicLocales: topicToLocaleArray(locale, doc.topic),
     }),
     (doc) => ({
@@ -539,7 +562,7 @@ export const articleContentLoader = async () => {
     id: number;
     slug: string | null;
     title: string | null;
-    paragraph: string | null;
+    paragraph: unknown;
     content: unknown;
     localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
@@ -562,7 +585,7 @@ export const articleContentLoader = async () => {
           locale,
           slug: doc.slug,
           title: doc.title ?? null,
-          paragraph: doc.paragraph ?? null,
+          paragraph: lexicalToHtml(doc.paragraph) ?? null,
           content: doc.content ?? null,
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
@@ -583,7 +606,7 @@ export const insightContentLoader = async () => {
     id: number;
     slug: string | null;
     title: string | null;
-    abstract: string | null;
+    abstract: unknown;
     content: unknown[] | null;
     localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
@@ -606,7 +629,7 @@ export const insightContentLoader = async () => {
           locale,
           slug: doc.slug,
           title: doc.title ?? null,
-          abstract: doc.abstract ?? null,
+          abstract: lexicalToPlainText(doc.abstract) ?? null,
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
@@ -671,7 +694,7 @@ export const webinarContentLoader = async () => {
     id: number;
     slug: string | null;
     title: string | null;
-    paragraph: string | null;
+    paragraph: unknown;
     date: string | null;
     content: unknown[] | null;
     localizedSlugs: Record<string, string> | null;
@@ -695,7 +718,7 @@ export const webinarContentLoader = async () => {
           locale,
           slug: doc.slug,
           title: doc.title ?? null,
-          paragraph: doc.paragraph ?? null,
+          paragraph: lexicalToHtml(doc.paragraph) ?? null,
           date: doc.date ?? null,
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
@@ -855,7 +878,7 @@ export const searchLoader = async () => {
 export const layoutLoader = async () => {
   type LayoutGlobal = {
     variant: string;
-    heading: string | null;
+    heading: unknown;
     logoSelect: string;
     organizations: unknown[] | null;
     listNavbarBrand: unknown[] | null;
@@ -912,7 +935,7 @@ export const layoutLoader = async () => {
     locales: [...LOCALES],
 
     _allTaglineLocales: buildTextLocales((r) => r.tagline),
-    _allHeadingLocales: buildTextLocales((r) => r.heading),
+    _allHeadingLocales: buildTextLocales((r) => lexicalToHtml(r.heading) ?? null),
     _allTopicTitleLocales: buildTextLocales((r) => r.topicTitle),
     _allUtilityTitleLocales: buildTextLocales((r) => r.utilityTitle),
 

@@ -51,5 +51,5 @@ const jsonLd: JsonLdPageData = {
 ---
 
 <Layout seo={seo} datePublished={publishedAt} jsonLd={jsonLd}>
-  <PageAdapter content={content} />
+  <PageAdapter content={content ?? []} />
 </Layout>

@@ -1,48 +1,19 @@
 ---
-import CalloutAdapter from "@components/cms-adapters/datocms/CalloutAdapter.astro";
-import CardServiceAdapter from "@components/cms-adapters/datocms/CardServiceAdapter.astro";
-import DownloadLinkAdapter from "@components/cms-adapters/datocms/DownloadLinkAdapter.astro";
-import ExternalLinkAdapter from "@components/cms-adapters/datocms/ExternalLinkAdapter.astro";
-import ImageContainerAdapter from "@components/cms-adapters/datocms/ImageContainerAdapter.astro";
-import InternalLinkAdapter from "@components/cms-adapters/datocms/InternalLinkAdapter.astro";
-import LinkInlineAdapter from "@components/cms-adapters/datocms/LinkInlineAdapter.astro";
-import ListBlockquoteAdapter from "@components/cms-adapters/datocms/ListBlockquoteAdapter.astro";
-import ListCardEditorialWithIconAdapter from "@components/cms-adapters/datocms/ListCardEditorialWithIconAdapter.astro";
-import ListCardInfoAdapter from "@components/cms-adapters/datocms/ListCardInfoAdapter.astro";
-import ListExternalLinkAdapter from "@components/cms-adapters/datocms/ListExternalLinkAdapter.astro";
-import OrderedListAdapter from "@components/cms-adapters/datocms/OrderedListAdapter.astro";
-import QuickLinkCardAdapter from "@components/cms-adapters/datocms/QuickLinkCardAdapter.astro";
-import RelatedArticleAdapter from "@components/cms-adapters/datocms/RelatedArticleAdapter.astro";
-import SupportCTASectionAdapter from "@components/cms-adapters/datocms/SupportCTASectionAdapter.astro";
-import TopicsAdapter from "@components/cms-adapters/datocms/TopicsAdapter.astro";
-import { StructuredText } from "@datocms/astro";
-import type { StructuredTextFragmentType } from "@graphql/fragment/sectionFragments";
+import { lexicalToHtml } from "@utils/lexicalUtils";
 
 type Props = {
-  block: StructuredTextFragmentType | unknown;
+  block: unknown;
 };
 
 const { block } = Astro.props;
+
+const isLexical =
+  block !== null &&
+  typeof block === "object" &&
+  !Array.isArray(block) &&
+  (block as Record<string, unknown>)?.root;
+
+const htmlContent = isLexical ? lexicalToHtml(block) : null;
 ---
 
-<StructuredText
-  data={block}
-  blockComponents={{
-    ListCardEditorialWithIconRecord: ListCardEditorialWithIconAdapter,
-    ExternalLinkRecord: ExternalLinkAdapter,
-    InternalLinkRecord: InternalLinkAdapter,
-    CardServiceRecord: CardServiceAdapter,
-    OrderedListRecord: OrderedListAdapter,
-    CalloutRecord: CalloutAdapter,
-    QuickLinkCardRecord: QuickLinkCardAdapter,
-    SupportCtaSectionRecord: SupportCTASectionAdapter,
-    TopicsBlockRecord: TopicsAdapter,
-    ListCardInfoRecord: ListCardInfoAdapter,
-    ListBlockquoteRecord: ListBlockquoteAdapter,
-    RelatedArticleRecord: RelatedArticleAdapter,
-    ImageBlockRecord: ImageContainerAdapter,
-    ListExternalLinkRecord: ListExternalLinkAdapter,
-    DownloadLinkRecord: DownloadLinkAdapter,
-  }}
-  nodeOverrides={{ link: LinkInlineAdapter }}
-/>
+{htmlContent && <Fragment set:html={htmlContent} />}

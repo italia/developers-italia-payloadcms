@@ -33,7 +33,7 @@ const { content, isFontSerif = false } = Astro.props;
 ---
 
 {
-  content.map((block) => {
+  (content ?? []).map((block) => {
     switch (block.componentName) {
       case DatoBlockModel.Hero:
         return <HeroAdapter block={block} />;

@@ -25,4 +25,4 @@ pnpm-debug.log*
 .idea/
 .vercel
 
-src/data/*
+src/data/linkMap.json

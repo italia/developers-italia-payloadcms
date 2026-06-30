@@ -1,15 +1,14 @@
 import dotenv from "dotenv";
 import { spawnSync } from "node:child_process";
 
-const mode = process.argv[2];
 const command = process.argv[3];
 
-if (!mode || !command) {
+if (!command) {
   console.error("Usage: bun run <staging|production> -- <dev|build>");
   process.exit(1);
 }
 
-const envFile = `.env.${mode}`;
+const envFile = `.env`;
 dotenv.config({ path: envFile, override: true });
 
 const payloadUrl = process.env.PAYLOAD_URL;

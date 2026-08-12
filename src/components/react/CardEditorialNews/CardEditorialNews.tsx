@@ -57,7 +57,10 @@ export function CardEditorialNews({
         </div>
       </div>
       <div className="it-card-body">
-        <p className="it-card-text">{description}</p>
+        <p
+          className="it-card-text"
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
       </div>
       {shouldShowFooter && (
         <footer className="it-card-related it-card-footer">

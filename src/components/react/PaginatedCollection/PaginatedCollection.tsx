@@ -85,7 +85,10 @@ export function PaginatedCollection({
         <div className="col-lg-5 col-12">
           <div className={`text-container mb-4 mb-lg-0`}>
             <h2 className="mb-3">{title}</h2>
-            <div className="mb-4">{paragraph}</div>
+            <div
+              className="mb-4"
+              dangerouslySetInnerHTML={{ __html: paragraph }}
+            />
           </div>
         </div>
         <div className="col-lg-4 col-12">

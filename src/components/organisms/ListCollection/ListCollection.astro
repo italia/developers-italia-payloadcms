@@ -29,7 +29,7 @@ const textColorClass =
       <h2 class=`${textColorClass}` id={title}>
         {title}
       </h2>
-      {paragraph && <p class={`${textColorClass}`}>{paragraph}</p>}
+      {paragraph && <p class={`${textColorClass}`} set:html={paragraph} />}
     </div>
 
     <div class=` ${!showInline ? 'd-none d-lg-block' : ''}`>

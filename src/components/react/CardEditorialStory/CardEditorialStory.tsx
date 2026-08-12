@@ -52,7 +52,10 @@ export function CardEditorialStory({
       </div>
 
       <div className="it-card-body">
-        <p className="it-card-text">{description}</p>
+        <p
+          className="it-card-text"
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
       </div>
 
       {shouldShowFooter && (

@@ -44,7 +44,7 @@ const t = getI18n(lang);
   }
 
   <div class="it-card-body">
-    <p class="it-card-text">{description}</p>
+    <p class="it-card-text" set:html={description} />
   </div>
 
   {

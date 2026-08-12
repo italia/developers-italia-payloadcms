@@ -30,7 +30,7 @@ const {
         <div class="it-hero-text-wrapper px-0">
           {showBreadcrumb && <slot name="breadcrumb" />}
           <h1 id={title}>{title}</h1>
-          {paragraph && <p class="font-sans-serif">{paragraph}</p>}
+          {paragraph && <p class="font-sans-serif" set:html={paragraph} />}
           {
             labelButton && linkTo && (
               <div class="it-btn-container">

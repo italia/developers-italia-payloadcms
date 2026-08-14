@@ -45,7 +45,9 @@ export const HeaderFragment = graphql(
           }
         }
       }
-      logoSelect
+      logoSelect {
+        url
+      }
       _allTaglineLocales {
         locale
         value

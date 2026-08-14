@@ -879,7 +879,7 @@ export const layoutLoader = async () => {
   type LayoutGlobal = {
     variant: string;
     heading: unknown;
-    logoSelect: string;
+    logoSelect: { url: string } | null;
     organizations: unknown[] | null;
     listNavbarBrand: unknown[] | null;
     topicTitle: string | null;
@@ -930,7 +930,7 @@ export const layoutLoader = async () => {
   const layout = {
     variant: base.variant,
     siteName: base.siteName,
-    logoSelect: base.logoSelect,
+    logoSelect: base.logoSelect?.url ?? "",
     showSitemapLink: base.showSitemapLink ?? false,
     locales: [...LOCALES],
 

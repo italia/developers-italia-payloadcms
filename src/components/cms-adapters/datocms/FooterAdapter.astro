@@ -39,8 +39,8 @@ const mailingList = getLocaleValue(_allMailingListFormLocales, lang, null);
 const logos: FooterLogoProps[] =
   organizations?.map((org) => {
     return {
-      mainLogo: org.mainLogo,
-      brandLogo: org.brandLogo,
+      mainLogo: org.mainLogo?.url ?? "",
+      brandLogo: org.brandLogo?.url ?? "",
       label: org.label,
       linkTo: org.url,
     };
@@ -61,7 +61,7 @@ const socialUtilities: FooterLinkSupportingBrandProps[] =
     .map((util) => ({
       label: util.label,
       ariaLabel: "link",
-      icon: util.brandLogo,
+      icon: util.brandLogo?.url ?? "",
       url: util.url,
     })) || [];
 

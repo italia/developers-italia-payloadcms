@@ -89,13 +89,17 @@ const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
   "list-external-link": "ListExternalLinkRecord",
 };
 
-// Fields defined as blocks with maxRows:1 in Payload — adapters expect a single object, not an array
+// Fields defined as blocks with maxRows:1 in Payload — adapters expect a single object, not an array.
+// Only field names that are unambiguously maxRows:1 everywhere they appear belong here — e.g. "statistics"
+// is maxRows:1 on TextStatistic but a genuine multi-row list on StatisticBlock, so it's handled locally
+// in TextAndStatisticsAdapter.astro instead of being added to this (name-only, not path-aware) set.
 const SINGLE_BLOCK_FIELDS = new Set([
   "cta",
   "text",
   "additionalContent",
   "link",
   "privacyPolicy",
+  "useCases",
 ]);
 
 function normalizePayloadBlock(block: Record<string, unknown>): Record<string, unknown> {
@@ -875,6 +879,12 @@ export const searchLoader = async () => {
     : [{ id: "search-empty", locales: [], allContentLocales: [] }];
 };
 
+type SearchGlobal = {
+  isSearchEnabled: boolean | null;
+  searchLabel: string | null;
+  slug: string | null;
+};
+
 export const layoutLoader = async () => {
   type LayoutGlobal = {
     variant: string;
@@ -896,14 +906,24 @@ export const layoutLoader = async () => {
     smallPrint: unknown[] | null;
   };
 
-  const results = await Promise.all(
-    LOCALES.map((locale) =>
-      payloadFetch<LayoutGlobal>(
-        "/globals/layout",
-        `locale=${locale}&depth=3&fallbackLocale=none`,
+  const [results, searchResults] = await Promise.all([
+    Promise.all(
+      LOCALES.map((locale) =>
+        payloadFetch<LayoutGlobal>(
+          "/globals/layout",
+          `locale=${locale}&depth=3&fallbackLocale=none`,
+        ),
       ),
     ),
-  );
+    Promise.all(
+      LOCALES.map((locale) =>
+        payloadFetch<SearchGlobal>(
+          "/globals/search",
+          `locale=${locale}&fallbackLocale=none`,
+        ),
+      ),
+    ),
+  ]);
 
   const base = results[0];
 
@@ -951,11 +971,20 @@ export const layoutLoader = async () => {
     _allMailingListFormLocales: buildSingleBlockLocales((r) => r.mailingListForm),
   };
 
+  const search = {
+    id: "search",
+    isSearchEnabled: searchResults[0]?.isSearchEnabled ?? false,
+    _allSearchLabelLocales: LOCALES.map((locale, i) => ({
+      locale,
+      value: searchResults[i]?.searchLabel ?? "",
+    })),
+  };
+
   return [
     {
       id: "layout",
       layout,
-      search: null,
+      search,
       homepageId: "homepage",
     },
   ];

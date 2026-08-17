@@ -38,6 +38,7 @@ async function gqlFetch<T>(
 
 const LOCALES: SiteLocale[] = ["en", "it"];
 const HOMEPAGE_ID = "homepage";
+const SEARCH_ID = "search";
 const LIMIT = 100;
 const outputPath = `src/data/linkMap.json`;
 
@@ -48,6 +49,12 @@ const outputPath = `src/data/linkMap.json`;
 const HomepageQuery = `
   query HomepageLinks($locale: LocaleInputType) {
     Homepage(locale: $locale) { title }
+  }
+`;
+
+const SearchQuery = `
+  query SearchLinks($locale: LocaleInputType) {
+    Search(locale: $locale) { slug }
   }
 `;
 
@@ -261,6 +268,16 @@ async function generateLinkMap() {
     it: homepageIt.Homepage?.title ?? "",
   };
 
+  // Fetch search page slug per locale
+  const [searchEn, searchIt] = await Promise.all([
+    gqlFetch<{ Search: { slug: string } | null }>(SearchQuery, { locale: "en" }),
+    gqlFetch<{ Search: { slug: string } | null }>(SearchQuery, { locale: "it" }),
+  ]);
+  const searchSlugByLocale: Partial<Record<SiteLocale, string>> = {
+    en: searchEn.Search?.slug || undefined,
+    it: searchIt.Search?.slug || undefined,
+  };
+
   // Fetch all collections for every locale in parallel
   const [
     pagesEn, pagesIt,
@@ -298,6 +315,14 @@ async function generateLinkMap() {
   linkMap[HOMEPAGE_ID] = {} as LocaleMap;
   for (const locale of LOCALES) {
     linkMap[HOMEPAGE_ID][locale] = { path: `/${locale}`, breadcrumb: [] };
+  }
+
+  // Search — stable synthetic ID, no parent
+  linkMap[SEARCH_ID] = {} as LocaleMap;
+  for (const locale of LOCALES) {
+    const slug = searchSlugByLocale[locale];
+    if (!slug) continue;
+    linkMap[SEARCH_ID][locale] = { path: `/${locale}/${slug}`, breadcrumb: [] };
   }
 
   // Pages — top-level, no parent

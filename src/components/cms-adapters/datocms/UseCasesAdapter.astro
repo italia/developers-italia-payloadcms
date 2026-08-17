@@ -7,6 +7,7 @@ import { UseCases } from "@components/molecules/UseCases";
 import type { UseCaseBlockFragmentType } from "@graphql/fragment/commonFragments";
 import { getLocaleValue } from "@utils/getLocaleValue";
 import { linkResolver } from "@utils/linkResolver";
+import { lexicalToHtml } from "@utils/lexicalUtils";
 
 type Props = {
   block: UseCaseBlockFragmentType;
@@ -17,13 +18,25 @@ const { block, backgroundColor = "light" } = Astro.props;
 const { lang } = Astro.locals;
 
 const usecases: UseCaseCardProps[] = block.useCases?.map((usecase) => {
-  let paragraphData =
+  // PayloadCMS: flat, locale-resolved fields (normalizePayloadBlock already
+  // resolves the current locale). DatoCMS: per-locale arrays as a fallback.
+  const payloadTitle = "title" in usecase ? (usecase.title as string) : undefined;
+  const payloadBody =
+    "paragraph" in usecase
+      ? usecase.paragraph
+      : "abstract" in usecase
+        ? usecase.abstract
+        : undefined;
+
+  const datoCmsTitle = getLocaleValue(usecase.allTitleLocales, lang, "");
+  const paragraphData =
     "allParagraphLocales" in usecase ? usecase.allParagraphLocales : [];
+  const datoCmsParagraph = getLocaleValue(paragraphData, lang, "");
 
   return {
     id: usecase.id,
-    title: getLocaleValue(usecase.allTitleLocales, lang, ""),
-    paragraph: getLocaleValue(paragraphData, lang, "") || "",
+    title: payloadTitle ?? datoCmsTitle,
+    paragraph: (payloadTitle ? lexicalToHtml(payloadBody) : null) ?? datoCmsParagraph ?? "",
     linkTo: linkResolver(usecase.id, lang),
     image: usecase.image || undefined,
   };

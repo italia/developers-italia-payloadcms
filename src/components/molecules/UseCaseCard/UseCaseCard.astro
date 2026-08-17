@@ -45,9 +45,7 @@ const cardTitleId = `card-title-${id}`;
         <h3 class="it-card-profile-name" id={cardTitleId}>
           <a href={linkTo}>{title}</a>
         </h3>
-        <p>
-          {paragraph}
-        </p>
+        <p set:html={paragraph} />
       </div>
 
       {
@@ -94,9 +92,7 @@ const cardTitleId = `card-title-${id}`;
       <h4 class="h3 it-card-profile-name">
         <a href={linkTo}>{title}</a>
       </h4>
-      <p class="it-card-text">
-        {paragraph}
-      </p>
+      <p class="it-card-text" set:html={paragraph} />
 
       {
         (descriptionTitle || description) && (

@@ -13,6 +13,16 @@ export async function payloadFetch<T>(path: string, qs = ''): Promise<T> {
   return res.json()
 }
 
+export async function payloadPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}/api${path}`, {
+    method: 'POST',
+    headers: { ...hdrs, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`Payload ${res.status}: ${path}`)
+  return res.json()
+}
+
 export async function gqlFetch<T>(
   query: string,
   variables?: Record<string, unknown>,

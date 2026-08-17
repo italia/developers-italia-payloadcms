@@ -7,12 +7,12 @@ type Props = FooterBrandProps;
 const { heading, logos } = Astro.props;
 ---
 
-<div class="footer-brand it-footer-small-prints pt-5 pb-4 text-white">
+<div class="footer-brand it-footer-small-prints pt-5 text-white">
   <div class="container">
     <div class="row">
       <div class="col-12 text-center text-md-start">
-        <div class="small mb-4">
-          <p set:html={heading} />
+        <div class="small">
+          <p class="mb-0" set:html={heading} />
         </div>
       </div>
     </div>
@@ -23,7 +23,7 @@ const { heading, logos } = Astro.props;
         >
           {
             logos.map((logo) => (
-              <li class="mb-4 me-md-5">
+              <li class="m-0 me-md-5">
                 <FooterLogo {...logo} />
               </li>
             ))

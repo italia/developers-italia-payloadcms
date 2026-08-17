@@ -9704,8 +9704,7 @@ union Layout_NavigationBarSecondary = MenuItem | MegaMenuItem
 union Layout_Organizations = Brand
 
 type Brand {
-  mainLogo(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): Media
-  brandLogo(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): Media
+  logo(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): Media
   label: String!
   url: String!
   id: String

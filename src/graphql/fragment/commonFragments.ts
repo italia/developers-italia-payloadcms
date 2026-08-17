@@ -86,10 +86,7 @@ export type LinkBlockFragmentType = FragmentOf<typeof LinkBlockFragment>;
 export const BrandFragment = graphql(`
   fragment BrandFragment on BrandRecord @_unmask {
     id
-    brandLogo {
-      url
-    }
-    mainLogo {
+    logo {
       url
     }
     label

@@ -14,8 +14,11 @@ export type FooterMainProps = {
 
 export type FooterLogoProps = {
   label: string;
-  mainLogo: string;
-  brandLogo: string;
+  logo: {
+    url: string;
+    width?: number | null;
+    height?: number | null;
+  } | null;
   linkTo: string;
   ariaLabel?: string;
 };

@@ -37,6 +37,20 @@ export function lexicalToPlainText(value: unknown): string | null {
   return parts.join(" ").trim() || null;
 }
 
+// Editors sometimes type markdown syntax directly (or it arrives that way via
+// migrated content) instead of using the rich text toolbar. Lexical only auto-converts
+// markdown shortcuts while typing live, so already-saved literal syntax (e.g. "**bold**")
+// would otherwise render as plain text. Parse it into real HTML at render time instead.
+function parseInlineMarkdown(text: string): string {
+  return text
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/_(.+?)_/g, "<em>$1</em>")
+    .replace(/`(.+?)`/g, "<code>$1</code>");
+}
+
 function wrapFormat(text: string, format: number): string {
   if (!format || !text) return text;
   let result = text;
@@ -53,7 +67,10 @@ function wrapFormat(text: string, format: number): string {
 function renderNode(node: LexicalNode): string {
   switch (node.type) {
     case "text":
-      return wrapFormat(node.text ?? "", typeof node.format === "number" ? node.format : 0);
+      return wrapFormat(
+        parseInlineMarkdown(node.text ?? ""),
+        typeof node.format === "number" ? node.format : 0
+      );
 
     case "linebreak":
       return "<br />";
@@ -94,7 +111,7 @@ function renderChildren(node: LexicalNode): string {
 
 export function lexicalToHtml(value: unknown): string | null {
   if (value == null) return null;
-  if (typeof value === "string") return value;
+  if (typeof value === "string") return parseInlineMarkdown(value);
   if (!isLexicalRoot(value)) return null;
   const html = (value.root.children ?? []).map(renderNode).join("");
   return html || null;

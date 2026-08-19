@@ -21,7 +21,13 @@
 
 .it-hero-wrapper.dark {
   .it-hero-text-wrapper h1,
-  .it-hero-text-wrapper p {
+  .it-hero-text-wrapper .font-sans-serif {
+    color: $color-text-base !important;
+  }
+
+  // .font-sans-serif's content comes from set:html (raw richText markup), so Astro
+  // never sees or scopes those inner nodes — :global() is required to reach them.
+  .it-hero-text-wrapper :global(.font-sans-serif p) {
     color: $color-text-base !important;
   }
 }

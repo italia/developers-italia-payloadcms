@@ -54,7 +54,7 @@ const HomepageQuery = `
 
 const SearchQuery = `
   query SearchLinks($locale: LocaleInputType) {
-    Search(locale: $locale) { slug }
+    Search(locale: $locale) { slug title }
   }
 `;
 
@@ -268,14 +268,18 @@ async function generateLinkMap() {
     it: homepageIt.Homepage?.title ?? "",
   };
 
-  // Fetch search page slug per locale
+  // Fetch search page slug + title per locale
   const [searchEn, searchIt] = await Promise.all([
-    gqlFetch<{ Search: { slug: string } | null }>(SearchQuery, { locale: "en" }),
-    gqlFetch<{ Search: { slug: string } | null }>(SearchQuery, { locale: "it" }),
+    gqlFetch<{ Search: { slug: string; title: string } | null }>(SearchQuery, { locale: "en" }),
+    gqlFetch<{ Search: { slug: string; title: string } | null }>(SearchQuery, { locale: "it" }),
   ]);
   const searchSlugByLocale: Partial<Record<SiteLocale, string>> = {
     en: searchEn.Search?.slug || undefined,
     it: searchIt.Search?.slug || undefined,
+  };
+  const searchTitleByLocale: Partial<Record<SiteLocale, string>> = {
+    en: searchEn.Search?.title || undefined,
+    it: searchIt.Search?.title || undefined,
   };
 
   // Fetch all collections for every locale in parallel
@@ -317,12 +321,18 @@ async function generateLinkMap() {
     linkMap[HOMEPAGE_ID][locale] = { path: `/${locale}`, breadcrumb: [] };
   }
 
-  // Search — stable synthetic ID, no parent
+  // Search — stable synthetic ID, no parent, breadcrumb is just Home > Search
   linkMap[SEARCH_ID] = {} as LocaleMap;
   for (const locale of LOCALES) {
     const slug = searchSlugByLocale[locale];
     if (!slug) continue;
-    linkMap[SEARCH_ID][locale] = { path: `/${locale}/${slug}`, breadcrumb: [] };
+    linkMap[SEARCH_ID][locale] = {
+      path: `/${locale}/${slug}`,
+      breadcrumb: [
+        { title: homeTitleByLocale[locale], id: HOMEPAGE_ID },
+        { title: searchTitleByLocale[locale] ?? "", id: SEARCH_ID },
+      ],
+    };
   }
 
   // Pages — top-level, no parent

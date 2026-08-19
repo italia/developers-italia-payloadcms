@@ -11,7 +11,6 @@ import {
 import { SidebarQuery } from "@graphql/query/layout";
 import { AllNewsQuery } from "@graphql/query/news";
 import { AllResourcesQuery } from "@graphql/query/resource";
-import { SearchPageContentQuery } from "@graphql/query/search";
 import { SiteMetaTagsQuery } from "@graphql/query/settings";
 import { AllStoryCardQuery } from "@graphql/query/story";
 import { AllWebinarQuery } from "@graphql/query/webinar";
@@ -872,16 +871,39 @@ export const homepageLoader = async () => {
 };
 
 export const searchLoader = async () => {
-  const response = await executeQuery(SearchPageContentQuery);
-  return response?.search
-    ? [response.search]
-    : [{ id: "search-empty", locales: [], allContentLocales: [] }];
+  const results = await Promise.all(
+    LOCALES.map((locale) =>
+      payloadFetch<SearchGlobal>(
+        "/globals/search",
+        `locale=${locale}&depth=3&fallbackLocale=none`,
+      ).catch(() => null),
+    ),
+  );
+
+  const locales = LOCALES.filter((_, i) => results[i]?.slug);
+  if (locales.length === 0) {
+    return [{ id: "search-empty", locales: [], allContentLocales: [] }];
+  }
+
+  return [
+    {
+      id: "search",
+      locales,
+      allContentLocales: LOCALES.map((locale, i) => ({
+        locale,
+        value: (results[i]?.content ?? []).map((b) =>
+          normalizePayloadBlock(b as Record<string, unknown>),
+        ),
+      })),
+    },
+  ];
 };
 
 type SearchGlobal = {
   isSearchEnabled: boolean | null;
   searchLabel: string | null;
   slug: string | null;
+  content: unknown[] | null;
 };
 
 export const layoutLoader = async () => {

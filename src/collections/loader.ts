@@ -13,7 +13,6 @@ import { AllNewsQuery } from "@graphql/query/news";
 import { AllResourcesQuery } from "@graphql/query/resource";
 import { SearchPageContentQuery } from "@graphql/query/search";
 import { SiteMetaTagsQuery } from "@graphql/query/settings";
-import { ErrorPageQuery } from "@graphql/query/errorPage";
 import { AllStoryCardQuery } from "@graphql/query/story";
 import { AllWebinarQuery } from "@graphql/query/webinar";
 import { LastItemsUpdateQuery } from "@graphql/query/catalogue";
@@ -1002,12 +1001,43 @@ export const localesLoader = async () => {
 };
 
 export const errorPageLoader = async () => {
-  const response = await executeQuery(ErrorPageQuery);
+  type GlobalSettingErrorDoc = {
+    title: string | null;
+    paragraph: unknown;
+    labelCta: string | null;
+    image: { url: string; width?: number | null; height?: number | null; alt?: string | null } | null;
+  };
+
+  const results = await Promise.all(
+    LOCALES.map((locale) =>
+      payloadFetch<GlobalSettingErrorDoc>(
+        "/globals/global-setting",
+        `locale=${locale}&depth=1&fallbackLocale=none`,
+      ).catch(() => null),
+    ),
+  );
+
+  const buildTextLocales = (getter: (r: GlobalSettingErrorDoc) => string | null) =>
+    LOCALES.map((locale, i) => {
+      const doc = results[i];
+      return { locale, value: (doc ? getter(doc) : null) ?? "" };
+    });
+
+  const image = results.find((r) => r?.image)?.image ?? null;
+  const hasData = results.some((r) => r !== null);
+
   return [
     {
       id: "error-page",
-      globalSetting: response?.globalSetting ?? null,
-      homepageId: response?.homepage?.id ?? undefined,
+      globalSetting: hasData
+        ? {
+            _allTitleLocales: buildTextLocales((r) => r.title),
+            _allParagraphLocales: buildTextLocales((r) => lexicalToHtml(r.paragraph)),
+            _allLabelCtaLocales: buildTextLocales((r) => r.labelCta),
+            image,
+          }
+        : null,
+      homepageId: "homepage",
     },
   ];
 };

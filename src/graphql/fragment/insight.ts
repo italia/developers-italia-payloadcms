@@ -9,6 +9,16 @@ import {
   PayloadTextUseCaseFragment,
 } from "@graphql/fragment/payloadBlocks";
 import { graphql, type FragmentOf } from "@graphql/graphql";
+import {
+  SearchCardLinkListFragment,
+  SearchHeroFragment,
+  SearchNewsFeedFragment,
+  SearchSupportChannelsSectionFragment,
+  SearchTextImageFragment,
+  SearchTextOnlyFragment,
+  SearchTextStatisticFragment,
+  SearchTextUseCaseFragment,
+} from "@graphql/fragment/searchBlocks";
 
 export const InsightPayloadFragment = graphql(
   `
@@ -55,7 +65,12 @@ export const InsightPayloadFragment = graphql(
 
 export type InsightPayloadFragmentType = FragmentOf<typeof InsightPayloadFragment>;
 
-export const InsightIndexPayloadFragment = graphql(`
+// Uses the minimal text-only Search*Fragment set (searchBlocks.ts), not the full
+// Payload*Fragment set — reusing those causes a GraphQL field-merge error, since
+// `bg`/`variant` resolve to a distinct enum type per block (Hero_bg, TextOnly_bg, ...)
+// even though they share the same values.
+export const InsightIndexPayloadFragment = graphql(
+  `
   fragment InsightIndexPayloadFragment on Insight @_unmask {
     id
     slug
@@ -67,7 +82,28 @@ export const InsightIndexPayloadFragment = graphql(`
       id
       title
     }
+    content {
+      ... on Hero { ...SearchHeroFragment }
+      ... on TextOnly { ...SearchTextOnlyFragment }
+      ... on TextImage { ...SearchTextImageFragment }
+      ... on NewsFeed { ...SearchNewsFeedFragment }
+      ... on SupportChannelsSection { ...SearchSupportChannelsSectionFragment }
+      ... on TextUseCase { ...SearchTextUseCaseFragment }
+      ... on TextStatistic { ...SearchTextStatisticFragment }
+      ... on CardLinkList { ...SearchCardLinkListFragment }
+    }
   }
-`);
+`,
+  [
+    SearchHeroFragment,
+    SearchTextOnlyFragment,
+    SearchTextImageFragment,
+    SearchNewsFeedFragment,
+    SearchSupportChannelsSectionFragment,
+    SearchTextUseCaseFragment,
+    SearchTextStatisticFragment,
+    SearchCardLinkListFragment,
+  ],
+);
 
 export type InsightIndexPayloadFragmentType = FragmentOf<typeof InsightIndexPayloadFragment>;

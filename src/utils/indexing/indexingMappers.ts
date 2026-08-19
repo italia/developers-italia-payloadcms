@@ -7,6 +7,8 @@ import type {
   WebinarIndexPayloadFragmentType,
 } from "@graphql/fragment/indexing";
 import type { SiteLocale } from "@graphql/types";
+import { flattenBlocks } from "@utils/indexing/blockContentMappers";
+import { lexicalToPlainText } from "@utils/lexicalUtils";
 import { linkResolver } from "@utils/linkResolver";
 
 // PayloadCMS docs are already locale-resolved (fetched with ?locale=xx).
@@ -28,8 +30,8 @@ export const getMapArticle = (
     category,
     internalLink: linkResolver(`articles:${article.id}`, lang),
     title: article.title ?? "",
-    description: (article as any).paragraph ?? "",
-    content: (article as any).paragraph ?? "",
+    description: lexicalToPlainText(article.paragraph) ?? "",
+    content: lexicalToPlainText(article.content) ?? "",
   };
 };
 
@@ -48,8 +50,8 @@ export const getMapInsight = (
     category,
     internalLink: linkResolver(`insights:${insight.id}`, lang),
     title: insight.title ?? "",
-    description: (insight as any).abstract ?? "",
-    content: (insight as any).abstract ?? "",
+    description: lexicalToPlainText(insight.abstract) ?? "",
+    content: flattenBlocks(insight.content),
   };
 };
 
@@ -68,8 +70,8 @@ export const getMapStory = (
     category,
     internalLink: linkResolver(`story-items:${story.id}`, lang),
     title: story.title ?? "",
-    description: "",
-    content: "",
+    description: lexicalToPlainText(story.paragraph) ?? "",
+    content: flattenBlocks(story.content),
   };
 };
 
@@ -87,9 +89,9 @@ export const getMapWebinar = (
     id: webinar.id,
     category,
     internalLink: linkResolver(`webinar-items:${webinar.id}`, lang),
-    title: (webinar as any).title ?? "",
-    description: (webinar as any).paragraph ?? "",
-    content: (webinar as any).paragraph ?? "",
+    title: webinar.title ?? "",
+    description: lexicalToPlainText(webinar.paragraph) ?? "",
+    content: flattenBlocks(webinar.content),
   };
 };
 
@@ -135,6 +137,6 @@ export const getMapPages = (
     internalLink: linkResolver(`pages:${page.id}`, lang),
     title: page.title ?? "",
     description: "",
-    content: "",
+    content: flattenBlocks(page.content),
   };
 };

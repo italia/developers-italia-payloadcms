@@ -9,6 +9,7 @@ import HeroAdapter from "@components/cms-adapters/datocms/HeroAdapter.astro";
 import IntroArticleAdapter from "@components/cms-adapters/datocms/IntroArticleAdapter.astro";
 import ListCollectionAdapter from "@components/cms-adapters/datocms/ListCollectionAdapter.astro";
 import NewsFeedAdapter from "@components/cms-adapters/datocms/NewsFeedAdapter.astro";
+import OrderedListAdapter from "@components/cms-adapters/datocms/OrderedListAdapter.astro";
 import SearchBarAdapter from "@components/cms-adapters/datocms/SearchBarAdapter.astro";
 import SpeakerAdapter from "@components/cms-adapters/datocms/SpeakerAdapter.astro";
 import StructuredTextBlockAdapter from "@components/cms-adapters/datocms/StructuredTextBlockAdapter.astro";
@@ -89,6 +90,8 @@ const { content, isFontSerif = false, centeredText = false } = Astro.props;
         return <TextOnlyAdapter block={block} />;
       case DatoBlockModel.CardLinkList:
         return <CardLinkListAdapter block={block} />;
+      case DatoBlockModel.OrderedList:
+        return <OrderedListAdapter block={block} />;
       default:
         return null;
     }

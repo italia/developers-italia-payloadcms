@@ -192,7 +192,8 @@ export const PayloadStructuredTextBlockFragment = graphql(`
 `);
 export type PayloadStructuredTextBlockFragmentType = FragmentOf<typeof PayloadStructuredTextBlockFragment>;
 
-export const PayloadSupportChannelsSectionFragment = graphql(`
+export const PayloadSupportChannelsSectionFragment = graphql(
+  `
   fragment PayloadSupportChannelsSectionFragment on SupportChannelsSection @_unmask {
     id
     blockType
@@ -205,12 +206,14 @@ export const PayloadSupportChannelsSectionFragment = graphql(`
         blockType
         title
         description
-        iconSelect
+        iconSelect { ...PayloadMediaFragment }
         linkTo
       }
     }
   }
-`);
+`,
+  [PayloadMediaFragment],
+);
 export type PayloadSupportChannelsSectionFragmentType = FragmentOf<typeof PayloadSupportChannelsSectionFragment>;
 
 export const PayloadTextAccordionFragment = graphql(
@@ -395,7 +398,18 @@ export const PayloadNewsFeedFragment = graphql(`
         id
         blockType
         title
-        news {
+        news: Stories {
+          id
+          slug
+          title
+          localizedSlugs
+        }
+      }
+      ... on WebinarTab {
+        id
+        blockType
+        title
+        news: Webinars {
           id
           slug
           title

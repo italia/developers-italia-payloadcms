@@ -61,6 +61,10 @@ type Query {
   Resources(draft: Boolean, where: Resource_where, fallbackLocale: FallbackLocaleInputType, locale: LocaleInputType, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): Resources
   countResources(draft: Boolean, trash: Boolean, where: Resource_where, locale: LocaleInputType): countResources
   docAccessResource(id: String!): resourcesDocAccess
+  Feedback(id: String!, draft: Boolean, fallbackLocale: FallbackLocaleInputType, locale: LocaleInputType, select: Boolean, trash: Boolean): Feedback
+  Feedbacks(draft: Boolean, where: Feedback_where, fallbackLocale: FallbackLocaleInputType, locale: LocaleInputType, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): Feedbacks
+  countFeedbacks(draft: Boolean, trash: Boolean, where: Feedback_where, locale: LocaleInputType): countFeedbacks
+  docAccessFeedback(id: String!): feedbackDocAccess
   Page(id: String!, draft: Boolean, fallbackLocale: FallbackLocaleInputType, locale: LocaleInputType, select: Boolean, trash: Boolean): Page
   Pages(draft: Boolean, where: Page_where, fallbackLocale: FallbackLocaleInputType, locale: LocaleInputType, limit: Int, page: Int, pagination: Boolean, select: Boolean, sort: String, trash: Boolean): Pages
   countPages(draft: Boolean, trash: Boolean, where: Page_where, locale: LocaleInputType): countPages
@@ -4539,6 +4543,359 @@ type ResourcesDeleteDocAccess {
   where: JSONObject
 }
 
+type Feedback {
+  id: String!
+  feedback: String!
+  url: String!
+  message: String
+  expertise: String
+  reachedFrom: String
+  updatedAt: DateTime
+  createdAt: DateTime
+}
+
+type Feedbacks {
+  docs: [Feedback!]!
+  hasNextPage: Boolean!
+  hasPrevPage: Boolean!
+  limit: Int!
+  nextPage: Int
+  offset: Int
+  page: Int!
+  pagingCounter: Int!
+  prevPage: Int
+  totalDocs: Int!
+  totalPages: Int!
+}
+
+input Feedback_where {
+  feedback: Feedback_feedback_operator
+  url: Feedback_url_operator
+  message: Feedback_message_operator
+  expertise: Feedback_expertise_operator
+  reachedFrom: Feedback_reachedFrom_operator
+  updatedAt: Feedback_updatedAt_operator
+  createdAt: Feedback_createdAt_operator
+  id: Feedback_id_operator
+  AND: [Feedback_where_and]
+  OR: [Feedback_where_or]
+}
+
+input Feedback_feedback_operator {
+  equals: String
+  not_equals: String
+  like: String
+  contains: String
+  in: [String]
+  not_in: [String]
+  all: [String]
+}
+
+input Feedback_url_operator {
+  equals: String
+  not_equals: String
+  like: String
+  contains: String
+  in: [String]
+  not_in: [String]
+  all: [String]
+}
+
+input Feedback_message_operator {
+  equals: String
+  not_equals: String
+  like: String
+  contains: String
+  in: [String]
+  not_in: [String]
+  all: [String]
+  exists: Boolean
+}
+
+input Feedback_expertise_operator {
+  equals: String
+  not_equals: String
+  like: String
+  contains: String
+  in: [String]
+  not_in: [String]
+  all: [String]
+  exists: Boolean
+}
+
+input Feedback_reachedFrom_operator {
+  equals: String
+  not_equals: String
+  like: String
+  contains: String
+  in: [String]
+  not_in: [String]
+  all: [String]
+  exists: Boolean
+}
+
+input Feedback_updatedAt_operator {
+  equals: DateTime
+  not_equals: DateTime
+  greater_than_equal: DateTime
+  greater_than: DateTime
+  less_than_equal: DateTime
+  less_than: DateTime
+  like: DateTime
+  exists: Boolean
+}
+
+input Feedback_createdAt_operator {
+  equals: DateTime
+  not_equals: DateTime
+  greater_than_equal: DateTime
+  greater_than: DateTime
+  less_than_equal: DateTime
+  less_than: DateTime
+  like: DateTime
+  exists: Boolean
+}
+
+input Feedback_id_operator {
+  equals: String
+  not_equals: String
+  like: String
+  contains: String
+  in: [String]
+  not_in: [String]
+  all: [String]
+  exists: Boolean
+}
+
+input Feedback_where_and {
+  feedback: Feedback_feedback_operator
+  url: Feedback_url_operator
+  message: Feedback_message_operator
+  expertise: Feedback_expertise_operator
+  reachedFrom: Feedback_reachedFrom_operator
+  updatedAt: Feedback_updatedAt_operator
+  createdAt: Feedback_createdAt_operator
+  id: Feedback_id_operator
+  AND: [Feedback_where_and]
+  OR: [Feedback_where_or]
+}
+
+input Feedback_where_or {
+  feedback: Feedback_feedback_operator
+  url: Feedback_url_operator
+  message: Feedback_message_operator
+  expertise: Feedback_expertise_operator
+  reachedFrom: Feedback_reachedFrom_operator
+  updatedAt: Feedback_updatedAt_operator
+  createdAt: Feedback_createdAt_operator
+  id: Feedback_id_operator
+  AND: [Feedback_where_and]
+  OR: [Feedback_where_or]
+}
+
+type countFeedbacks {
+  totalDocs: Int
+}
+
+type feedbackDocAccess {
+  fields: FeedbackDocAccessFields
+  create: FeedbackCreateDocAccess
+  read: FeedbackReadDocAccess
+  update: FeedbackUpdateDocAccess
+  delete: FeedbackDeleteDocAccess
+}
+
+type FeedbackDocAccessFields {
+  feedback: FeedbackDocAccessFields_feedback
+  url: FeedbackDocAccessFields_url
+  message: FeedbackDocAccessFields_message
+  expertise: FeedbackDocAccessFields_expertise
+  reachedFrom: FeedbackDocAccessFields_reachedFrom
+  updatedAt: FeedbackDocAccessFields_updatedAt
+  createdAt: FeedbackDocAccessFields_createdAt
+}
+
+type FeedbackDocAccessFields_feedback {
+  create: FeedbackDocAccessFields_feedback_Create
+  read: FeedbackDocAccessFields_feedback_Read
+  update: FeedbackDocAccessFields_feedback_Update
+  delete: FeedbackDocAccessFields_feedback_Delete
+}
+
+type FeedbackDocAccessFields_feedback_Create {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_feedback_Read {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_feedback_Update {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_feedback_Delete {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_url {
+  create: FeedbackDocAccessFields_url_Create
+  read: FeedbackDocAccessFields_url_Read
+  update: FeedbackDocAccessFields_url_Update
+  delete: FeedbackDocAccessFields_url_Delete
+}
+
+type FeedbackDocAccessFields_url_Create {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_url_Read {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_url_Update {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_url_Delete {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_message {
+  create: FeedbackDocAccessFields_message_Create
+  read: FeedbackDocAccessFields_message_Read
+  update: FeedbackDocAccessFields_message_Update
+  delete: FeedbackDocAccessFields_message_Delete
+}
+
+type FeedbackDocAccessFields_message_Create {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_message_Read {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_message_Update {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_message_Delete {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_expertise {
+  create: FeedbackDocAccessFields_expertise_Create
+  read: FeedbackDocAccessFields_expertise_Read
+  update: FeedbackDocAccessFields_expertise_Update
+  delete: FeedbackDocAccessFields_expertise_Delete
+}
+
+type FeedbackDocAccessFields_expertise_Create {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_expertise_Read {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_expertise_Update {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_expertise_Delete {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_reachedFrom {
+  create: FeedbackDocAccessFields_reachedFrom_Create
+  read: FeedbackDocAccessFields_reachedFrom_Read
+  update: FeedbackDocAccessFields_reachedFrom_Update
+  delete: FeedbackDocAccessFields_reachedFrom_Delete
+}
+
+type FeedbackDocAccessFields_reachedFrom_Create {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_reachedFrom_Read {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_reachedFrom_Update {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_reachedFrom_Delete {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_updatedAt {
+  create: FeedbackDocAccessFields_updatedAt_Create
+  read: FeedbackDocAccessFields_updatedAt_Read
+  update: FeedbackDocAccessFields_updatedAt_Update
+  delete: FeedbackDocAccessFields_updatedAt_Delete
+}
+
+type FeedbackDocAccessFields_updatedAt_Create {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_updatedAt_Read {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_updatedAt_Update {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_updatedAt_Delete {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_createdAt {
+  create: FeedbackDocAccessFields_createdAt_Create
+  read: FeedbackDocAccessFields_createdAt_Read
+  update: FeedbackDocAccessFields_createdAt_Update
+  delete: FeedbackDocAccessFields_createdAt_Delete
+}
+
+type FeedbackDocAccessFields_createdAt_Create {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_createdAt_Read {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_createdAt_Update {
+  permission: Boolean!
+}
+
+type FeedbackDocAccessFields_createdAt_Delete {
+  permission: Boolean!
+}
+
+type FeedbackCreateDocAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
+type FeedbackReadDocAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
+type FeedbackUpdateDocAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
+type FeedbackDeleteDocAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
 type Page {
   id: String!
   title: String
@@ -4669,7 +5026,7 @@ type Insight {
   createdAt: DateTime
 }
 
-union Insight_Content = Hero | TextOnly | TextImage | NewsFeed | SupportChannelsSection | TextUseCase | TextStatistic | CardLinkList
+union Insight_Content = Hero | TextOnly | TextImage | NewsFeed | SupportChannelsSection | TextUseCase | TextStatistic | CardLinkList | StructuredTextBlock | ListCollection
 
 type TextOnly {
   bg: TextOnly_bg!
@@ -4709,7 +5066,7 @@ type TextBlock {
 union TextBlock_Cta = InternalLink | ExternalLink
 
 type TextImage {
-  variant: String!
+  variant: TextImage_variant!
   bg: TextImage_bg!
   heading: TextImage_heading
   text: [TextImage_Text!]!
@@ -4718,6 +5075,12 @@ type TextImage {
   id: String
   blockName: String
   blockType: String
+}
+
+enum TextImage_variant {
+  variant_1
+  variant_2
+  variant_3
 }
 
 enum TextImage_bg {
@@ -4777,7 +5140,7 @@ enum NewsFeed_bg {
   dark
 }
 
-union NewsFeed_Tabs = NewsTab | StoryTab
+union NewsFeed_Tabs = NewsTab | StoryTab | WebinarTab
 
 type NewsTab {
   title: String!
@@ -4789,7 +5152,7 @@ type NewsTab {
 
 type StoryTab {
   title: String!
-  news(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): [StoryItem!]
+  Stories(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): [StoryItem!]
   id: String
   blockName: String
   blockType: String
@@ -4813,7 +5176,7 @@ type StoryItem {
   createdAt: DateTime
 }
 
-union StoryItem_Content = Hero | FaqSection | TextOnly | StructuredTextBlock | TextImage | SupportChannelsSection | TextAccordion | ListCollection | SupportCtaSection | TextUseCase | TextStatistic | CardLinkList
+union StoryItem_Content = Hero | FaqSection | TextOnly | StructuredTextBlock | TextImage | SupportChannelsSection | TextAccordion | ListCollection | SupportCtaSection | TextUseCase | TextStatistic | CardLinkList | IntroArticle
 
 type FaqSection {
   bg: FaqSection_bg!
@@ -4892,7 +5255,7 @@ union SupportChannelsSection_Channels = Channel
 type Channel {
   title: String!
   description(depth: Int): JSON!
-  iconSelect: String!
+  iconSelect(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): Media
   linkTo: String!
   id: String
   blockName: String
@@ -4974,6 +5337,7 @@ union WebinarItem_Content = Hero | ActionCard | Speaker | WebinarDescription
 type ActionCard {
   title: String!
   category: String
+  videoUrl: String
   cta: [ActionCard_Cta!]!
   paragraph(depth: Int): JSON!
   readMoreLabel: String!
@@ -5269,11 +5633,20 @@ type CatalogueTab {
   filterTitle: String!
   labelForAll: String!
   newsPageTabType: String!
-  filterStory(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): StoryTopic
+  filterStory(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): StoryClass
+  sortMode: CatalogueTab_sortMode
   elementPerPage: Float
   id: String
   blockName: String
   blockType: String
+}
+
+enum CatalogueTab_sortMode {
+  date_desc
+  date_asc
+  title_asc
+  title_desc
+  updated_desc
 }
 
 type Catalogue_Seo {
@@ -5282,10 +5655,57 @@ type Catalogue_Seo {
   image(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): Media
 }
 
+type IntroArticle {
+  text: [IntroArticle_Text!]!
+  list: [IntroArticle_List!]!
+  id: String
+  blockName: String
+  blockType: String
+}
+
+union IntroArticle_Text = TextBlock
+
+union IntroArticle_List = IconListBlock
+
+type IconListBlock {
+  title: String
+  items: [IconListBlock_Items!]
+  id: String
+  blockName: String
+  blockType: String
+}
+
+union IconListBlock_Items = IconList
+
+type IconList {
+  items: [IconList_Items!]
+  id: String
+  blockName: String
+  blockType: String
+}
+
+union IconList_Items = IconListItem
+
+type IconListItem {
+  iconSelect: String!
+  label: String!
+  id: String
+  blockName: String
+  blockType: String
+}
+
 type StoryItem_Seo {
   title: String
   description: String
   image(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): Media
+}
+
+type WebinarTab {
+  title: String!
+  Webinars(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): [WebinarItem!]
+  id: String
+  blockName: String
+  blockType: String
 }
 
 union NewsFeed_Cta = InternalLink | ExternalLink
@@ -7807,6 +8227,7 @@ input StoryItem_image_operator {
   in: [JSON]
   not_in: [JSON]
   all: [JSON]
+  exists: Boolean
 }
 
 input StoryItem_seo__title_operator {
@@ -9018,6 +9439,7 @@ enum PayloadLockedDocument_Document_RelationTo {
   kpi_elements
   news_items
   resources
+  feedback
   pages
   articles
   insights
@@ -9026,7 +9448,7 @@ enum PayloadLockedDocument_Document_RelationTo {
   catalogues
 }
 
-union PayloadLockedDocument_Document = User | Media | ArticleTopic | NewsTopic | StoryTopic | InsightTopic | ResourceTopic | WebinarTopic | MacroTopic | StoryClass | WebinarAuthor | ChartElement | KpiElement | NewsItem | Resource | Page | Article | Insight | WebinarItem | StoryItem | Catalogue
+union PayloadLockedDocument_Document = User | Media | ArticleTopic | NewsTopic | StoryTopic | InsightTopic | ResourceTopic | WebinarTopic | MacroTopic | StoryClass | WebinarAuthor | ChartElement | KpiElement | NewsItem | Resource | Feedback | Page | Article | Insight | WebinarItem | StoryItem | Catalogue
 
 type PayloadLockedDocument_User_Relationship {
   relationTo: PayloadLockedDocument_User_RelationTo
@@ -9085,6 +9507,7 @@ enum PayloadLockedDocument_document_Relation_RelationTo {
   kpi_elements
   news_items
   resources
+  feedback
   pages
   articles
   insights
@@ -10763,13 +11186,13 @@ type SearchUpdateDocAccess {
 }
 
 type GlobalSetting {
-  lastUpdateLabel: String
-  title: String
-  links: [GlobalSetting_Links!]
-  paragraph(depth: Int): JSON
   siteName: String
+  title: String
+  paragraph(depth: Int): JSON
   image(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): Media
   labelCta: String
+  lastUpdateLabel: String
+  links: [GlobalSetting_Links!]
   updatedAt: DateTime
   createdAt: DateTime
 }
@@ -10783,37 +11206,37 @@ type global_settingDocAccess {
 }
 
 type GlobalSettingDocAccessFields {
-  lastUpdateLabel: GlobalSettingDocAccessFields_lastUpdateLabel
-  title: GlobalSettingDocAccessFields_title
-  links: GlobalSettingDocAccessFields_links
-  paragraph: GlobalSettingDocAccessFields_paragraph
   siteName: GlobalSettingDocAccessFields_siteName
+  title: GlobalSettingDocAccessFields_title
+  paragraph: GlobalSettingDocAccessFields_paragraph
   image: GlobalSettingDocAccessFields_image
   labelCta: GlobalSettingDocAccessFields_labelCta
+  lastUpdateLabel: GlobalSettingDocAccessFields_lastUpdateLabel
+  links: GlobalSettingDocAccessFields_links
   updatedAt: GlobalSettingDocAccessFields_updatedAt
   createdAt: GlobalSettingDocAccessFields_createdAt
 }
 
-type GlobalSettingDocAccessFields_lastUpdateLabel {
-  create: GlobalSettingDocAccessFields_lastUpdateLabel_Create
-  read: GlobalSettingDocAccessFields_lastUpdateLabel_Read
-  update: GlobalSettingDocAccessFields_lastUpdateLabel_Update
-  delete: GlobalSettingDocAccessFields_lastUpdateLabel_Delete
+type GlobalSettingDocAccessFields_siteName {
+  create: GlobalSettingDocAccessFields_siteName_Create
+  read: GlobalSettingDocAccessFields_siteName_Read
+  update: GlobalSettingDocAccessFields_siteName_Update
+  delete: GlobalSettingDocAccessFields_siteName_Delete
 }
 
-type GlobalSettingDocAccessFields_lastUpdateLabel_Create {
+type GlobalSettingDocAccessFields_siteName_Create {
   permission: Boolean!
 }
 
-type GlobalSettingDocAccessFields_lastUpdateLabel_Read {
+type GlobalSettingDocAccessFields_siteName_Read {
   permission: Boolean!
 }
 
-type GlobalSettingDocAccessFields_lastUpdateLabel_Update {
+type GlobalSettingDocAccessFields_siteName_Update {
   permission: Boolean!
 }
 
-type GlobalSettingDocAccessFields_lastUpdateLabel_Delete {
+type GlobalSettingDocAccessFields_siteName_Delete {
   permission: Boolean!
 }
 
@@ -10840,29 +11263,6 @@ type GlobalSettingDocAccessFields_title_Delete {
   permission: Boolean!
 }
 
-type GlobalSettingDocAccessFields_links {
-  create: GlobalSettingDocAccessFields_links_Create
-  read: GlobalSettingDocAccessFields_links_Read
-  update: GlobalSettingDocAccessFields_links_Update
-  delete: GlobalSettingDocAccessFields_links_Delete
-}
-
-type GlobalSettingDocAccessFields_links_Create {
-  permission: Boolean!
-}
-
-type GlobalSettingDocAccessFields_links_Read {
-  permission: Boolean!
-}
-
-type GlobalSettingDocAccessFields_links_Update {
-  permission: Boolean!
-}
-
-type GlobalSettingDocAccessFields_links_Delete {
-  permission: Boolean!
-}
-
 type GlobalSettingDocAccessFields_paragraph {
   create: GlobalSettingDocAccessFields_paragraph_Create
   read: GlobalSettingDocAccessFields_paragraph_Read
@@ -10883,29 +11283,6 @@ type GlobalSettingDocAccessFields_paragraph_Update {
 }
 
 type GlobalSettingDocAccessFields_paragraph_Delete {
-  permission: Boolean!
-}
-
-type GlobalSettingDocAccessFields_siteName {
-  create: GlobalSettingDocAccessFields_siteName_Create
-  read: GlobalSettingDocAccessFields_siteName_Read
-  update: GlobalSettingDocAccessFields_siteName_Update
-  delete: GlobalSettingDocAccessFields_siteName_Delete
-}
-
-type GlobalSettingDocAccessFields_siteName_Create {
-  permission: Boolean!
-}
-
-type GlobalSettingDocAccessFields_siteName_Read {
-  permission: Boolean!
-}
-
-type GlobalSettingDocAccessFields_siteName_Update {
-  permission: Boolean!
-}
-
-type GlobalSettingDocAccessFields_siteName_Delete {
   permission: Boolean!
 }
 
@@ -10952,6 +11329,52 @@ type GlobalSettingDocAccessFields_labelCta_Update {
 }
 
 type GlobalSettingDocAccessFields_labelCta_Delete {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_lastUpdateLabel {
+  create: GlobalSettingDocAccessFields_lastUpdateLabel_Create
+  read: GlobalSettingDocAccessFields_lastUpdateLabel_Read
+  update: GlobalSettingDocAccessFields_lastUpdateLabel_Update
+  delete: GlobalSettingDocAccessFields_lastUpdateLabel_Delete
+}
+
+type GlobalSettingDocAccessFields_lastUpdateLabel_Create {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_lastUpdateLabel_Read {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_lastUpdateLabel_Update {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_lastUpdateLabel_Delete {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_links {
+  create: GlobalSettingDocAccessFields_links_Create
+  read: GlobalSettingDocAccessFields_links_Read
+  update: GlobalSettingDocAccessFields_links_Update
+  delete: GlobalSettingDocAccessFields_links_Delete
+}
+
+type GlobalSettingDocAccessFields_links_Create {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_links_Read {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_links_Update {
+  permission: Boolean!
+}
+
+type GlobalSettingDocAccessFields_links_Delete {
   permission: Boolean!
 }
 
@@ -11458,6 +11881,7 @@ type Access {
   kpi_elements: kpi_elementsAccess
   news_items: news_itemsAccess
   resources: resourcesAccess
+  feedback: feedbackAccess
   pages: pagesAccess
   articles: articlesAccess
   insights: insightsAccess
@@ -13914,6 +14338,205 @@ type ResourcesUpdateAccess {
 }
 
 type ResourcesDeleteAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
+type feedbackAccess {
+  fields: FeedbackFields
+  create: FeedbackCreateAccess
+  read: FeedbackReadAccess
+  update: FeedbackUpdateAccess
+  delete: FeedbackDeleteAccess
+}
+
+type FeedbackFields {
+  feedback: FeedbackFields_feedback
+  url: FeedbackFields_url
+  message: FeedbackFields_message
+  expertise: FeedbackFields_expertise
+  reachedFrom: FeedbackFields_reachedFrom
+  updatedAt: FeedbackFields_updatedAt
+  createdAt: FeedbackFields_createdAt
+}
+
+type FeedbackFields_feedback {
+  create: FeedbackFields_feedback_Create
+  read: FeedbackFields_feedback_Read
+  update: FeedbackFields_feedback_Update
+  delete: FeedbackFields_feedback_Delete
+}
+
+type FeedbackFields_feedback_Create {
+  permission: Boolean!
+}
+
+type FeedbackFields_feedback_Read {
+  permission: Boolean!
+}
+
+type FeedbackFields_feedback_Update {
+  permission: Boolean!
+}
+
+type FeedbackFields_feedback_Delete {
+  permission: Boolean!
+}
+
+type FeedbackFields_url {
+  create: FeedbackFields_url_Create
+  read: FeedbackFields_url_Read
+  update: FeedbackFields_url_Update
+  delete: FeedbackFields_url_Delete
+}
+
+type FeedbackFields_url_Create {
+  permission: Boolean!
+}
+
+type FeedbackFields_url_Read {
+  permission: Boolean!
+}
+
+type FeedbackFields_url_Update {
+  permission: Boolean!
+}
+
+type FeedbackFields_url_Delete {
+  permission: Boolean!
+}
+
+type FeedbackFields_message {
+  create: FeedbackFields_message_Create
+  read: FeedbackFields_message_Read
+  update: FeedbackFields_message_Update
+  delete: FeedbackFields_message_Delete
+}
+
+type FeedbackFields_message_Create {
+  permission: Boolean!
+}
+
+type FeedbackFields_message_Read {
+  permission: Boolean!
+}
+
+type FeedbackFields_message_Update {
+  permission: Boolean!
+}
+
+type FeedbackFields_message_Delete {
+  permission: Boolean!
+}
+
+type FeedbackFields_expertise {
+  create: FeedbackFields_expertise_Create
+  read: FeedbackFields_expertise_Read
+  update: FeedbackFields_expertise_Update
+  delete: FeedbackFields_expertise_Delete
+}
+
+type FeedbackFields_expertise_Create {
+  permission: Boolean!
+}
+
+type FeedbackFields_expertise_Read {
+  permission: Boolean!
+}
+
+type FeedbackFields_expertise_Update {
+  permission: Boolean!
+}
+
+type FeedbackFields_expertise_Delete {
+  permission: Boolean!
+}
+
+type FeedbackFields_reachedFrom {
+  create: FeedbackFields_reachedFrom_Create
+  read: FeedbackFields_reachedFrom_Read
+  update: FeedbackFields_reachedFrom_Update
+  delete: FeedbackFields_reachedFrom_Delete
+}
+
+type FeedbackFields_reachedFrom_Create {
+  permission: Boolean!
+}
+
+type FeedbackFields_reachedFrom_Read {
+  permission: Boolean!
+}
+
+type FeedbackFields_reachedFrom_Update {
+  permission: Boolean!
+}
+
+type FeedbackFields_reachedFrom_Delete {
+  permission: Boolean!
+}
+
+type FeedbackFields_updatedAt {
+  create: FeedbackFields_updatedAt_Create
+  read: FeedbackFields_updatedAt_Read
+  update: FeedbackFields_updatedAt_Update
+  delete: FeedbackFields_updatedAt_Delete
+}
+
+type FeedbackFields_updatedAt_Create {
+  permission: Boolean!
+}
+
+type FeedbackFields_updatedAt_Read {
+  permission: Boolean!
+}
+
+type FeedbackFields_updatedAt_Update {
+  permission: Boolean!
+}
+
+type FeedbackFields_updatedAt_Delete {
+  permission: Boolean!
+}
+
+type FeedbackFields_createdAt {
+  create: FeedbackFields_createdAt_Create
+  read: FeedbackFields_createdAt_Read
+  update: FeedbackFields_createdAt_Update
+  delete: FeedbackFields_createdAt_Delete
+}
+
+type FeedbackFields_createdAt_Create {
+  permission: Boolean!
+}
+
+type FeedbackFields_createdAt_Read {
+  permission: Boolean!
+}
+
+type FeedbackFields_createdAt_Update {
+  permission: Boolean!
+}
+
+type FeedbackFields_createdAt_Delete {
+  permission: Boolean!
+}
+
+type FeedbackCreateAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
+type FeedbackReadAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
+type FeedbackUpdateAccess {
+  permission: Boolean!
+  where: JSONObject
+}
+
+type FeedbackDeleteAccess {
   permission: Boolean!
   where: JSONObject
 }
@@ -17509,37 +18132,37 @@ type global_settingAccess {
 }
 
 type GlobalSettingFields {
-  lastUpdateLabel: GlobalSettingFields_lastUpdateLabel
-  title: GlobalSettingFields_title
-  links: GlobalSettingFields_links
-  paragraph: GlobalSettingFields_paragraph
   siteName: GlobalSettingFields_siteName
+  title: GlobalSettingFields_title
+  paragraph: GlobalSettingFields_paragraph
   image: GlobalSettingFields_image
   labelCta: GlobalSettingFields_labelCta
+  lastUpdateLabel: GlobalSettingFields_lastUpdateLabel
+  links: GlobalSettingFields_links
   updatedAt: GlobalSettingFields_updatedAt
   createdAt: GlobalSettingFields_createdAt
 }
 
-type GlobalSettingFields_lastUpdateLabel {
-  create: GlobalSettingFields_lastUpdateLabel_Create
-  read: GlobalSettingFields_lastUpdateLabel_Read
-  update: GlobalSettingFields_lastUpdateLabel_Update
-  delete: GlobalSettingFields_lastUpdateLabel_Delete
+type GlobalSettingFields_siteName {
+  create: GlobalSettingFields_siteName_Create
+  read: GlobalSettingFields_siteName_Read
+  update: GlobalSettingFields_siteName_Update
+  delete: GlobalSettingFields_siteName_Delete
 }
 
-type GlobalSettingFields_lastUpdateLabel_Create {
+type GlobalSettingFields_siteName_Create {
   permission: Boolean!
 }
 
-type GlobalSettingFields_lastUpdateLabel_Read {
+type GlobalSettingFields_siteName_Read {
   permission: Boolean!
 }
 
-type GlobalSettingFields_lastUpdateLabel_Update {
+type GlobalSettingFields_siteName_Update {
   permission: Boolean!
 }
 
-type GlobalSettingFields_lastUpdateLabel_Delete {
+type GlobalSettingFields_siteName_Delete {
   permission: Boolean!
 }
 
@@ -17566,29 +18189,6 @@ type GlobalSettingFields_title_Delete {
   permission: Boolean!
 }
 
-type GlobalSettingFields_links {
-  create: GlobalSettingFields_links_Create
-  read: GlobalSettingFields_links_Read
-  update: GlobalSettingFields_links_Update
-  delete: GlobalSettingFields_links_Delete
-}
-
-type GlobalSettingFields_links_Create {
-  permission: Boolean!
-}
-
-type GlobalSettingFields_links_Read {
-  permission: Boolean!
-}
-
-type GlobalSettingFields_links_Update {
-  permission: Boolean!
-}
-
-type GlobalSettingFields_links_Delete {
-  permission: Boolean!
-}
-
 type GlobalSettingFields_paragraph {
   create: GlobalSettingFields_paragraph_Create
   read: GlobalSettingFields_paragraph_Read
@@ -17609,29 +18209,6 @@ type GlobalSettingFields_paragraph_Update {
 }
 
 type GlobalSettingFields_paragraph_Delete {
-  permission: Boolean!
-}
-
-type GlobalSettingFields_siteName {
-  create: GlobalSettingFields_siteName_Create
-  read: GlobalSettingFields_siteName_Read
-  update: GlobalSettingFields_siteName_Update
-  delete: GlobalSettingFields_siteName_Delete
-}
-
-type GlobalSettingFields_siteName_Create {
-  permission: Boolean!
-}
-
-type GlobalSettingFields_siteName_Read {
-  permission: Boolean!
-}
-
-type GlobalSettingFields_siteName_Update {
-  permission: Boolean!
-}
-
-type GlobalSettingFields_siteName_Delete {
   permission: Boolean!
 }
 
@@ -17678,6 +18255,52 @@ type GlobalSettingFields_labelCta_Update {
 }
 
 type GlobalSettingFields_labelCta_Delete {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_lastUpdateLabel {
+  create: GlobalSettingFields_lastUpdateLabel_Create
+  read: GlobalSettingFields_lastUpdateLabel_Read
+  update: GlobalSettingFields_lastUpdateLabel_Update
+  delete: GlobalSettingFields_lastUpdateLabel_Delete
+}
+
+type GlobalSettingFields_lastUpdateLabel_Create {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_lastUpdateLabel_Read {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_lastUpdateLabel_Update {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_lastUpdateLabel_Delete {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_links {
+  create: GlobalSettingFields_links_Create
+  read: GlobalSettingFields_links_Read
+  update: GlobalSettingFields_links_Update
+  delete: GlobalSettingFields_links_Delete
+}
+
+type GlobalSettingFields_links_Create {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_links_Read {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_links_Update {
+  permission: Boolean!
+}
+
+type GlobalSettingFields_links_Delete {
   permission: Boolean!
 }
 
@@ -18178,6 +18801,10 @@ type Mutation {
   updateResource(id: String!, autosave: Boolean, data: mutationResourceUpdateInput!, draft: Boolean, locale: LocaleInputType, trash: Boolean): Resource
   deleteResource(id: String!, trash: Boolean): Resource
   duplicateResource(id: String!, data: mutationResourceInput!): Resource
+  createFeedback(data: mutationFeedbackInput!, draft: Boolean, locale: LocaleInputType): Feedback
+  updateFeedback(id: String!, autosave: Boolean, data: mutationFeedbackUpdateInput!, draft: Boolean, locale: LocaleInputType, trash: Boolean): Feedback
+  deleteFeedback(id: String!, trash: Boolean): Feedback
+  duplicateFeedback(id: String!, data: mutationFeedbackInput!): Feedback
   createPage(data: mutationPageInput!, draft: Boolean, locale: LocaleInputType): Page
   updatePage(id: String!, autosave: Boolean, data: mutationPageUpdateInput!, draft: Boolean, locale: LocaleInputType, trash: Boolean): Page
   deletePage(id: String!, trash: Boolean): Page
@@ -18521,6 +19148,26 @@ input mutationResourceUpdateInput {
   createdAt: String
 }
 
+input mutationFeedbackInput {
+  feedback: String!
+  url: String!
+  message: String
+  expertise: String
+  reachedFrom: String
+  updatedAt: String
+  createdAt: String
+}
+
+input mutationFeedbackUpdateInput {
+  feedback: String
+  url: String
+  message: String
+  expertise: String
+  reachedFrom: String
+  updatedAt: String
+  createdAt: String
+}
+
 input mutationPageInput {
   title: String
   slug: String
@@ -18800,6 +19447,7 @@ enum PayloadLockedDocument_DocumentRelationshipInputRelationTo {
   kpi_elements
   news_items
   resources
+  feedback
   pages
   articles
   insights
@@ -18846,6 +19494,7 @@ enum PayloadLockedDocumentUpdate_DocumentRelationshipInputRelationTo {
   kpi_elements
   news_items
   resources
+  feedback
   pages
   articles
   insights
@@ -18951,13 +19600,13 @@ input mutationSearch_SeoInput {
 }
 
 input mutationGlobalSettingInput {
-  lastUpdateLabel: String
-  title: String
-  links: JSON
-  paragraph: JSON
   siteName: String
+  title: String
+  paragraph: JSON
   image: String
   labelCta: String
+  lastUpdateLabel: String
+  links: JSON
   updatedAt: String
   createdAt: String
 }

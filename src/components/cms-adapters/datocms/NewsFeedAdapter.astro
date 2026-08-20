@@ -32,6 +32,15 @@ type PayloadStoryItem = {
   topic: PayloadTopic;
 };
 
+type PayloadWebinarItem = {
+  id: string;
+  title: string | null;
+  paragraph: unknown;
+  date: string | null;
+  image: ImageProps | null;
+  topic: PayloadTopic;
+};
+
 type Props = {
   block: {
     id: string;
@@ -41,7 +50,8 @@ type Props = {
     cta?: { id: string; label: string; linkTo?: { id: string } | null } | null;
     tabs: (
       | { componentName: "NewsTabRecord"; title: string; news: PayloadNewsItem[] }
-      | { componentName: "StoryTabRecord"; title: string; news: PayloadStoryItem[] }
+      | { componentName: "StoryTabRecord"; title: string; Stories: PayloadStoryItem[] }
+      | { componentName: "WebinarTabRecord"; title: string; Webinars: PayloadWebinarItem[] }
       | { componentName: string; title: string; news: unknown[] }
     )[];
   };
@@ -89,7 +99,7 @@ const buttonLabel = block.cta?.label;
         return {
           componentName: "CardEditorialStory",
           title: tab.title,
-          news: (tab.news as PayloadStoryItem[]).map((n) => {
+          news: ((tab as { Stories: PayloadStoryItem[] }).Stories ?? []).map((n) => {
             return {
               id: n.id,
               title: n.title ?? "",
@@ -98,6 +108,23 @@ const buttonLabel = block.cta?.label;
               category: n.topic?.label ?? undefined,
               description: lexicalToHtml(n.paragraph) || undefined,
               dateTime: n.dateOfPublication || undefined,
+            };
+          }),
+        };
+
+      case DatoBlockModel.WebinarTab:
+        return {
+          componentName: "CardEditorialStory",
+          title: tab.title,
+          news: ((tab as { Webinars: PayloadWebinarItem[] }).Webinars ?? []).map((n) => {
+            return {
+              id: n.id,
+              title: n.title ?? "",
+              image: n.image || undefined,
+              linkTo: linkResolver(`webinar-items:${n.id}`, lang),
+              category: n.topic?.label ?? undefined,
+              description: lexicalToHtml(n.paragraph) || undefined,
+              dateTime: n.date || undefined,
             };
           }),
         };

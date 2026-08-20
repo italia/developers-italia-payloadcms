@@ -63,6 +63,7 @@ const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
   "image-block": "ImageBlockRecord",
   "news-tab": "NewsTabRecord",
   "story-tab": "StoryTabRecord",
+  "Webinar-tab": "WebinarTabRecord",
   "article-navigation": "ArticleNavigationRecord",
   "article-list": "ArticleListRecord",
   "internal-link": "InternalLinkRecord",

@@ -53,8 +53,12 @@ export const insightSchema = payloadLocaleEntryBase.extend({
 });
 
 export const storyContentSchema = payloadLocaleEntryBase.extend({
+  paragraph: z.string().nullable(),
   content: z.array(z.any()),
   dateOfPublication: z.string().nullable(),
+  articleClassificationId: z.string().nullable(),
+  category: z.string().nullable(),
+  topicLabel: z.string().nullable(),
 });
 
 export const webinarContentSchema = payloadLocaleEntryBase.extend({

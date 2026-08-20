@@ -1,13 +1,50 @@
 ---
 import { NewsFeed } from "@components/organisms/NewsFeed";
-import type { NewsFeedFragmentType } from "@graphql/fragment/sectionFragments";
+import type { ImageProps } from "@components/atoms/Image/types";
 import type { SectionBackground } from "@utils/background";
 import { DatoBlockModel } from "@utils/cmsMapper";
-import { getLocaleValue } from "@utils/getLocaleValue";
+import { lexicalToHtml } from "@utils/lexicalUtils";
 import { linkResolver } from "@utils/linkResolver";
 
+// Data comes from a REST fetch (payloadFetch, per-locale) reshaped by
+// normalizePayloadBlock (collections/loader.ts) — not a DatoCMS GraphQL fragment.
+// tab.news items are flat, single-locale Payload docs: normalizePayloadBlock only
+// auto-converts Lexical richText on the block's own direct keys, so each news item's
+// own `paragraph` still needs lexicalToHtml() here.
+type PayloadTopic = { label?: string | null } | null;
+
+type PayloadNewsItem = {
+  id: string;
+  title: string | null;
+  link: string | null;
+  paragraph: unknown;
+  dateOfPublication: string | null;
+  image: ImageProps | null;
+  topic: PayloadTopic;
+};
+
+type PayloadStoryItem = {
+  id: string;
+  title: string | null;
+  paragraph: unknown;
+  dateOfPublication: string | null;
+  image: ImageProps | null;
+  topic: PayloadTopic;
+};
+
 type Props = {
-  block: NewsFeedFragmentType;
+  block: {
+    id: string;
+    title: string;
+    paragraph: string;
+    backgroundColor: string;
+    cta?: { id: string; label: string; linkTo?: { id: string } | null } | null;
+    tabs: (
+      | { componentName: "NewsTabRecord"; title: string; news: PayloadNewsItem[] }
+      | { componentName: "StoryTabRecord"; title: string; news: PayloadStoryItem[] }
+      | { componentName: string; title: string; news: unknown[] }
+    )[];
+  };
 };
 
 const { block } = Astro.props;
@@ -33,17 +70,16 @@ const buttonLabel = block.cta?.label;
         return {
           componentName: "CardEditorialNews",
           title: tab.title,
-          news: tab.news.map((n) => {
-            const link = getLocaleValue(n.allLinkLocales, lang, "");
-            const topic = getLocaleValue(n.allTopicLocales, lang, null);
+          news: (tab.news as PayloadNewsItem[]).map((n) => {
+            const link = n.link ?? "";
             return {
               id: n.id,
-              title: getLocaleValue(n.allTitleLocales, lang, ""),
-              description: getLocaleValue(n.allParagraphLocales, lang, ""),
-              image: n.image,
+              title: n.title ?? "",
+              description: lexicalToHtml(n.paragraph) ?? "",
+              image: n.image || undefined,
               linkTo: link || "#",
-              category: getLocaleValue(topic?._allLabelLocales, lang, ""),
-              dateTime: n.publishedAt,
+              category: n.topic?.label ?? "",
+              dateTime: n.dateOfPublication ?? undefined,
               action: link ? new URL(link).host : "",
             };
           }),
@@ -53,26 +89,15 @@ const buttonLabel = block.cta?.label;
         return {
           componentName: "CardEditorialStory",
           title: tab.title,
-          news: tab.news.map((n) => {
-            let allTopicLocales =
-              "allTopicLocales" in n ? n.allTopicLocales : [];
-            const topic = getLocaleValue(allTopicLocales, lang, null);
-            let publishedAt = "publishedAt" in n ? n.publishedAt : undefined;
-
-            const description = getLocaleValue(n.allParagraphLocales, lang, "");
-
+          news: (tab.news as PayloadStoryItem[]).map((n) => {
             return {
               id: n.id,
-              title: getLocaleValue(n.allTitleLocales, lang, ""),
+              title: n.title ?? "",
               image: n.image || undefined,
-              linkTo: linkResolver(n.id, lang),
-              category: getLocaleValue(
-                topic?._allLabelLocales,
-                lang,
-                undefined,
-              ),
-              description: description || undefined,
-              dateTime: publishedAt || undefined,
+              linkTo: linkResolver(`story-items:${n.id}`, lang),
+              category: n.topic?.label ?? undefined,
+              description: lexicalToHtml(n.paragraph) || undefined,
+              dateTime: n.dateOfPublication || undefined,
             };
           }),
         };

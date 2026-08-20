@@ -1,18 +1,36 @@
 ---
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
+import { Breadcrumb } from "@components/molecules/Breadcrumb";
+import { StoryHeader } from "@components/molecules/StoryHeader";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
 import type { SiteLocale } from "@graphql/types";
 import Layout from "@layouts/Layout.astro";
+import { DatoBlockModel } from "@utils/cmsMapper";
+import { createBreadcrumb } from "@utils/createBreadcrumb";
 import { extractFaqItems, type JsonLdPageData } from "@utils/JsonLD/seoJsonLd";
+import { getReadingTime } from "@utils/getReadingTime";
 import { linkResolver } from "@utils/linkResolver";
 import { removeLang } from "@utils/pathHelper";
+import { isNewsStoryClass } from "@utils/storyClassification";
 import { getCollection, getEntry } from "astro:content";
 
 export async function getStaticPaths() {
   const response = await getCollection("story_content");
 
   const pathsPromises = (response ?? []).map(async (item) => {
-    const { docId, locale, content, publishedAt, updatedAt } = item.data;
+    const {
+      docId,
+      locale,
+      content,
+      publishedAt,
+      updatedAt,
+      title,
+      paragraph,
+      dateOfPublication,
+      articleClassificationId,
+      category,
+      topicLabel,
+    } = item.data;
     const seoRes = (await getEntry("global_seo", `${docId}_${locale}`))?.data;
     const fullPath = linkResolver(`story-items:${docId}`, locale);
     const slug = removeLang(fullPath, locale);
@@ -20,12 +38,18 @@ export async function getStaticPaths() {
     return {
       params: { story: slug, lang: locale as SiteLocale },
       props: {
-        
         seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
         id: docId,
         content,
         publishedAt: publishedAt ?? "",
         updatedAt: seoRes?.updatedAt ?? updatedAt ?? "",
+        isNews: isNewsStoryClass(articleClassificationId),
+        title: title ?? "",
+        subtitle: paragraph ?? "",
+        category: category ?? "",
+        dateOfPublication: dateOfPublication ?? null,
+        topics: topicLabel ? [topicLabel] : [],
+        readingTime: getReadingTime(content),
       },
     };
   });
@@ -33,7 +57,20 @@ export async function getStaticPaths() {
   return Promise.all(pathsPromises);
 }
 
-const { id, content, seo,  publishedAt, updatedAt } = Astro.props;
+const {
+  id,
+  content,
+  seo,
+  publishedAt,
+  updatedAt,
+  isNews,
+  title,
+  subtitle,
+  category,
+  dateOfPublication,
+  topics,
+  readingTime,
+} = Astro.props;
 const { lang } = Astro.params;
 
 Astro.locals.lang = lang;
@@ -47,8 +84,54 @@ const jsonLd: JsonLdPageData = {
   updatedAt,
   faq: extractFaqItems(content ?? []),
 };
+
+// On News stories we replicate the event-page header (designers.italia.it),
+// reusing the same layout as WebinarDescription: breadcrumb, title +
+// subtitle, type tag, metadata block (date + topics). The story's title and
+// subtitle live in the IntroArticle block: we remove it from the body since
+// we redraw them in the header instead, for a consistent look.
+const blocks = (content ?? []) as { componentName?: string }[];
+const hasHero = blocks.some(
+  (block) => block.componentName === DatoBlockModel.Hero,
+);
+const showStoryHeader = isNews;
+
+const introIndex = blocks.findIndex(
+  (block) => block.componentName === DatoBlockModel.IntroArticle,
+);
+const bodyBlocks =
+  introIndex >= 0 ? blocks.filter((_, i) => i !== introIndex) : blocks;
+
+// A Hero block already carries its own title and breadcrumb: in that case we
+// don't redraw the title in the header and leave the Hero in the body.
+const renderHeaderTitle = !hasHero;
+const breadcrumbItems =
+  showStoryHeader && !hasHero
+    ? createBreadcrumb(`story-items:${id}`, lang as SiteLocale)
+    : [];
 ---
 
 <Layout seo={seo} datePublished={publishedAt} jsonLd={jsonLd}>
-  <PageAdapter content={content ?? []} />
+  {
+    showStoryHeader ? (
+      <>
+        {breadcrumbItems.length > 0 && (
+          <div class="container pt-4 ps-xxl-5">
+            <Breadcrumb items={breadcrumbItems} />
+          </div>
+        )}
+        <StoryHeader
+          title={renderHeaderTitle ? title : undefined}
+          subtitle={renderHeaderTitle ? subtitle : undefined}
+          category={category || undefined}
+          readingTime={readingTime}
+          date={dateOfPublication}
+          topics={topics}
+        />
+        <PageAdapter content={bodyBlocks} centeredText />
+      </>
+    ) : (
+      <PageAdapter content={content ?? []} />
+    )
+  }
 </Layout>

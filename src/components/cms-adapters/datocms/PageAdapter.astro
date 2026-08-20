@@ -27,9 +27,11 @@ import { DatoBlockModel } from "@utils/cmsMapper";
 type Props = {
   content: unknown[];
   isFontSerif?: boolean;
+  /** Centers the StructuredText block column (event/news pages). */
+  centeredText?: boolean;
 };
 
-const { content, isFontSerif = false } = Astro.props;
+const { content, isFontSerif = false, centeredText = false } = Astro.props;
 ---
 
 {
@@ -53,7 +55,11 @@ const { content, isFontSerif = false } = Astro.props;
         return <SupportCTASectionAdapter block={block} size="default" />;
       case DatoBlockModel.StructuredText:
         return (
-          <StructuredTextBlockAdapter block={block} isFontSerif={isFontSerif} />
+          <StructuredTextBlockAdapter
+            block={block}
+            isFontSerif={isFontSerif}
+            centered={centeredText}
+          />
         );
       case DatoBlockModel.ListCollection:
         return <ListCollectionAdapter block={block} />;

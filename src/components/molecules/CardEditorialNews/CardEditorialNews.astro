@@ -51,7 +51,7 @@ const rel = isExternal ? "noopener noreferrer" : undefined;
     )
   }
   <div class="it-card-body">
-    <p class="it-card-text" set:html={description} />
+    <div class="it-card-text" set:html={description} />
   </div>
   {
     shouldShowFooter && (

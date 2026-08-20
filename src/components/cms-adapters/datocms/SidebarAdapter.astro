@@ -4,20 +4,28 @@ import type {
   SidebarItemFirstLevelProps,
   SidebarItemSecondLevelProps,
 } from "@components/organisms/Sidebar/types";
-import type {
-  MenuArticleItemFragmentType,
-  SidebarMenuFragmentType,
-} from "@graphql/fragment/commonFragments";
-import type { SidebarFragmentType } from "@graphql/fragment/layout";
+import type { SiteLocale } from "@graphql/types";
 import { DatoBlockModel } from "@utils/cmsMapper";
 import {
   createFlatMenuSidebar,
   createMenuSidebar,
+  type MenuArticleItem,
+  type SidebarMenu,
 } from "@utils/createMenuSidebarHelper";
 import { getLocaleValue } from "@utils/getLocaleValue";
 
+// Matches the shape sidebarLoader (collections/loader.ts) builds from Payload's
+// sidebar-for-article global — not a GraphQL fragment, this data comes over REST.
+type SidebarData = {
+  id: string;
+  _allHeaderLabelLocales: { locale: SiteLocale; value: string }[];
+  _allOpenLabelLocales: { locale: SiteLocale; value: string }[];
+  _allCloseLabelLocales: { locale: SiteLocale; value: string }[];
+  _allMenuLocales: { locale: SiteLocale; value: (MenuArticleItem | SidebarMenu)[] }[];
+};
+
 type Props = {
-  sidebar: SidebarFragmentType;
+  sidebar: SidebarData;
 };
 
 const { sidebar } = Astro.props;
@@ -33,20 +41,16 @@ if (!menu) {
   return;
 }
 
-const isMenuArticle = (item: any): item is MenuArticleItemFragmentType =>
-  item.__typename === DatoBlockModel.MenuArticleItem;
+const isMenuArticle = (item: any): item is MenuArticleItem =>
+  item.componentName === DatoBlockModel.MenuArticleItem;
 
-const isAccordionMenu = (item: any): item is SidebarMenuFragmentType =>
-  item.__typename === DatoBlockModel.AccordionMenu;
+const isAccordionMenu = (item: any): item is SidebarMenu =>
+  item.componentName === DatoBlockModel.AccordionMenu;
 
 const menuItems = menu ?? [];
 
-const flatItems = menuItems.filter(
-  isMenuArticle,
-) as MenuArticleItemFragmentType[];
-const accordionItems = menuItems.filter(
-  isAccordionMenu,
-) as SidebarMenuFragmentType[];
+const flatItems = menuItems.filter(isMenuArticle) as MenuArticleItem[];
+const accordionItems = menuItems.filter(isAccordionMenu) as SidebarMenu[];
 
 const sidebarAccordionItems: SidebarItemFirstLevelProps[] = createMenuSidebar(
   accordionItems,

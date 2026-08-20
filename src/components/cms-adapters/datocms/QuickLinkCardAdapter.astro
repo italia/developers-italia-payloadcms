@@ -1,67 +1,39 @@
 ---
 import type { ListLinkItemProps } from "@components/molecules/ListLink/types";
 import { QuickLinkCard } from "@components/molecules/QuickLinkCard";
-import type { QuickLinkCardFragmentType } from "@graphql/fragment/commonFragments";
 import { getI18n } from "@i18n/microcopy";
-import { DatoBlockModel } from "@utils/cmsMapper";
-import { createDownloadUrl } from "@utils/createDownloadUrl";
-import { getLocaleValue } from "@utils/getLocaleValue";
 import { linkResolver } from "@utils/linkResolver";
 
-type DatoRecord = QuickLinkCardFragmentType & {
-  __typename: string;
+// linkToResource is a direct polymorphic relation to content documents
+// (articles/insights/webinar-items/story-items/pages) in Payload — unlike
+// DatoCMS's linkToResource, which pointed at an intermediate Resource|Article
+// union with its own url/label. normalizePayloadBlock flattens each populated
+// doc with a linkResolver-ready prefixed id ("articles:123"), so every item
+// here is just an internal content link.
+type PayloadLinkItem = {
   id: string;
+  title: string | null;
 };
 
 type Props = {
-  block: DatoRecord | QuickLinkCardFragmentType;
+  block: {
+    title: string;
+    linkToResource?: PayloadLinkItem[] | null;
+  };
 };
 
 const { block } = Astro.props;
 const { lang } = Astro.locals;
 
 const t = getI18n(lang);
-
-const downloadLabel = t["link.download"];
-const externalLinkLabel = t["link.external"];
 const articleLinkLabel = t["link.internal"];
 
-const links: ListLinkItemProps[] = (block.linkToResource ?? []).map((link) => {
-  if (link.componentName === DatoBlockModel.Resource) {
-    const res = getLocaleValue(link.allResourceLocales, lang, null);
-
-    if (res?.componentName === DatoBlockModel.DownloadLink) {
-      return {
-        linkTo: createDownloadUrl(res.doc),
-        text: res.label,
-        iconRight: "it-download",
-        ariaLabelLink: `${downloadLabel} ${res.label}`,
-      };
-    }
-
-    return {
-      linkTo: res?.url || "#",
-      text: res?.label || "",
-      iconRight: "it-external-link",
-      openInNewTab: true,
-      ariaLabelLink: `${externalLinkLabel} ${res?.label || ""}`,
-    };
-  }
-
-  if (link.componentName === DatoBlockModel.Article) {
-    return {
-      linkTo: linkResolver(link.id, lang),
-      text: link.title,
-      iconRight: "it-arrow-right",
-      ariaLabelLink: `${articleLinkLabel} ${link.title}`,
-    };
-  }
-
-  return {
-    linkTo: "#",
-    text: "Link non valido",
-  };
-});
+const links: ListLinkItemProps[] = (block.linkToResource ?? []).map((item) => ({
+  linkTo: linkResolver(item.id, lang),
+  text: item.title ?? "",
+  iconRight: "it-arrow-right",
+  ariaLabelLink: `${articleLinkLabel} ${item.title ?? ""}`,
+}));
 ---
 
 <QuickLinkCard title={block.title} links={links} />

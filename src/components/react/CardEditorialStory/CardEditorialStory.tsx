@@ -52,7 +52,7 @@ export function CardEditorialStory({
       </div>
 
       <div className="it-card-body">
-        <p
+        <div
           className="it-card-text"
           dangerouslySetInnerHTML={{ __html: description }}
         />

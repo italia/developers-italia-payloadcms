@@ -8,7 +8,6 @@ import {
   StoriesIdxQuery,
   WebinarsIdxQuery,
 } from "@graphql/query/indexing";
-import { SidebarQuery } from "@graphql/query/layout";
 import { AllNewsQuery } from "@graphql/query/news";
 import { AllResourcesQuery } from "@graphql/query/resource";
 import { SiteMetaTagsQuery } from "@graphql/query/settings";
@@ -98,6 +97,9 @@ const SINGLE_BLOCK_FIELDS = new Set([
   "link",
   "privacyPolicy",
   "useCases",
+  "subjects",
+  "resources",
+  "list",
 ]);
 
 function normalizePayloadBlock(block: Record<string, unknown>): Record<string, unknown> {
@@ -652,8 +654,11 @@ export const storyContentLoader = async () => {
     id: number;
     slug: string | null;
     title: string | null;
+    paragraph: unknown;
     content: unknown[] | null;
     dateOfPublication: string | null;
+    articleClassification: { id: number | string; label?: string | null } | null;
+    topic: { id: number | string; label?: string | null } | null;
     localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
@@ -675,8 +680,14 @@ export const storyContentLoader = async () => {
           locale,
           slug: doc.slug,
           title: doc.title ?? null,
+          paragraph: lexicalToHtml(doc.paragraph) ?? null,
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           dateOfPublication: doc.dateOfPublication ?? null,
+          articleClassificationId: doc.articleClassification
+            ? String(doc.articleClassification.id)
+            : null,
+          category: doc.articleClassification?.label ?? null,
+          topicLabel: doc.topic?.label ?? null,
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
           publishedAt: doc.createdAt ?? null,
@@ -1012,10 +1023,42 @@ export const layoutLoader = async () => {
 };
 
 export const sidebarLoader = async () => {
-  const response = await executeQuery(SidebarQuery);
-  return response?.sidebarForArticle
-    ? [{ ...response.sidebarForArticle, id: "sidebar" }]
-    : [{ id: "sidebar" }];
+  type SidebarGlobal = {
+    headerLabel: string | null;
+    openLabel: string | null;
+    closeLabel: string | null;
+    menu: unknown[] | null;
+  };
+
+  const results = await Promise.all(
+    LOCALES.map((locale) =>
+      payloadFetch<SidebarGlobal>(
+        "/globals/sidebar-for-article",
+        `locale=${locale}&depth=2&fallbackLocale=none`,
+      ),
+    ),
+  );
+
+  const buildTextLocales = (getter: (r: SidebarGlobal) => string | null) =>
+    LOCALES.map((locale, i) => ({ locale, value: getter(results[i]) ?? "" }));
+
+  const buildBlocksLocales = (getter: (r: SidebarGlobal) => unknown[] | null) =>
+    LOCALES.map((locale, i) => ({
+      locale,
+      value: (getter(results[i]) ?? []).map((b) =>
+        normalizePayloadBlock(b as Record<string, unknown>),
+      ),
+    }));
+
+  return [
+    {
+      id: "sidebar",
+      _allHeaderLabelLocales: buildTextLocales((r) => r.headerLabel),
+      _allOpenLabelLocales: buildTextLocales((r) => r.openLabel),
+      _allCloseLabelLocales: buildTextLocales((r) => r.closeLabel),
+      _allMenuLocales: buildBlocksLocales((r) => r.menu),
+    },
+  ];
 };
 
 export const localesLoader = async () => {

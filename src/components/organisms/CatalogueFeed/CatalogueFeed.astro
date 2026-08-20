@@ -1,6 +1,8 @@
 ---
+import type { CardEditorialStoryProps } from "@components/molecules/CardEditorialStory/types";
 import { SplitContent } from "@components/layout/SplitContent";
 import { TabContent, Tabs } from "@components/molecules/Tabs";
+import { NewsArchiveList } from "@components/organisms/NewsArchiveList";
 import { PaginatedCollection } from "@components/react/PaginatedCollection/PaginatedCollection";
 import {
   getNews,
@@ -21,6 +23,8 @@ import type {
   StoryCardFragmentType,
   WebinarItemFragmentType,
 } from "@graphql/fragment/commonFragments";
+import { sortFeedItems } from "@utils/feedSort";
+import { isNewsStoryClass } from "@utils/storyClassification";
 import type { ElementType, UpdateTabSectionProps } from "./types";
 
 type Props = UpdateTabSectionProps;
@@ -54,7 +58,11 @@ function isValidTabType(val: string): val is ElementType {
   );
 }
 
-function getFilteredItems(tabType: ElementType, tabCategoryReference?: string) {
+function getFilteredItems(
+  tabType: ElementType,
+  tabCategoryReference?: string,
+  sortMode?: string,
+) {
   switch (tabType) {
     case "story":
     case "story_item": {
@@ -69,8 +77,12 @@ function getFilteredItems(tabType: ElementType, tabCategoryReference?: string) {
           )
         : filteredStoryByLang;
 
-      return filteredStories.map((s) =>
-        mapStoryToCardEditorialStoryProps(s.data, lang),
+      return sortFeedItems(
+        filteredStories.map((s) =>
+          mapStoryToCardEditorialStoryProps(s.data, lang),
+        ),
+        sortMode,
+        lang,
       );
     }
 
@@ -81,8 +93,10 @@ function getFilteredItems(tabType: ElementType, tabCategoryReference?: string) {
         n.data.allTitleLocales?.some((item) => item.locale === lang),
       );
 
-      return filteredNews.map((n) =>
-        mapNewsToCardEditorialNewsProps(n.data, lang),
+      return sortFeedItems(
+        filteredNews.map((n) => mapNewsToCardEditorialNewsProps(n.data, lang)),
+        sortMode,
+        lang,
       );
     }
 
@@ -92,45 +106,82 @@ function getFilteredItems(tabType: ElementType, tabCategoryReference?: string) {
       const filteredWebinars = webinarData.filter((w) =>
         w.data.allTitleLocales?.some((item) => item.locale === lang),
       );
-      return filteredWebinars.map((w) =>
-        mapWebinarToCardEditorialNewsProps(w.data, lang),
+      return sortFeedItems(
+        filteredWebinars.map((w) =>
+          mapWebinarToCardEditorialNewsProps(w.data, lang),
+        ),
+        sortMode,
+        lang,
       );
     }
 
     case "resource": {
       const resourceData = resources as { data: ResourceFragmentType }[];
-      return resourceData.map((r) => mapResourceToResourceProps(r.data, lang));
+      return sortFeedItems(
+        resourceData.map((r) => mapResourceToResourceProps(r.data, lang)),
+        sortMode,
+        lang,
+      );
     }
 
     default:
       return [];
   }
 }
+
+// The Notizie page is a CatalogueFeed with a single story_item tab filtered
+// to the "News" class: in that case we use the list layout (NewsArchiveList)
+// instead of the image grid. The discrimination goes through
+// `isNewsStoryClass` so it's ready for a future switch to `storyType`.
+const newsArchiveTab =
+  tabs.length === 1 &&
+  tabs[0].newsPageTabType === "story_item" &&
+  isNewsStoryClass(tabs[0].filterStory)
+    ? tabs[0]
+    : null;
 ---
 
-<SplitContent leftColumns={5} alignItems="top" background={background}>
-  <div class="row">
-    <Tabs id={id} items={tabsItems}>
-      {
-        tabs.map((tab, index) => {
-          const tabType = tab.newsPageTabType;
-          if (!isValidTabType(tabType)) return null;
-
-          const items = getFilteredItems(tabType, tab.filterStory);
-
-          return (
-            <TabContent tab={tabsItems[index]}>
-              <PaginatedCollection
-                client:load
-                {...tab}
-                items={items as any}
-                newsPageTabType={tabType}
-                lang={lang}
-              />
-            </TabContent>
-          );
-        })
+{
+  newsArchiveTab ? (
+    <NewsArchiveList
+      id={id}
+      title={newsArchiveTab.title}
+      items={
+        getFilteredItems(
+          "story_item",
+          newsArchiveTab.filterStory,
+          newsArchiveTab.sortMode,
+        ) as CardEditorialStoryProps[]
       }
-    </Tabs>
-  </div>
-</SplitContent>
+    />
+  ) : (
+    <SplitContent leftColumns={5} alignItems="top" background={background}>
+      <div class="row">
+        <Tabs id={id} items={tabsItems}>
+          {tabs.map((tab, index) => {
+            const tabType = tab.newsPageTabType;
+            if (!isValidTabType(tabType)) return null;
+
+            const items = getFilteredItems(
+              tabType,
+              tab.filterStory,
+              tab.sortMode,
+            );
+
+            return (
+              <TabContent tab={tabsItems[index]}>
+                <PaginatedCollection
+                  client:load
+                  {...tab}
+                  items={items as any}
+                  newsPageTabType={tabType}
+                  lang={lang}
+                />
+              </TabContent>
+            );
+          })}
+        </Tabs>
+      </div>
+    </SplitContent>
+  )
+}

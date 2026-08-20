@@ -2,15 +2,26 @@ import type {
   SidebarItemFirstLevelProps,
   SidebarItemSecondLevelProps,
 } from "@components/organisms/Sidebar/types";
-import type {
-  MenuArticleItemFragmentType,
-  SidebarMenuFragmentType,
-} from "@graphql/fragment/commonFragments";
 import type { SiteLocale } from "@graphql/types";
 import { linkResolver } from "@utils/linkResolver";
 
+// Payload's sidebar-for-article global (normalized via normalizePayloadBlock in
+// collections/loader.ts) — not tied to a GraphQL fragment type since these blocks
+// are fetched over REST, not DatoCMS GraphQL.
+export type MenuArticleItem = {
+  id: string;
+  label: string;
+  pointsTo: { id: string };
+};
+
+export type SidebarMenu = {
+  id: string;
+  label: string;
+  menu: MenuArticleItem[];
+};
+
 export function createMenuSidebar(
-  datoItems: SidebarMenuFragmentType[],
+  datoItems: SidebarMenu[],
   currentPathname: string,
   locale: SiteLocale,
 ): SidebarItemFirstLevelProps[] {
@@ -45,7 +56,7 @@ export function createMenuSidebar(
 }
 
 export function createFlatMenuSidebar(
-  datoItems: MenuArticleItemFragmentType[],
+  datoItems: MenuArticleItem[],
   currentPathname: string,
   locale: SiteLocale,
 ): SidebarItemSecondLevelProps[] {

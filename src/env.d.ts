@@ -14,3 +14,8 @@ declare namespace App {
     lang: SiteLocale;
   }
 }
+
+// BI plugin with no types: registers the YouTube tech on the global video.js instance.
+declare module "bootstrap-italia/dist/plugins/util/youtube-video" {
+  export function initYoutubePlugin(videojs: unknown): void;
+}

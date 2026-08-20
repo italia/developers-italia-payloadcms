@@ -7,7 +7,7 @@ export function Image({ url, alt, title, width, height }: ImageProps) {
 
   const resolvedUrl =
     url?.startsWith("/")
-      ? `${import.meta.env.PAYLOAD_URL}${url}`
+      ? `${import.meta.env.PUBLIC_PAYLOAD_URL}${url}`
       : url;
 
   const targetWidths = [480, 720, 1024];

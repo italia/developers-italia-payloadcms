@@ -2,7 +2,9 @@
 import type { LinkProps } from "@components/atoms/Link/types";
 import { OrderedList } from "@components/molecules/OrderedList";
 import type { ListItemProps } from "@components/molecules/OrderedList/types";
+import { SectionContainer } from "@components/organisms/SectionContainer";
 import type { OrderedListFragmentType } from "@graphql/fragment/commonFragments";
+import { getSectionBgClass } from "@utils/background";
 import { createDownloadUrl } from "@utils/createDownloadUrl";
 import { linkResolver } from "@utils/linkResolver";
 
@@ -61,4 +63,10 @@ const items: ListItemProps[] = block.items.map((item) => {
 });
 ---
 
-<OrderedList items={items} variant="default" />
+<SectionContainer className={getSectionBgClass("default")}>
+  <div class="row">
+    <div class="col-12 col-lg-8">
+      <OrderedList items={items} variant="default" />
+    </div>
+  </div>
+</SectionContainer>

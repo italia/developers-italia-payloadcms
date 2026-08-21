@@ -19,13 +19,18 @@ import WAI from "./WAI.astro";
 
 type Props = {
   seo?: SeoFieldFragmentType | null;
+  /** The record's own title (e.g. an Insight/Page/Article title) — used as the SEO
+   * title when the record has no dedicated SEO title set, before falling back to
+   * the site-wide default. Keeps every page's title unique instead of every
+   * untitled page sharing the same generic fallback. */
+  title?: string;
   redirectUrl?: string;
   datePublished?: string;
   jsonLd?: JsonLdPageData;
 };
 
 const isPreview = isDraftModeEnabled(Astro.cookies);
-const { seo, redirectUrl, datePublished, jsonLd } = Astro.props;
+const { seo, title, redirectUrl, datePublished, jsonLd } = Astro.props;
 
 const { lang } = Astro.locals;
 
@@ -41,12 +46,20 @@ const globalSetting = await getGlobalSettings(lang);
 const seoDefaultEntry = await getEntry("seo_default", lang);
 const seoDefault = seoDefaultEntry?.data;
 
-const pageTitle = (seo?.title || seoDefault?.fallbackTitle || "")
+const pageTitle = (seo?.title || title || seoDefault?.fallbackTitle || "")
   + (seoDefault?.titleSuffix || "");
 const pageDescription = seo?.description || seoDefault?.fallbackDescription || "";
-const ogImageUrl = (seo?.image as { url?: string } | null)?.url ?? seoDefault?.ogImage?.url ?? "";
+
+// Payload upload URLs are root-relative ("/api/media/file/…") — resolved against
+// the CMS origin, not the website's, or they 404 silently in the browser.
+const resolveMediaUrl = (url?: string | null) =>
+  url?.startsWith("/") ? `${import.meta.env.PAYLOAD_URL}${url}` : (url ?? "");
+
+const ogImageUrl = resolveMediaUrl(
+  (seo?.image as { url?: string } | null)?.url ?? seoDefault?.ogImage?.url,
+);
 const siteName = seoDefault?.siteName ?? "";
-const faviconUrl = seoDefault?.favicon?.url ?? "";
+const faviconUrl = resolveMediaUrl(seoDefault?.favicon?.url);
 // ─────────────────────────────────────────────────────────────────────────────
 
 const headerLayout = {

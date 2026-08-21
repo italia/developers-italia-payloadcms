@@ -12,7 +12,7 @@ export async function getStaticPaths() {
   const allPages = await getCollection("page");
 
   const pathsPromises = (allPages ?? []).map(async (item) => {
-    const { docId, locale, content, publishedAt, updatedAt } = item.data;
+    const { docId, locale, title, content, publishedAt, updatedAt } = item.data;
     const seoRes = (await getEntry("global_seo", `${docId}_${locale}`))?.data;
     const fullPath = linkResolver(`pages:${docId}`, locale);
     const slug = removeLang(fullPath, locale);
@@ -21,6 +21,7 @@ export async function getStaticPaths() {
       params: { slug, lang: locale as SiteLocale },
       props: {
         seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
+        title: title ?? "",
         id: docId,
         content,
         publishedAt: publishedAt ?? "",
@@ -32,7 +33,7 @@ export async function getStaticPaths() {
   return Promise.all(pathsPromises);
 }
 
-const { id, content, seo, publishedAt, updatedAt } = Astro.props;
+const { id, content, seo, title, publishedAt, updatedAt } = Astro.props;
 const { lang } = Astro.params;
 
 console.log(`Rendering page with id ${id} and lang ${lang}...`);
@@ -50,6 +51,6 @@ const jsonLd: JsonLdPageData = {
 };
 ---
 
-<Layout seo={seo} datePublished={publishedAt} jsonLd={jsonLd}>
+<Layout seo={seo} title={title} datePublished={publishedAt} jsonLd={jsonLd}>
   <PageAdapter content={content ?? []} />
 </Layout>

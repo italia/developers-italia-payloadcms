@@ -1,6 +1,7 @@
 ---
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
 import type { SearchPageContentFragmentType } from "@graphql/fragment/search";
+import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
 import type { SiteLocale } from "@graphql/types";
 import Layout from "@layouts/Layout.astro";
 import { getLocaleValue } from "@utils/getLocaleValue";
@@ -16,6 +17,7 @@ export async function getStaticPaths() {
     };
     props: {
       content: SearchPageContentFragmentType[];
+      seo: SeoFieldFragmentType | null;
       id: string;
     };
   };
@@ -45,6 +47,7 @@ export async function getStaticPaths() {
         props: {
           id: page.id,
           content: getLocaleValue(page.allContentLocales, lang, null),
+          seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
         },
       };
     }) || [];
@@ -54,13 +57,13 @@ export async function getStaticPaths() {
   return paths.filter((path): path is PathItem => !!path.params.lang);
 }
 
-const { id, content } = Astro.props;
+const { id, content, seo } = Astro.props;
 const { lang } = Astro.params;
 
 Astro.locals.lang = lang;
 Astro.locals.recordId = id;
 ---
 
-<Layout>
+<Layout seo={seo}>
   <PageAdapter content={content ?? []} />
 </Layout>

@@ -12,6 +12,7 @@ export async function getStaticPaths() {
     params: { lang: SiteLocale };
     props: {
       seo: SeoFieldFragmentType | null;
+      title: string;
       content: HomepageModelContentFragmentType[];
       publishedAt: string;
       id: string;
@@ -39,6 +40,7 @@ export async function getStaticPaths() {
         id: homepage.id,
         content,
         seo: (seoRes?.seo ?? null) as SeoFieldFragmentType | null,
+        title: (homepage.data as { title?: string })?.title ?? "",
         publishedAt: (homepage.data as { publishedAt?: string })?.publishedAt ?? "",
       },
     };
@@ -49,13 +51,13 @@ export async function getStaticPaths() {
   return paths.filter((path): path is PathItem => path !== null);
 }
 
-const { id, content, seo, publishedAt } = Astro.props;
+const { id, content, seo, title, publishedAt } = Astro.props;
 const { lang } = Astro.params;
 
 Astro.locals.lang = lang;
 Astro.locals.recordId = id;
 ---
 
-<Layout seo={seo} datePublished={publishedAt}>
+<Layout seo={seo} title={title} datePublished={publishedAt}>
   <PageAdapter content={content ?? []} />
 </Layout>

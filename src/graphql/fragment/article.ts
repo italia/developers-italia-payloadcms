@@ -1,13 +1,26 @@
+import {
+  PayloadStructuredTextBlockFragment,
+  PayloadSupportCtaSectionFragment,
+} from "@graphql/fragment/payloadBlocks";
 import { graphql, type FragmentOf } from "@graphql/graphql";
+import {
+  SearchStructuredTextBlockFragment,
+  SearchSupportCtaSectionFragment,
+} from "@graphql/fragment/searchBlocks";
 
-// Article.content is a JSON scalar (Lexical rich text) — no sub-selection needed.
-export const ArticlePayloadFragment = graphql(`
+// Article.content is a blocks array (structured-text-block / support-cta-section),
+// same as Insight/StoryItem's content — needs a per-block-type sub-selection.
+export const ArticlePayloadFragment = graphql(
+  `
   fragment ArticlePayloadFragment on Article @_unmask {
     id
     slug
     title
     paragraph
-    content
+    content {
+      ... on StructuredTextBlock { ...PayloadStructuredTextBlockFragment }
+      ... on SupportCtaSection { ...PayloadSupportCtaSectionFragment }
+    }
     localizedSlugs
     updatedAt
     createdAt
@@ -21,22 +34,30 @@ export const ArticlePayloadFragment = graphql(`
       description
     }
   }
-`);
+`,
+  [PayloadStructuredTextBlockFragment, PayloadSupportCtaSectionFragment],
+);
 
 export type ArticlePayloadFragmentType = FragmentOf<typeof ArticlePayloadFragment>;
 
 // ─── Indexing fragment (minimal fields for search index) ─────────────────────
 
-export const ArticleIndexPayloadFragment = graphql(`
+export const ArticleIndexPayloadFragment = graphql(
+  `
   fragment ArticleIndexPayloadFragment on Article @_unmask {
     id
     slug
     title
     paragraph
-    content
+    content {
+      ... on StructuredTextBlock { ...SearchStructuredTextBlockFragment }
+      ... on SupportCtaSection { ...SearchSupportCtaSectionFragment }
+    }
     localizedSlugs
     updatedAt
   }
-`);
+`,
+  [SearchStructuredTextBlockFragment, SearchSupportCtaSectionFragment],
+);
 
 export type ArticleIndexPayloadFragmentType = FragmentOf<typeof ArticleIndexPayloadFragment>;

@@ -58,7 +58,11 @@ export const GET: APIRoute = async ({ params, site }) => {
     description: lexicalToPlainText(article.paragraph) ?? "",
     link: linkResolver(`articles:${article.id}`, lang),
     pubDate: new Date(article.updatedAt ?? 0),
-    content: lexicalToHtml(article.content) ?? "",
+    content: (article.content ?? [])
+      .map((block) =>
+        "structuredTextContent" in block ? lexicalToHtml(block.structuredTextContent) : "",
+      )
+      .join(""),
   }));
 
   return rss({

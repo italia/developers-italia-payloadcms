@@ -40,9 +40,8 @@ const payloadLocaleEntryBase = z.object({
 
 // ─── Content collections ───────────────────────────────────────────────────────
 
-// Article.content is a JSON scalar (Lexical rich text), not a blocks array.
 export const articleSchema = payloadLocaleEntryBase.extend({
-  content: z.any(),
+  content: z.array(z.any()),
   paragraph: z.string().nullable(),
 });
 

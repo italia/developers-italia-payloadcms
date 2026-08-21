@@ -568,7 +568,7 @@ export const articleContentLoader = async () => {
     slug: string | null;
     title: string | null;
     paragraph: unknown;
-    content: unknown;
+    content: unknown[] | null;
     localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
@@ -591,7 +591,7 @@ export const articleContentLoader = async () => {
           slug: doc.slug,
           title: doc.title ?? null,
           paragraph: lexicalToHtml(doc.paragraph) ?? null,
-          content: doc.content ?? null,
+          content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
           publishedAt: doc.createdAt ?? null,

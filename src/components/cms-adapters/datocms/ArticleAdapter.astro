@@ -1,11 +1,11 @@
 ---
-import StructuredTextAdapter from "@components/cms-adapters/datocms/StructuredTextAdapter.astro";
+import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
 import { Breadcrumb } from "@components/molecules/Breadcrumb";
 import { SectionContainer } from "@components/organisms/SectionContainer";
 import { createBreadcrumb } from "@utils/createBreadcrumb";
 
 type Props = {
-  content: unknown;
+  content: unknown[];
 };
 
 const { content } = Astro.props;
@@ -15,5 +15,5 @@ const breadcrumbItems = createBreadcrumb(recordId, lang);
 
 <SectionContainer className="ps-lg-4 structured-text-container">
   <Breadcrumb items={breadcrumbItems} />
-  <StructuredTextAdapter block={content} />
 </SectionContainer>
+<PageAdapter content={content} />

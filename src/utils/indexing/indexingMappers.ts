@@ -31,7 +31,9 @@ export const getMapArticle = (
     internalLink: linkResolver(`articles:${article.id}`, lang),
     title: article.title ?? "",
     description: lexicalToPlainText(article.paragraph) ?? "",
-    content: lexicalToPlainText(article.content) ?? "",
+    // gql.tada's local schema.graphql snapshot hasn't been regenerated since Article.content
+    // became a blocks field in Payload, so it's still typed as a bare scalar here.
+    content: flattenBlocks(article.content as unknown[]),
   };
 };
 

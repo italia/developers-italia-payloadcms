@@ -2,13 +2,24 @@
 import type { CardEditorialNewsProps } from "@components/molecules/CardEditorialNews/types";
 import { ListCollection } from "@components/organisms/ListCollection";
 import { getLocaleValue } from "@utils/getLocaleValue";
+import { lexicalToHtml } from "@utils/lexicalUtils";
 import { linkResolver } from "@utils/linkResolver";
+
+// The body-text field is named differently per related collection (Insight uses
+// "abstract", the rest use "paragraph") and, since it comes from a polymorphic
+// relationship, normalizePayloadBlock never recurses into it to auto-convert the
+// Lexical JSON to HTML the way it does for a block's own fields — it arrives raw.
+const DESCRIPTION_FIELD: Record<string, string> = {
+  insights: "abstract",
+  articles: "paragraph",
+  "story-items": "paragraph",
+  "webinar-items": "paragraph",
+};
 
 // Accepts both DatoCMS ListCollectionRecord and PayloadCMS normalized shape.
 type ContentItem = {
   id?: string;
   title?: string;
-  paragraph?: string;
   image?: unknown;
   allTitleLocales?: { locale: string | null; value: string }[];
   allParagraphLocales?: { locale: string | null; value: string }[];
@@ -28,14 +39,22 @@ const { block } = Astro.props;
 const { lang } = Astro.locals;
 
 const items: CardEditorialNewsProps[] = (block.content ?? []).map((item) => {
-  // PayloadCMS: normalizePayloadBlock flattens hasMany polymorphic rels to docs with prefixed
-  // id ("articles:1") and locale-resolved flat fields (title, paragraph).
+  // PayloadCMS: normalizePayloadBlock flattens hasMany polymorphic rels to docs with a
+  // prefixed id ("articles:1") and a flat title, but leaves other fields (including the
+  // body text) as raw Payload data — see DESCRIPTION_FIELD above.
   // DatoCMS: allTitleLocales / allParagraphLocales / allTopicLocales locale arrays.
   const topicRecord = getLocaleValue(item.allTopicLocales ?? null, lang, null);
   const title: string =
     item.title ?? getLocaleValue(item.allTitleLocales ?? null, lang, "");
+
+  const relationTo = item.id?.split(":")[0] ?? "";
+  const descriptionField = DESCRIPTION_FIELD[relationTo];
+  const rawDescription = descriptionField
+    ? (item as Record<string, unknown>)[descriptionField]
+    : undefined;
   const description: string =
-    item.paragraph ?? getLocaleValue(item.allParagraphLocales ?? null, lang, "");
+    lexicalToHtml(rawDescription) ??
+    getLocaleValue(item.allParagraphLocales ?? null, lang, "");
   const category: string = getLocaleValue(topicRecord?._allLabelLocales ?? null, lang, "");
 
   return {

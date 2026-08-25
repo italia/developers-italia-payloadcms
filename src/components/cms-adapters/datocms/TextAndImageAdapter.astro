@@ -7,6 +7,7 @@ import { TextAndImage } from "@components/organisms/TextAndImage";
 import type { VariantTextAndImageProps } from "@components/organisms/TextAndImage/types";
 import type { TextAndImageFragmentType } from "@graphql/fragment/sectionFragments";
 import type { SectionBackground } from "@utils/background";
+import { resolveMediaUrl } from "@utils/resolveMediaUrl";
 
 type Props = {
   block: TextAndImageFragmentType;
@@ -52,11 +53,11 @@ const additionalContent = block.additionalContent;
       <AdditionalContent
         slot="additionalContent"
         title={additionalContent.title || undefined}
-        content={additionalContent.content.map((item) => {
+        content={additionalContent.content.map((item: any) => {
           return {
             title: item.title,
             description: item.description,
-            icon: item.iconSelect,
+            icon: resolveMediaUrl(item.iconSelect),
           };
         })}
         variant={variantAdditionalContent}

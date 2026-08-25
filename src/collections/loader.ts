@@ -53,6 +53,8 @@ const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
   "text-only": "TextOnlyRecord",
   "card-link-list": "CardLinkListRecord",
   "list-card-editorial-with-icon": "ListCardEditorialWithIconRecord",
+  "additional-content": "AdditionalContentRecord",
+  "card-editorial-with-icon": "CardEditorialWithIconRecord",
   "ordered-list": "OrderedListRecord",
   "callout": "CalloutRecord",
   "quick-link-card": "QuickLinkCardRecord",

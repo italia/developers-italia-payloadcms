@@ -2,6 +2,7 @@
 import { SupportChannelsSection } from "@components/organisms/SupportChannelsSection";
 import type { SupportChannelSectionBackgroundProps } from "@components/organisms/SupportChannelsSection/types";
 import type { SupportChannelsSectionFragmentType } from "@graphql/fragment/sectionFragments";
+import { resolveMediaUrl } from "@utils/resolveMediaUrl";
 
 type Props = {
   block: SupportChannelsSectionFragmentType;
@@ -9,11 +10,11 @@ type Props = {
 
 const { block } = Astro.props;
 
-const channelItems = block.channels.map((channel) => {
+const channelItems = block.channels.map((channel: any) => {
   return {
     title: channel.title,
     description: channel.description,
-    icon: channel.iconSelect,
+    icon: resolveMediaUrl(channel.iconSelect),
     linkTo: channel.linkTo || "#",
   };
 });

@@ -9,10 +9,18 @@ type Props = {
 
 const { block } = Astro.props;
 
+// IconListBlock.items is a Payload blocks field with maxRows:1 — like TextAndStatistics'
+// `statistics` (see TextAndStatisticsAdapter.astro), it isn't collapsed to a single object
+// by loader.ts's normalizePayloadBlock, because the field name "items" is shared with
+// genuinely multi-row fields elsewhere (IconList.items itself, ListCardInfo.items, …) and
+// so can't be safely added to that global single-block-field allowlist. It stays an array
+// of 0 or 1 items here; `block.items?.items` — treating it as already-collapsed — read
+// `.items` off that array (always undefined, arrays have no such property) and crashed on
+// `.map()`. Every intro-article block hit this, since Payload always sends one IconListBlock.
 const items: ListWithIconItemProps[] =
-  block.items?.items.map((item) => {
+  (block.items as any)?.[0]?.items?.map((item: any) => {
     return { icon: item.iconSelect, label: item.label };
-  }) || [];
+  }) ?? [];
 ---
 
 <ListWithIcon title={block.title || undefined} items={items} />

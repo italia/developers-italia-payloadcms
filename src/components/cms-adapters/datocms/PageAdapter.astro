@@ -23,6 +23,7 @@ import TextOnlyAdapter from "@components/cms-adapters/datocms/TextOnlyAdapter.as
 import TopicFilterAdapter from "@components/cms-adapters/datocms/TopicFilterAdapter.astro";
 import UseCaseContainerAdapter from "@components/cms-adapters/datocms/UseCaseContainerAdapter.astro";
 import WebinarDescriptionAdapter from "@components/cms-adapters/datocms/WebinarDescriptionAdapter.astro";
+import type { SupportCTASectionSizeProps } from "@components/organisms/SupportCTASection/types";
 import { DatoBlockModel } from "@utils/cmsMapper";
 
 type Props = {
@@ -30,9 +31,21 @@ type Props = {
   isFontSerif?: boolean;
   /** Centers the StructuredText block column (event/news pages). */
   centeredText?: boolean;
+  /**
+   * Size of an embedded support-cta-section block. Pages render it full-width
+   * ("default"); embedded in narrower body content (e.g. an article) it should
+   * stay "small" — matching website-dato's StructuredTextAdapter, which never
+   * passed a size there and so fell back to the component's "small" default.
+   */
+  supportCtaSize?: SupportCTASectionSizeProps;
 };
 
-const { content, isFontSerif = false, centeredText = false } = Astro.props;
+const {
+  content,
+  isFontSerif = false,
+  centeredText = false,
+  supportCtaSize = "default",
+} = Astro.props;
 ---
 
 {
@@ -53,7 +66,7 @@ const { content, isFontSerif = false, centeredText = false } = Astro.props;
       case DatoBlockModel.TopicFilter:
         return <TopicFilterAdapter block={block} />;
       case DatoBlockModel.SupportCta:
-        return <SupportCTASectionAdapter block={block} size="default" />;
+        return <SupportCTASectionAdapter block={block} size={supportCtaSize} />;
       case DatoBlockModel.StructuredText:
         return (
           <StructuredTextBlockAdapter

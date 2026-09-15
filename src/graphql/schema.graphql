@@ -5140,7 +5140,7 @@ enum NewsFeed_bg {
   dark
 }
 
-union NewsFeed_Tabs = NewsTab | StoryTab | WebinarTab
+union NewsFeed_Tabs = NewsTab | StoryTab | WebinarTab | InsightTab
 
 type NewsTab {
   title: String!
@@ -5703,6 +5703,14 @@ type StoryItem_Seo {
 type WebinarTab {
   title: String!
   Webinars(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): [WebinarItem!]
+  id: String
+  blockName: String
+  blockType: String
+}
+
+type InsightTab {
+  title: String!
+  Insights(locale: LocaleInputType, fallbackLocale: FallbackLocaleInputType): [Insight!]
   id: String
   blockName: String
   blockType: String

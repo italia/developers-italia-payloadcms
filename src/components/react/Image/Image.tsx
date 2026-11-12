@@ -6,7 +6,7 @@ export function Image({ url, alt, title, width, height }: ImageProps) {
   }
 
   const resolvedUrl =
-    url?.startsWith("/")
+    url?.startsWith("/api/")
       ? `${import.meta.env.PUBLIC_PAYLOAD_URL}${url}`
       : url;
 

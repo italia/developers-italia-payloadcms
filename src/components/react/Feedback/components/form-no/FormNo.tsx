@@ -58,7 +58,7 @@ function FormNo({ onResult, state, lang }: FormNoProps) {
     <div ref={rootRef}>
       <form>
         <Image
-          url="/public/kit-analitics.svg"
+          url="/kit-analitics.svg"
           alt=""
           width={100}
           height={100}

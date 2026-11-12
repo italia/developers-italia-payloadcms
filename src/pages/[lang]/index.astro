@@ -29,7 +29,7 @@ export async function getStaticPaths() {
   }
 
   const pathsPromises = locales.map(async (lang) => {
-    const seoRes = (await getEntry("global_seo", `${homepage.id}_${lang}`))?.data;
+    const seoRes = (await getEntry("global_seo", `homepage_${lang}`))?.data;
     const content = getLocaleValue(homepage.data.allContentLocales, lang, null);
 
     if (!content) return null;

@@ -1,0 +1,63 @@
+---
+import type { ListLinkItemProps } from "@components/molecules/ListLink/types";
+import { getI18n } from "@i18n/microcopy";
+import { linkResolver } from "@utils/linkResolver";
+
+// linkToResource is a direct polymorphic relation to content documents
+// (articles/insights/webinar-items/story-items/pages) in Payload — unlike
+// DatoCMS's linkToResource, which pointed at an intermediate Resource|Article
+// union with its own url/label. normalizePayloadBlock flattens each populated
+// doc with a linkResolver-ready prefixed id ("articles:123"), so every item
+// here is just an internal content link (same shape QuickLinkCardAdapter reads).
+type PayloadLinkItem = {
+  id: string;
+  title: string | null;
+};
+
+type Props = {
+  block: {
+    title: string;
+    linkToResource?: PayloadLinkItem[] | null;
+  };
+};
+
+const { block } = Astro.props;
+const { lang } = Astro.locals;
+
+const t = getI18n(lang);
+const articleLinkLabel = t["link.internal"];
+
+const links: ListLinkItemProps[] = (block.linkToResource ?? []).map((item) => ({
+  linkTo: linkResolver(item.id, lang),
+  text: item.title ?? "",
+  iconRight: "it-arrow-right",
+  ariaLabelLink: `${articleLinkLabel} ${item.title ?? ""}`,
+}));
+---
+
+<div class="row">
+  <div class="d-inline-flex align-items-center me-lg-5 my tag-small-size">
+    <span class="text-uppercase text-secondary me-2">
+      <strong>{block.title}</strong>
+    </span>
+    <div class="ms-3">
+      {
+        links?.map((link) => (
+          <span>
+            <a
+              class="chip chip-primary chip-lg chip-simple"
+              href={link.linkTo}
+              target={link.openInNewTab ? "_blank" : "_self"}
+              aria-label={link.ariaLabelLink}
+            >
+              <span class="chip-label">{link.text}</span>
+            </a>
+            {link.iconRight && (
+              <span class={`icon ${link.iconRight}`} aria-hidden="true" />
+            )}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</div>

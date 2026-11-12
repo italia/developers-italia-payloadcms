@@ -1,8 +1,12 @@
 ---
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
+import { Breadcrumb } from "@components/molecules/Breadcrumb";
 import type { SeoFieldFragmentType } from "@graphql/fragment/seoFragments";
 import type { SiteLocale } from "@graphql/types";
 import Layout from "@layouts/Layout.astro";
+import { DatoBlockModel } from "@utils/cmsMapper";
+import { createBreadcrumb } from "@utils/createBreadcrumb";
+import { decorateExternalLinks } from "@utils/decorateExternalLinks";
 import { extractFaqItems, type JsonLdPageData } from "@utils/JsonLD/seoJsonLd";
 import { linkResolver } from "@utils/linkResolver";
 import { removeLang } from "@utils/pathHelper";
@@ -12,7 +16,8 @@ export async function getStaticPaths() {
   const response = await getCollection("webinar_content");
 
   const pathsPromises = (response ?? []).map(async (item) => {
-    const { docId, locale, title, content, publishedAt, updatedAt } = item.data;
+    const { docId, locale, title, content, eventBody, publishedAt, updatedAt } =
+      item.data;
     const seoRes = (await getEntry("global_seo", `${docId}_${locale}`))?.data;
     const fullPath = linkResolver(`webinar-items:${docId}`, locale);
     const slug = removeLang(fullPath, locale);
@@ -25,6 +30,7 @@ export async function getStaticPaths() {
         title: title ?? "",
         id: docId,
         content,
+        eventBody: eventBody ?? null,
         publishedAt: publishedAt ?? "",
         updatedAt: seoRes?.updatedAt ?? updatedAt ?? "",
       },
@@ -34,7 +40,8 @@ export async function getStaticPaths() {
   return Promise.all(pathsPromises);
 }
 
-const { id, content, seo, title, publishedAt, updatedAt } = Astro.props;
+const { id, content, eventBody, seo, title, publishedAt, updatedAt } =
+  Astro.props;
 const { lang } = Astro.params;
 
 Astro.locals.lang = lang;
@@ -48,8 +55,35 @@ const jsonLd: JsonLdPageData = {
   updatedAt,
   faq: extractFaqItems(content ?? []),
 };
+
+// The Hero already renders its own breadcrumb: we show it separately only for
+// content that does not start with a Hero (e.g. editorial content).
+const hasHero = ((content ?? []) as { componentName?: string }[]).some(
+  (block) => block.componentName === DatoBlockModel.Hero,
+);
+const breadcrumbItems = hasHero
+  ? []
+  : createBreadcrumb(`webinar-items:${id}`, lang as SiteLocale);
 ---
 
 <Layout seo={seo} title={title} datePublished={publishedAt} jsonLd={jsonLd}>
+  {
+    breadcrumbItems.length > 0 && (
+      <div class="container pt-4">
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
+    )
+  }
   <PageAdapter content={content ?? []} />
+  {
+    eventBody && (
+      <section class="container py-5">
+        <div class="row justify-content-center">
+          <div class="col-12 col-lg-8">
+            <div set:html={decorateExternalLinks(eventBody)} />
+          </div>
+        </div>
+      </section>
+    )
+  }
 </Layout>

@@ -1,3 +1,5 @@
+import { normalizeSpaces } from "@utils/normalizeSpaces";
+
 type LexicalNode = {
   type: string;
   text?: string;
@@ -12,6 +14,17 @@ type LexicalNode = {
 };
 
 type LexicalRoot = { root: LexicalNode };
+
+/** Rendering options for the main rich-text body. */
+export type LexicalRenderOptions = {
+  /**
+   * Visually hidden text appended to every link, as the DatoCMS site did for
+   * links in structured text ("Vai alla pagina" / "Apre in un nuovo tab").
+   */
+  linkLabels?: { internal: string; external: string };
+  /** Turn non-breaking spaces pasted from external editors into plain spaces. */
+  normalizeSpaces?: boolean;
+};
 
 function isLexicalRoot(value: unknown): value is LexicalRoot {
   return (
@@ -64,55 +77,72 @@ function wrapFormat(text: string, format: number): string {
   return result;
 }
 
-function renderNode(node: LexicalNode): string {
+function renderNode(node: LexicalNode, options: LexicalRenderOptions): string {
   switch (node.type) {
-    case "text":
+    case "text": {
+      const text = options.normalizeSpaces
+        ? normalizeSpaces(node.text ?? "")
+        : (node.text ?? "");
       return wrapFormat(
-        parseInlineMarkdown(node.text ?? ""),
+        parseInlineMarkdown(text),
         typeof node.format === "number" ? node.format : 0
       );
+    }
 
     case "linebreak":
       return "<br />";
 
     case "paragraph":
-      return `<p>${renderChildren(node)}</p>`;
+      return `<p>${renderChildren(node, options)}</p>`;
 
     case "heading": {
       const tag = node.tag ?? "h2";
-      return `<${tag}>${renderChildren(node)}</${tag}>`;
+      return `<${tag}>${renderChildren(node, options)}</${tag}>`;
     }
 
     case "list": {
       const tag = node.listType === "number" ? "ol" : "ul";
-      return `<${tag}>${renderChildren(node)}</${tag}>`;
+      return `<${tag}>${renderChildren(node, options)}</${tag}>`;
     }
 
     case "listitem":
-      return `<li>${renderChildren(node)}</li>`;
+      return `<li>${renderChildren(node, options)}</li>`;
 
     case "link": {
       const url = node.fields?.url ?? node.url ?? "#";
-      const target = node.fields?.newTab ? ' target="_blank" rel="noopener noreferrer"' : "";
-      return `<a href="${url}"${target}>${renderChildren(node)}</a>`;
+      const isExternal = !!node.fields?.newTab;
+      const target = isExternal ? ' target="_blank" rel="noopener noreferrer"' : "";
+      // No whitespace inside the anchor other than the one leading the hidden
+      // label: it would be rendered (underlined) around the link text.
+      const label = options.linkLabels
+        ? `<span class="visually-hidden"> ${
+            isExternal ? options.linkLabels.external : options.linkLabels.internal
+          }</span>`
+        : "";
+      return `<a href="${url}"${target}>${renderChildren(node, options)}${label}</a>`;
     }
 
     case "quote":
-      return `<blockquote>${renderChildren(node)}</blockquote>`;
+      return `<blockquote>${renderChildren(node, options)}</blockquote>`;
 
     default:
-      return node.children ? renderChildren(node) : "";
+      return node.children ? renderChildren(node, options) : "";
   }
 }
 
-function renderChildren(node: LexicalNode): string {
-  return (node.children ?? []).map(renderNode).join("");
+function renderChildren(node: LexicalNode, options: LexicalRenderOptions): string {
+  return (node.children ?? []).map((child) => renderNode(child, options)).join("");
 }
 
-export function lexicalToHtml(value: unknown): string | null {
+export function lexicalToHtml(
+  value: unknown,
+  options: LexicalRenderOptions = {},
+): string | null {
   if (value == null) return null;
   if (typeof value === "string") return parseInlineMarkdown(value);
   if (!isLexicalRoot(value)) return null;
-  const html = (value.root.children ?? []).map(renderNode).join("");
+  const html = (value.root.children ?? [])
+    .map((child) => renderNode(child, options))
+    .join("");
   return html || null;
 }

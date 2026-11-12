@@ -66,6 +66,7 @@ const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
   "news-tab": "NewsTabRecord",
   "story-tab": "StoryTabRecord",
   "Webinar-tab": "WebinarTabRecord",
+  "insight-tab": "InsightTabRecord",
   "article-navigation": "ArticleNavigationRecord",
   "article-list": "ArticleListRecord",
   "internal-link": "InternalLinkRecord",
@@ -242,11 +243,16 @@ function mergeByDocId<Raw extends { id: number | string }>(
   localeResults: { locale: string; docs: Raw[] }[],
   mapLocale: (locale: string, doc: Raw) => Record<string, unknown>,
   baseFrom?: (doc: Raw) => Record<string, unknown>,
+  skipUntitled = false,
 ): Record<string, unknown>[] {
   const byId = new Map<string, Record<string, unknown>>();
 
   for (const { locale, docs } of localeResults) {
     for (const doc of docs) {
+      // A document with no title in this locale is not translated: DatoCMS
+      // did not list that locale at all, so we skip it instead of emitting
+      // an empty card. Collections without a title opt out via skipUntitled.
+      if (skipUntitled && !(doc as { title?: unknown }).title) continue;
       const id = String(doc.id);
       if (!byId.has(id)) {
         byId.set(id, { id, ...(baseFrom ? baseFrom(doc) : {}) });
@@ -282,9 +288,10 @@ export const newsLoader = async () => {
   };
   type NewsList = { docs: NewsDoc[]; hasNextPage: boolean };
 
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const dateLimit = oneYearAgo.toISOString().split("T")[0]; // YYYY-MM-DD
+  // Same window as the DatoCMS site: news from the last 10 years.
+  const tenYearsAgo = new Date();
+  tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+  const dateLimit = tenYearsAgo.toISOString().split("T")[0]; // YYYY-MM-DD
 
   const localeResults = await Promise.all(
     LOCALES.map(async (locale) => {
@@ -314,6 +321,7 @@ export const newsLoader = async () => {
       publishedAt: doc.dateOfPublication ?? null,
       image: doc.image ?? null,
     }),
+    true,
   );
 };
 
@@ -361,6 +369,7 @@ export const storiesLoader = async () => {
         ? { id: String((doc.articleClassification as { id: number | string }).id) }
         : null,
     }),
+    true,
   );
 };
 
@@ -377,17 +386,13 @@ export const webinarsLoader = async () => {
   };
   type WebinarList = { docs: WebinarDoc[]; hasNextPage: boolean };
 
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const dateLimit = oneYearAgo.toISOString().split("T")[0];
-
   const localeResults = await Promise.all(
     LOCALES.map(async (locale) => {
       const docs: WebinarDoc[] = [];
       let page = 1;
       let hasMore = true;
       while (hasMore) {
-        const qs = `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none&where[date][greater_than_equal]=${dateLimit}`;
+        const qs = `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none`;
         const res = await payloadFetch<WebinarList>("/webinar-items", qs).catch(() => ({ docs: [], hasNextPage: false }));
         docs.push(...res.docs);
         hasMore = res.hasNextPage;
@@ -408,6 +413,7 @@ export const webinarsLoader = async () => {
       publishedAt: doc.date ?? null,
       image: doc.image ?? null,
     }),
+    true,
   );
 };
 
@@ -652,6 +658,8 @@ export const insightContentLoader = async () => {
 
 // ─── Story content (PayloadCMS REST, per-locale entries) ──────────────────────
 
+const PLACEHOLDER_IMAGE_FILENAME = "placeholder.jpg";
+
 export const storyContentLoader = async () => {
   type StoryDoc = {
     id: number;
@@ -662,6 +670,13 @@ export const storyContentLoader = async () => {
     dateOfPublication: string | null;
     articleClassification: { id: number | string; label?: string | null } | null;
     topic: { id: number | string; label?: string | null } | null;
+    image: {
+      url?: string | null;
+      filename?: string | null;
+      alt?: string | null;
+      width?: number | null;
+      height?: number | null;
+    } | null;
     localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
@@ -691,6 +706,16 @@ export const storyContentLoader = async () => {
             : null,
           category: doc.articleClassification?.label ?? null,
           topicLabel: doc.topic?.label ?? null,
+          // Stories migrated without a cover carry the CMS placeholder
+          // image (the field is required): it is used on cards only.
+          image: doc.image?.url && doc.image.filename !== PLACEHOLDER_IMAGE_FILENAME
+            ? {
+                url: doc.image.url,
+                alt: doc.image.alt ?? "",
+                width: doc.image.width ?? null,
+                height: doc.image.height ?? null,
+              }
+            : null,
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
           publishedAt: doc.createdAt ?? null,
@@ -713,6 +738,8 @@ export const webinarContentLoader = async () => {
     paragraph: unknown;
     date: string | null;
     content: unknown[] | null;
+    eventBody: unknown;
+    topic: { id: number | string; label?: string | null } | null;
     localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
@@ -736,6 +763,8 @@ export const webinarContentLoader = async () => {
           title: doc.title ?? null,
           paragraph: lexicalToHtml(doc.paragraph) ?? null,
           date: doc.date ?? null,
+          topicLabel: doc.topic?.label ?? null,
+          eventBody: lexicalToHtml(doc.eventBody) ?? null,
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,

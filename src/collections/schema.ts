@@ -58,6 +58,14 @@ export const storyContentSchema = payloadLocaleEntryBase.extend({
   articleClassificationId: z.string().nullable(),
   category: z.string().nullable(),
   topicLabel: z.string().nullable(),
+  image: z
+    .object({
+      url: z.string(),
+      alt: z.string(),
+      width: z.number().nullable(),
+      height: z.number().nullable(),
+    })
+    .nullable(),
 });
 
 export const webinarContentSchema = payloadLocaleEntryBase.extend({

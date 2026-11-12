@@ -1,4 +1,5 @@
 ---
+import { getI18n } from "@i18n/microcopy";
 import { lexicalToHtml } from "@utils/lexicalUtils";
 
 type Props = {
@@ -13,7 +14,17 @@ const isLexical =
   !Array.isArray(block) &&
   (block as Record<string, unknown>)?.root;
 
-const htmlContent = isLexical ? lexicalToHtml(block) : null;
+const t = getI18n(Astro.locals.lang || "it");
+
+const htmlContent = isLexical
+  ? lexicalToHtml(block, {
+      linkLabels: {
+        internal: t["link.internal"],
+        external: t["link.external"],
+      },
+      normalizeSpaces: true,
+    })
+  : null;
 ---
 
 {htmlContent && <Fragment set:html={htmlContent} />}

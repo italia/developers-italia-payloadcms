@@ -72,6 +72,8 @@ export const webinarContentSchema = payloadLocaleEntryBase.extend({
   content: z.array(z.any()),
   date: z.string().nullable(),
   paragraph: z.string().nullable(),
+  topicLabel: z.string().nullable(),
+  eventBody: z.string().nullable(),
 });
 
 export const catalogueSchema = payloadLocaleEntryBase

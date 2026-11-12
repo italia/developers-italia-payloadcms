@@ -41,6 +41,14 @@ type PayloadWebinarItem = {
   topic: PayloadTopic;
 };
 
+type PayloadInsightItem = {
+  id: string;
+  title: string | null;
+  abstract: unknown;
+  image: ImageProps | null;
+  topic: PayloadTopic;
+};
+
 type Props = {
   block: {
     id: string;
@@ -52,6 +60,7 @@ type Props = {
       | { componentName: "NewsTabRecord"; title: string; news: PayloadNewsItem[] }
       | { componentName: "StoryTabRecord"; title: string; Stories: PayloadStoryItem[] }
       | { componentName: "WebinarTabRecord"; title: string; Webinars: PayloadWebinarItem[] }
+      | { componentName: "InsightTabRecord"; title: string; Insights: PayloadInsightItem[] }
       | { componentName: string; title: string; news: unknown[] }
     )[];
   };
@@ -125,6 +134,22 @@ const buttonLabel = block.cta?.label;
               category: n.topic?.label ?? undefined,
               description: lexicalToHtml(n.paragraph) || undefined,
               dateTime: n.date || undefined,
+            };
+          }),
+        };
+
+      case DatoBlockModel.InsightTab:
+        return {
+          componentName: "CardEditorialStory",
+          title: tab.title,
+          news: ((tab as { Insights: PayloadInsightItem[] }).Insights ?? []).map((n) => {
+            return {
+              id: n.id,
+              title: n.title ?? "",
+              image: n.image || undefined,
+              linkTo: linkResolver(`insights:${n.id}`, lang),
+              category: n.topic?.label ?? undefined,
+              description: lexicalToHtml(n.abstract) || undefined,
             };
           }),
         };

@@ -54,7 +54,17 @@ const headingId = `archive-list-${id}`;
                       </div>
                       <p class="text-secondary fw-normal d-block mb-3 mt-1 small">
                         {item.dateTime && <DateTime value={item.dateTime} />}
-                        {item.description && <span> — {item.description}</span>}
+                        {item.description && (
+                          <span>
+                            {" — "}
+                            <Fragment
+                              set:html={item.description.replace(
+                                /<\/?p[^>]*>/g,
+                                "",
+                              )}
+                            />
+                          </span>
+                        )}
                       </p>
                     </span>
                   </a>

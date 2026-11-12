@@ -66,6 +66,7 @@ const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
   "news-tab": "NewsTabRecord",
   "story-tab": "StoryTabRecord",
   "Webinar-tab": "WebinarTabRecord",
+  "insight-tab": "InsightTabRecord",
   "article-navigation": "ArticleNavigationRecord",
   "article-list": "ArticleListRecord",
   "internal-link": "InternalLinkRecord",
@@ -737,6 +738,8 @@ export const webinarContentLoader = async () => {
     paragraph: unknown;
     date: string | null;
     content: unknown[] | null;
+    eventBody: unknown;
+    topic: { id: number | string; label?: string | null } | null;
     localizedSlugs: Record<string, string> | null;
     updatedAt: string | null;
     createdAt: string | null;
@@ -760,6 +763,8 @@ export const webinarContentLoader = async () => {
           title: doc.title ?? null,
           paragraph: lexicalToHtml(doc.paragraph) ?? null,
           date: doc.date ?? null,
+          topicLabel: doc.topic?.label ?? null,
+          eventBody: lexicalToHtml(doc.eventBody) ?? null,
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,

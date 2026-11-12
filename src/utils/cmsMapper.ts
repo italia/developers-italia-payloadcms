@@ -33,6 +33,7 @@ export enum DatoBlockModel {
   NewsTab = "NewsTabRecord",
   StoryTab = "StoryTabRecord",
   WebinarTab = "WebinarTabRecord",
+  InsightTab = "InsightTabRecord",
   ArticleNavigation = "ArticleNavigationRecord",
   ArticleList = "ArticleListRecord",
   InternalLink = "InternalLinkRecord",

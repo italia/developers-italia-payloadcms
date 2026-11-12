@@ -416,6 +416,17 @@ export const PayloadNewsFeedFragment = graphql(`
           localizedSlugs
         }
       }
+      ... on InsightTab {
+        id
+        blockType
+        title
+        news: Insights {
+          id
+          slug
+          title
+          localizedSlugs
+        }
+      }
     }
     cta {
       ... on InternalLink { id blockType label }

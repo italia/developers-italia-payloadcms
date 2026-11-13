@@ -1,4 +1,5 @@
 ---
+import { RichParagraph } from "@components/atoms/RichParagraph";
 import { ButtonLink } from "@components/atoms/Button";
 import { Image } from "@components/atoms/Image";
 import { slugify } from "@utils/slugify";
@@ -62,7 +63,7 @@ const titleId = slugify(title);
         <div class="it-hero-text-wrapper px-0">
           {showBreadcrumb && <slot name="breadcrumb" />}
           <h1 id={titleId}>{title}</h1>
-          {paragraph && <div class="font-sans-serif" set:html={paragraph} />}
+          {paragraph && <RichParagraph class="font-sans-serif" html={paragraph} />}
           {
             labelButton && linkTo && (
               <div class="it-btn-container">

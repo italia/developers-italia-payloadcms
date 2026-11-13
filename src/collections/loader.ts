@@ -69,6 +69,7 @@ const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
   "insight-tab": "InsightTabRecord",
   "mixed-tab": "MixedTabRecord",
   "graphitalia-dashboard": "GraphitaliaDashboardRecord",
+  "third-party-cookie": "ThirdPartyCookieRecord",
   "article-navigation": "ArticleNavigationRecord",
   "article-list": "ArticleListRecord",
   "internal-link": "InternalLinkRecord",

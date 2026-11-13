@@ -1,4 +1,5 @@
 ---
+import InternalLinkAdapter from "@components/cms-adapters/datocms/InternalLinkAdapter.astro";
 import ExternalLinkAdapter from "@components/cms-adapters/datocms/ExternalLinkAdapter.astro";
 import ListExternalLinkAdapter from "@components/cms-adapters/datocms/ListExternalLinkAdapter.astro";
 import { getI18n } from "@i18n/microcopy";
@@ -79,6 +80,25 @@ if (isLexical) {
         return <ListExternalLinkAdapter block={segment.fields as never} />;
       case "external-link":
         return <ExternalLinkAdapter block={segment.fields as never} />;
+      case "internal-link": {
+        // `linkTo` is a polymorphic relationship: { relationTo, value } where
+        // value is the document or its id. The link map is keyed "collection:id".
+        const rel = segment.fields.linkTo as
+          | { relationTo?: string; value?: string | { id?: string } | null }
+          | undefined;
+        const docId = typeof rel?.value === "object" ? rel?.value?.id : rel?.value;
+        if (!rel?.relationTo || !docId) return null;
+        return (
+          <InternalLinkAdapter
+            block={
+              {
+                label: segment.fields.label,
+                linkTo: { id: `${rel.relationTo}:${docId}` },
+              } as never
+            }
+          />
+        );
+      }
       default:
         return null;
     }

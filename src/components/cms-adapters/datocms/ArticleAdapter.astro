@@ -1,19 +1,34 @@
 ---
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
+import StructuredTextAdapter from "@components/cms-adapters/datocms/StructuredTextAdapter.astro";
 import { Breadcrumb } from "@components/molecules/Breadcrumb";
 import { SectionContainer } from "@components/organisms/SectionContainer";
+import { DatoBlockModel } from "@utils/cmsMapper";
 import { createBreadcrumb } from "@utils/createBreadcrumb";
 
 type Props = {
   content: unknown[];
 };
 
+type Block = { componentName?: string; textContent?: unknown };
+
 const { content } = Astro.props;
 const { recordId, lang } = Astro.locals;
 const breadcrumbItems = createBreadcrumb(recordId, lang);
+
+// The article body is a run of structured-text blocks: it is rendered in the
+// same section as the breadcrumb, at full column width, as the article text of
+// the previous site. Any other block that follows keeps its own section.
+const blocks = (content ?? []) as Block[];
+const firstOther = blocks.findIndex(
+  (block) => block.componentName !== DatoBlockModel.StructuredText,
+);
+const textBlocks = firstOther === -1 ? blocks : blocks.slice(0, firstOther);
+const otherBlocks = firstOther === -1 ? [] : blocks.slice(firstOther);
 ---
 
 <SectionContainer className="ps-lg-4 structured-text-container">
   <Breadcrumb items={breadcrumbItems} />
+  {textBlocks.map((block) => <StructuredTextAdapter block={block.textContent} />)}
 </SectionContainer>
-<PageAdapter content={content} />
+{otherBlocks.length > 0 && <PageAdapter content={otherBlocks} />}

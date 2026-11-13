@@ -1,10 +1,23 @@
 ---
+import ExternalLinkAdapter from "@components/cms-adapters/datocms/ExternalLinkAdapter.astro";
+import ListExternalLinkAdapter from "@components/cms-adapters/datocms/ListExternalLinkAdapter.astro";
 import { getI18n } from "@i18n/microcopy";
 import { lexicalToHtml } from "@utils/lexicalUtils";
 
 type Props = {
   block: unknown;
 };
+
+type LexicalChild = {
+  type: string;
+  fields?: { blockType?: string; [key: string]: unknown };
+};
+
+// A run of consecutive text nodes, rendered to HTML, or a block embedded in the
+// text (Lexical `block` node), rendered by its own adapter.
+type Segment =
+  | { kind: "html"; html: string }
+  | { kind: "block"; blockType: string; fields: Record<string, unknown> };
 
 const { block } = Astro.props;
 
@@ -16,15 +29,58 @@ const isLexical =
 
 const t = getI18n(Astro.locals.lang || "it");
 
-const htmlContent = isLexical
-  ? lexicalToHtml(block, {
-      linkLabels: {
-        internal: t["link.internal"],
-        external: t["link.external"],
-      },
-      normalizeSpaces: true,
-    })
-  : null;
+const renderOptions = {
+  linkLabels: {
+    internal: t["link.internal"],
+    external: t["link.external"],
+  },
+  normalizeSpaces: true,
+};
+
+const segments: Segment[] = [];
+
+if (isLexical) {
+  const root = (block as { root: { children?: LexicalChild[] } }).root;
+  let run: LexicalChild[] = [];
+
+  const flushRun = () => {
+    if (run.length === 0) return;
+    const html = lexicalToHtml(
+      { root: { ...root, children: run } },
+      renderOptions,
+    );
+    if (html) segments.push({ kind: "html", html });
+    run = [];
+  };
+
+  for (const child of root.children ?? []) {
+    if (child.type === "block" && child.fields?.blockType) {
+      flushRun();
+      segments.push({
+        kind: "block",
+        blockType: child.fields.blockType,
+        fields: child.fields,
+      });
+    } else {
+      run.push(child);
+    }
+  }
+  flushRun();
+}
 ---
 
-{htmlContent && <Fragment set:html={htmlContent} />}
+{
+  segments.map((segment) => {
+    if (segment.kind === "html") {
+      return <Fragment set:html={segment.html} />;
+    }
+    switch (segment.blockType) {
+      case "list-external-link":
+        return <ListExternalLinkAdapter block={segment.fields as never} />;
+      case "external-link":
+        return <ExternalLinkAdapter block={segment.fields as never} />;
+      default:
+        return null;
+    }
+  })
+}

@@ -4,6 +4,7 @@ import { DateTime } from "@components/react/DateTime";
 import { Image } from "@components/react/Image";
 import type { SiteLocale } from "@graphql/types";
 import { getI18n } from "@i18n/microcopy";
+import { singleParagraphInner } from "@utils/singleParagraph";
 
 export type CardEditorialStoryProps = {
   id?: string;
@@ -31,6 +32,11 @@ export function CardEditorialStory({
   const cardTitleId = `card-title-${id}`;
   const t = getI18n(lang);
 
+  // A single paragraph from the CMS is rendered as <p>, not nested in a div.
+  const descriptionInner = description
+    ? singleParagraphInner(description)
+    : "";
+
   return (
     <article
       className="it-card it-card-image it-card-height-full rounded shadow-sm border"
@@ -52,10 +58,17 @@ export function CardEditorialStory({
       </div>
 
       <div className="it-card-body">
-        <div
-          className="it-card-text"
-          dangerouslySetInnerHTML={{ __html: description }}
-        />
+        {descriptionInner !== null ? (
+          <p
+            className="it-card-text"
+            dangerouslySetInnerHTML={{ __html: descriptionInner }}
+          />
+        ) : (
+          <div
+            className="it-card-text"
+            dangerouslySetInnerHTML={{ __html: description ?? "" }}
+          />
+        )}
       </div>
 
       {shouldShowFooter && (

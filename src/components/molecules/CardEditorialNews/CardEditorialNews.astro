@@ -1,4 +1,5 @@
 ---
+import { RichParagraph } from "@components/atoms/RichParagraph";
 import { DateTime } from "@components/atoms/DateTime";
 import { Image } from "@components/atoms/Image";
 import { getI18n } from "@i18n/microcopy";
@@ -51,7 +52,7 @@ const rel = isExternal ? "noopener noreferrer" : undefined;
     )
   }
   <div class="it-card-body">
-    <div class="it-card-text" set:html={description} />
+    <RichParagraph class="it-card-text" html={description} />
   </div>
   {
     shouldShowFooter && (

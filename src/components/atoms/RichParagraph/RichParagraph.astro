@@ -1,0 +1,25 @@
+---
+import { singleParagraphInner } from "@utils/singleParagraph";
+
+/**
+ * Short rich text coming from the CMS as HTML. A single paragraph is rendered
+ * as `<p class>` (as the plain-text fields of the previous site); anything
+ * richer keeps its markup inside a `<div class>`.
+ */
+type Props = {
+  html?: string | null;
+  class?: string;
+};
+
+const { html, class: className } = Astro.props;
+// No text: an empty paragraph, as the plain-text fields rendered.
+const inner = html ? singleParagraphInner(html) : "";
+---
+
+{
+  inner !== null ? (
+    <p class={className} set:html={inner} />
+  ) : (
+    <div class={className} set:html={html} />
+  )
+}

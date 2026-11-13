@@ -1,5 +1,6 @@
 ---
 import PageAdapter from "@components/cms-adapters/datocms/PageAdapter.astro";
+import SupportCTASectionAdapter from "@components/cms-adapters/datocms/SupportCTASectionAdapter.astro";
 import StructuredTextAdapter from "@components/cms-adapters/datocms/StructuredTextAdapter.astro";
 import { Breadcrumb } from "@components/molecules/Breadcrumb";
 import { SectionContainer } from "@components/organisms/SectionContainer";
@@ -16,19 +17,28 @@ const { content } = Astro.props;
 const { recordId, lang } = Astro.locals;
 const breadcrumbItems = createBreadcrumb(recordId, lang);
 
-// The article body is a run of structured-text blocks: it is rendered in the
-// same section as the breadcrumb, at full column width, as the article text of
-// the previous site. Any other block that follows keeps its own section.
+// The article body (structured text and the call-to-action boxes placed in
+// it) is rendered in the same section as the breadcrumb, at full column width,
+// as the article text of the previous site. Any other block keeps its own
+// section, after the body.
 const blocks = (content ?? []) as Block[];
-const firstOther = blocks.findIndex(
-  (block) => block.componentName !== DatoBlockModel.StructuredText,
-);
-const textBlocks = firstOther === -1 ? blocks : blocks.slice(0, firstOther);
-const otherBlocks = firstOther === -1 ? [] : blocks.slice(firstOther);
+const isBodyBlock = (block: Block) =>
+  block.componentName === DatoBlockModel.StructuredText ||
+  block.componentName === DatoBlockModel.SupportCta;
+const bodyBlocks = blocks.filter(isBodyBlock);
+const otherBlocks = blocks.filter((block) => !isBodyBlock(block));
 ---
 
 <SectionContainer className="ps-lg-4 structured-text-container">
   <Breadcrumb items={breadcrumbItems} />
-  {textBlocks.map((block) => <StructuredTextAdapter block={block.textContent} />)}
+  {
+    bodyBlocks.map((block) =>
+      block.componentName === DatoBlockModel.SupportCta ? (
+        <SupportCTASectionAdapter block={block as never} />
+      ) : (
+        <StructuredTextAdapter block={block.textContent} />
+      ),
+    )
+  }
 </SectionContainer>
 {otherBlocks.length > 0 && <PageAdapter content={otherBlocks} />}

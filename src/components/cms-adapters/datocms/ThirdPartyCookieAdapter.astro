@@ -1,0 +1,19 @@
+---
+import { CookieManagement } from "@components/organisms/CookieManagement";
+
+type Props = {
+  block: {
+    title?: string | null;
+    description?: string | null;
+    cookiePrefix?: string | null;
+  };
+};
+
+const { block } = Astro.props;
+---
+
+<CookieManagement
+  title={block.title}
+  description={block.description}
+  cookiePrefix={block.cookiePrefix}
+/>

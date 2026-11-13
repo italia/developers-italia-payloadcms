@@ -36,6 +36,7 @@ export enum DatoBlockModel {
   InsightTab = "InsightTabRecord",
   MixedTab = "MixedTabRecord",
   GraphitaliaDashboard = "GraphitaliaDashboardRecord",
+  ThirdPartyCookie = "ThirdPartyCookieRecord",
   ArticleNavigation = "ArticleNavigationRecord",
   ArticleList = "ArticleListRecord",
   InternalLink = "InternalLinkRecord",

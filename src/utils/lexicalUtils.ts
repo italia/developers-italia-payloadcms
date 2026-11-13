@@ -58,9 +58,11 @@ function parseInlineMarkdown(text: string): string {
   return text
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    // Underscores count as markdown only around a word, never inside one:
+    // "dip_trasformazione_digitale" (handles, URLs) must stay as typed.
+    .replace(/(?<![\w])__(.+?)__(?![\w])/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/_(.+?)_/g, "<em>$1</em>")
+    .replace(/(?<![\w])_(.+?)_(?![\w])/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, "<code>$1</code>");
 }
 
@@ -102,7 +104,23 @@ function renderNode(node: LexicalNode, options: LexicalRenderOptions): string {
 
     case "list": {
       const tag = node.listType === "number" ? "ol" : "ul";
-      return `<${tag}>${renderChildren(node, options)}</${tag}>`;
+      // Lexical stores a nested list in a list item of its own, right after the
+      // item it belongs to: render it inside that item, as HTML expects.
+      const items: string[] = [];
+      for (const child of node.children ?? []) {
+        const isNestedList =
+          child.type === "listitem" &&
+          child.children?.length === 1 &&
+          child.children[0].type === "list";
+        if (isNestedList && items.length > 0) {
+          items[items.length - 1] += renderChildren(child, options);
+        } else if (child.type === "listitem") {
+          items.push(renderChildren(child, options));
+        } else {
+          items.push(renderNode(child, options));
+        }
+      }
+      return `<${tag}>${items.map((item) => `<li>${item}</li>`).join("")}</${tag}>`;
     }
 
     case "listitem":

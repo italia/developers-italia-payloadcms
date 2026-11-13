@@ -24,6 +24,12 @@ export type LexicalRenderOptions = {
   linkLabels?: { internal: string; external: string };
   /** Turn non-breaking spaces pasted from external editors into plain spaces. */
   normalizeSpaces?: boolean;
+  /**
+   * Wrap the text of every list item in a paragraph (`<li><p>…</p></li>`), as
+   * the DatoCMS site did in structured text: it gives list items the spacing
+   * of paragraphs.
+   */
+  listItemParagraphs?: boolean;
 };
 
 function isLexicalRoot(value: unknown): value is LexicalRoot {
@@ -115,7 +121,8 @@ function renderNode(node: LexicalNode, options: LexicalRenderOptions): string {
         if (isNestedList && items.length > 0) {
           items[items.length - 1] += renderChildren(child, options);
         } else if (child.type === "listitem") {
-          items.push(renderChildren(child, options));
+          const content = renderChildren(child, options);
+          items.push(options.listItemParagraphs ? `<p>${content}</p>` : content);
         } else {
           items.push(renderNode(child, options));
         }

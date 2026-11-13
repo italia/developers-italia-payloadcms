@@ -1,0 +1,16 @@
+---
+import Dashboard from "@components/dashboards/Dashboard";
+
+type Props = {
+  block: { dashboardId?: string | null };
+};
+
+const { block } = Astro.props;
+const dashboardId = block.dashboardId || undefined;
+---
+
+<section>
+  <div class="container py-5 py-lg-80">
+    <Dashboard client:visible dashboardId={dashboardId} />
+  </div>
+</section>

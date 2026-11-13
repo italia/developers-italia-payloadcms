@@ -67,6 +67,8 @@ const PAYLOAD_BLOCK_TYPE_MAP: Record<string, string> = {
   "story-tab": "StoryTabRecord",
   "Webinar-tab": "WebinarTabRecord",
   "insight-tab": "InsightTabRecord",
+  "mixed-tab": "MixedTabRecord",
+  "graphitalia-dashboard": "GraphitaliaDashboardRecord",
   "article-navigation": "ArticleNavigationRecord",
   "article-list": "ArticleListRecord",
   "internal-link": "InternalLinkRecord",
@@ -205,6 +207,16 @@ type PayloadPageList = {
   docs: PayloadPageDoc[];
   hasNextPage: boolean;
 };
+
+/**
+ * Date of the last editorial publication (`lastPublishedAt` in the CMS).
+ * It is what the site shows as "last update": unlike `updatedAt` it does not
+ * change on technical saves. Missing on CMS versions without the field.
+ */
+function lastPublished(doc: unknown): string | null {
+  const value = (doc as { lastPublishedAt?: unknown } | null)?.lastPublishedAt;
+  return typeof value === "string" && value ? value : null;
+}
 
 // ─── Helper: extract docs from executeAutoPagingQuery result ─────────────────
 // executeAutoPagingQuery<Result> returns Result[] at runtime (the docs array)
@@ -560,7 +572,7 @@ export const pagesLoader = async () => {
         content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
         localizedSlugs: slugMap.get(docId) ?? null,
         updatedAt: doc.updatedAt ?? null,
-        publishedAt: doc.updatedAt ?? doc.createdAt ?? null,
+        publishedAt: lastPublished(doc) ?? doc.updatedAt ?? doc.createdAt ?? null,
       });
     }
   }
@@ -602,7 +614,7 @@ export const articleContentLoader = async () => {
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
-          publishedAt: doc.createdAt ?? null,
+          publishedAt: lastPublished(doc) ?? doc.createdAt ?? null,
         });
       }
       hasMore = res.hasNextPage;
@@ -646,7 +658,7 @@ export const insightContentLoader = async () => {
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
-          publishedAt: doc.createdAt ?? null,
+          publishedAt: lastPublished(doc) ?? doc.createdAt ?? null,
         });
       }
       hasMore = res.hasNextPage;
@@ -718,7 +730,7 @@ export const storyContentLoader = async () => {
             : null,
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
-          publishedAt: doc.createdAt ?? null,
+          publishedAt: lastPublished(doc) ?? doc.createdAt ?? null,
         });
       }
       hasMore = res.hasNextPage;
@@ -768,7 +780,7 @@ export const webinarContentLoader = async () => {
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
-          publishedAt: doc.createdAt ?? null,
+          publishedAt: lastPublished(doc) ?? doc.createdAt ?? null,
         });
       }
       hasMore = res.hasNextPage;
@@ -829,7 +841,7 @@ export const cataloguesLoader = async () => {
           content: (doc.content ?? []).map((b) => normalizePayloadBlock(b as Record<string, unknown>)),
           localizedSlugs: doc.localizedSlugs ?? null,
           updatedAt: doc.updatedAt ?? null,
-          publishedAt: doc.createdAt ?? null,
+          publishedAt: lastPublished(doc) ?? doc.createdAt ?? null,
           datesRegistry,
         });
       }
@@ -901,7 +913,7 @@ export const homepageLoader = async () => {
     {
       id: String(base.id),
       title: base.title,
-      publishedAt: base.updatedAt || base.createdAt,
+      publishedAt: lastPublished(base) || base.updatedAt || base.createdAt,
       updatedAt: base.updatedAt,
       allContentLocales: LOCALES.map((locale, i) => ({
         locale,

@@ -49,6 +49,20 @@ type PayloadInsightItem = {
   topic: PayloadTopic;
 };
 
+// Item of a mixed tab: a document of any of the listed collections. The id is
+// prefixed with the collection ("story-items:…") by normalizePayloadBlock.
+type PayloadMixedItem = {
+  id: string;
+  title: string | null;
+  link?: string | null;
+  paragraph?: unknown;
+  abstract?: unknown;
+  dateOfPublication?: string | null;
+  date?: string | null;
+  image?: ImageProps | null;
+  topic?: PayloadTopic;
+};
+
 type Props = {
   block: {
     id: string;
@@ -61,6 +75,7 @@ type Props = {
       | { componentName: "StoryTabRecord"; title: string; Stories: PayloadStoryItem[] }
       | { componentName: "WebinarTabRecord"; title: string; Webinars: PayloadWebinarItem[] }
       | { componentName: "InsightTabRecord"; title: string; Insights: PayloadInsightItem[] }
+      | { componentName: "MixedTabRecord"; title: string; items: PayloadMixedItem[] }
       | { componentName: string; title: string; news: unknown[] }
     )[];
   };
@@ -150,6 +165,25 @@ const buttonLabel = block.cta?.label;
               linkTo: linkResolver(`insights:${n.id}`, lang),
               category: n.topic?.label ?? undefined,
               description: lexicalToHtml(n.abstract) || undefined,
+            };
+          }),
+        };
+
+      case DatoBlockModel.MixedTab:
+        return {
+          componentName: "CardEditorialStory",
+          title: tab.title,
+          news: ((tab as { items: PayloadMixedItem[] }).items ?? []).map((n) => {
+            // News items point to an external page, everything else to a site page.
+            const externalLink = n.id.startsWith("news-items:") ? n.link : "";
+            return {
+              id: n.id,
+              title: n.title ?? "",
+              image: n.image || undefined,
+              linkTo: externalLink || linkResolver(n.id, lang),
+              category: n.topic?.label ?? undefined,
+              description: lexicalToHtml(n.paragraph ?? n.abstract) || undefined,
+              dateTime: n.dateOfPublication || n.date || undefined,
             };
           }),
         };

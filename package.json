@@ -32,10 +32,13 @@
     "datocms-structured-text-to-plain-text": "^5.1.16",
     "dotenv": "^16.6.1",
     "gql.tada": "^1.11.3",
+    "graph-italia-components": "^0.3.29",
     "graphql": "^16.14.2",
     "jsonwebtoken": "^9.0.3",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-grid-layout": "^2.2.3",
+    "react-resizable": "^4.0.2"
   },
   "devDependencies": {
     "@datocms/cli": "^3.1.16",

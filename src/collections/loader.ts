@@ -109,6 +109,18 @@ const SINGLE_BLOCK_FIELDS = new Set([
   "list",
 ]);
 
+// Media document used in the CMS where an image is required but none exists.
+const PLACEHOLDER_IMAGE_FILENAME = "placeholder.jpg";
+
+function isPlaceholderMedia(value: unknown): boolean {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    (value as { filename?: unknown }).filename === PLACEHOLDER_IMAGE_FILENAME &&
+    "mimeType" in (value as object)
+  );
+}
+
 function normalizePayloadBlock(block: Record<string, unknown>): Record<string, unknown> {
   const { blockType, bg, ...rest } = block;
   const result: Record<string, unknown> = {
@@ -120,6 +132,12 @@ function normalizePayloadBlock(block: Record<string, unknown>): Record<string, u
   };
 
   for (const [key, val] of Object.entries(result)) {
+    if (isPlaceholderMedia(val)) {
+      // Upload fields are required in the CMS: where the previous site had no
+      // image the editors picked the placeholder. It must not be shown.
+      result[key] = null;
+      continue;
+    }
     if (
       Array.isArray(val) &&
       val.length > 0 &&
@@ -671,7 +689,6 @@ export const insightContentLoader = async () => {
 
 // ─── Story content (PayloadCMS REST, per-locale entries) ──────────────────────
 
-const PLACEHOLDER_IMAGE_FILENAME = "placeholder.jpg";
 
 export const storyContentLoader = async () => {
   type StoryDoc = {

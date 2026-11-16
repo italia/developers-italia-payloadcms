@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "bun run generate-link-map && dotenv -- astro dev",
     "build": "bun run generate-link-map && dotenv -- astro build",
+    "generate-software-redirects": "bun ./scripts/gen-software-redirects.ts",
     "generate-link-map": "bun ./scripts/generate-link-map.ts",
     "generate-output": "gql.tada generate output",
     "tada-doctor": "gql-tada doctor",

@@ -38,6 +38,14 @@ export default defineConfig({
     },
   },
   vite: {
+    // Client components build image URLs from the CMS address: make it always
+    // available, falling back to PAYLOAD_URL when PUBLIC_PAYLOAD_URL is not set
+    // in the build environment (otherwise the URLs start with "undefined").
+    define: {
+      "import.meta.env.PUBLIC_PAYLOAD_URL": JSON.stringify(
+        process.env.PUBLIC_PAYLOAD_URL || process.env.PAYLOAD_URL || "",
+      ),
+    },
     ssr: {
       noExternal: ["dataviz-components", "graph-italia-components"],
     },

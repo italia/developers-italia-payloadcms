@@ -1,4 +1,5 @@
 ---
+import { unwrapSingleParagraph } from "@utils/singleParagraph";
 import type { CardInfoProps } from "./types";
 
 type Props = CardInfoProps;
@@ -13,6 +14,6 @@ const { title, description } = Astro.props;
     </span>
   </h3>
   <div class="it-card-body">
-    <p class="it-card-text" set:html={description} />
+    <p class="it-card-text" set:html={unwrapSingleParagraph(description)} />
   </div>
 </div>

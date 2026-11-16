@@ -25,6 +25,7 @@ const rowAlignClass = centered ? "justify-content-center" : "";
       <div class={`row ${rowAlignClass}`}>
         <div class="col-12 col-lg-8">
           <StructuredTextAdapter block={block.textContent} />
+          <slot />
         </div>
       </div>
     </div>

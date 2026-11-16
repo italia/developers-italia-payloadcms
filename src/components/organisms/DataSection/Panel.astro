@@ -1,4 +1,5 @@
 ---
+import { unwrapSingleParagraph } from "@utils/singleParagraph";
 import { Link } from "@components/atoms/Link";
 
 import Chart from "@components/charts/Chart";
@@ -15,7 +16,7 @@ const { title, paragraph, chart, externalLink } = Astro.props;
     <h3 class="mb-3">
       {title}
     </h3>
-    <p class="mb-4" set:html={paragraph} />
+    <p class="mb-4" set:html={unwrapSingleParagraph(paragraph)} />
   </div>
   <div class="col-12">
     {

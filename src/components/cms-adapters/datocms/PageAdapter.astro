@@ -35,10 +35,27 @@ type Props = {
 };
 
 const { content, isFontSerif = false, centeredText = false } = Astro.props;
+
+// A step list that follows a text block belongs to it: on the previous site it
+// was a block inside the text, in the same section and column. Group them so
+// that the list is rendered inside the text section.
+type AnyBlock = { componentName?: string; attachedLists?: AnyBlock[] };
+const blocks: AnyBlock[] = [];
+for (const item of (content ?? []) as AnyBlock[]) {
+  const previous = blocks[blocks.length - 1];
+  if (
+    item.componentName === DatoBlockModel.OrderedList &&
+    previous?.componentName === DatoBlockModel.StructuredText
+  ) {
+    previous.attachedLists = [...(previous.attachedLists ?? []), item];
+  } else {
+    blocks.push({ ...item });
+  }
+}
 ---
 
 {
-  (content ?? []).map((block) => {
+  blocks.map((block) => {
     switch (block.componentName) {
       case DatoBlockModel.Hero:
         return <HeroAdapter block={block} />;
@@ -62,7 +79,11 @@ const { content, isFontSerif = false, centeredText = false } = Astro.props;
             block={block}
             isFontSerif={isFontSerif}
             centered={centeredText}
-          />
+          >
+            {(block.attachedLists ?? []).map((list) => (
+              <OrderedListAdapter block={list} bare />
+            ))}
+          </StructuredTextBlockAdapter>
         );
       case DatoBlockModel.ListCollection:
         return <ListCollectionAdapter block={block} />;

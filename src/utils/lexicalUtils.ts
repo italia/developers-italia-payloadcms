@@ -147,6 +147,35 @@ function renderNode(node: LexicalNode, options: LexicalRenderOptions): string {
       return `<a href="${url}"${target}>${renderChildren(node, options)}${label}</a>`;
     }
 
+    case "block": {
+      // Link blocks embedded in the text. Pages render them with their own
+      // components (see StructuredTextAdapter); in plain HTML contexts such as
+      // the RSS feed they become ordinary links, so that they are not lost.
+      const fields = (node.fields ?? {}) as {
+        blockType?: string;
+        label?: string;
+        url?: string;
+        description?: string;
+        links?: { label?: string; url?: string; description?: string }[];
+      };
+      const anchor = (link: { label?: string; url?: string }) =>
+        link.url && link.label ? `<a href="${link.url}">${link.label}</a>` : "";
+      if (fields.blockType === "external-link") {
+        const link = anchor(fields);
+        return link ? `<p>${link}</p>` : "";
+      }
+      if (fields.blockType === "list-external-link") {
+        const items = (fields.links ?? [])
+          .map((link) => {
+            const a = anchor(link);
+            return a ? `<li>${link.description ? `${link.description} ` : ""}${a}</li>` : "";
+          })
+          .join("");
+        return items ? `<ul>${items}</ul>` : "";
+      }
+      return "";
+    }
+
     case "quote":
       return `<blockquote>${renderChildren(node, options)}</blockquote>`;
 

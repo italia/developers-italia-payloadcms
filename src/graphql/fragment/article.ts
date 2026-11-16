@@ -55,6 +55,7 @@ export const ArticleIndexPayloadFragment = graphql(
     }
     localizedSlugs
     updatedAt
+    lastPublishedAt
   }
 `,
   [SearchStructuredTextBlockFragment, SearchSupportCtaSectionFragment],

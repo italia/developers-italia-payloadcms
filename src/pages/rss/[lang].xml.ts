@@ -16,6 +16,15 @@ const MAX_ITEMS = 50;
 // allDocumentsLoader tags each doc with its locale — not part of the base fragment type.
 type LocalizedArticle = ArticleIndexPayloadFragmentType & { locale: string };
 
+// Date of the item: the editorial publication date shown on the page
+// ("last update"), not the technical date of the last save.
+const publishedAt = (article: LocalizedArticle) =>
+  new Date(
+    (article as { lastPublishedAt?: string | null }).lastPublishedAt ??
+      article.updatedAt ??
+      0,
+  );
+
 export async function getStaticPaths() {
   const response = await getEntry("locales", "site-locales");
 
@@ -47,17 +56,14 @@ export const GET: APIRoute = async ({ params, site }) => {
 
   const localizedArticles = articles
     .filter((article) => article.locale === lang)
-    .sort(
-      (a, b) =>
-        new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime(),
-    )
+    .sort((a, b) => publishedAt(b).getTime() - publishedAt(a).getTime())
     .slice(0, MAX_ITEMS);
 
   const items = localizedArticles.map((article) => ({
     title: article.title ?? "",
     description: lexicalToPlainText(article.paragraph) ?? "",
     link: linkResolver(`articles:${article.id}`, lang),
-    pubDate: new Date(article.updatedAt ?? 0),
+    pubDate: publishedAt(article),
     content: (article.content ?? [])
       .map((block) =>
         "structuredTextContent" in block ? lexicalToHtml(block.structuredTextContent) : "",

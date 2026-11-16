@@ -13,6 +13,7 @@ import NewsFeedAdapter from "@components/cms-adapters/datocms/NewsFeedAdapter.as
 import OrderedListAdapter from "@components/cms-adapters/datocms/OrderedListAdapter.astro";
 import SearchBarAdapter from "@components/cms-adapters/datocms/SearchBarAdapter.astro";
 import SpeakerAdapter from "@components/cms-adapters/datocms/SpeakerAdapter.astro";
+import StructuredTextAdapter from "@components/cms-adapters/datocms/StructuredTextAdapter.astro";
 import StructuredTextBlockAdapter from "@components/cms-adapters/datocms/StructuredTextBlockAdapter.astro";
 import SupportChannelsSectionAdapter from "@components/cms-adapters/datocms/SupportChannelsSectionAdapter.astro";
 import SupportCTASectionAdapter from "@components/cms-adapters/datocms/SupportCTASectionAdapter.astro";
@@ -39,15 +40,25 @@ const { content, isFontSerif = false, centeredText = false } = Astro.props;
 // A step list that follows a text block belongs to it: on the previous site it
 // was a block inside the text, in the same section and column. Group them so
 // that the list is rendered inside the text section.
-type AnyBlock = { componentName?: string; attachedLists?: AnyBlock[] };
+// The text that follows such a list (same background) continues the same
+// text: it is attached too, instead of opening a new section.
+type AnyBlock = {
+  componentName?: string;
+  backgroundColor?: string | null;
+  textContent?: unknown;
+  attached?: AnyBlock[];
+};
 const blocks: AnyBlock[] = [];
 for (const item of (content ?? []) as AnyBlock[]) {
   const previous = blocks[blocks.length - 1];
-  if (
-    item.componentName === DatoBlockModel.OrderedList &&
-    previous?.componentName === DatoBlockModel.StructuredText
-  ) {
-    previous.attachedLists = [...(previous.attachedLists ?? []), item];
+  const previousIsText = previous?.componentName === DatoBlockModel.StructuredText;
+  const isList = item.componentName === DatoBlockModel.OrderedList;
+  const continuesText =
+    item.componentName === DatoBlockModel.StructuredText &&
+    !!previous?.attached?.length &&
+    (item.backgroundColor ?? null) === (previous.backgroundColor ?? null);
+  if (previousIsText && (isList || continuesText)) {
+    previous.attached = [...(previous.attached ?? []), item];
   } else {
     blocks.push({ ...item });
   }
@@ -80,9 +91,13 @@ for (const item of (content ?? []) as AnyBlock[]) {
             isFontSerif={isFontSerif}
             centered={centeredText}
           >
-            {(block.attachedLists ?? []).map((list) => (
-              <OrderedListAdapter block={list} bare />
-            ))}
+            {(block.attached ?? []).map((item) =>
+              item.componentName === DatoBlockModel.OrderedList ? (
+                <OrderedListAdapter block={item} bare />
+              ) : (
+                <StructuredTextAdapter block={item.textContent} />
+              ),
+            )}
           </StructuredTextBlockAdapter>
         );
       case DatoBlockModel.ListCollection:

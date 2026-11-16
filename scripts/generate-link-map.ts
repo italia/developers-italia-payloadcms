@@ -38,6 +38,24 @@ async function gqlFetch<T>(
 }
 
 const LOCALES: SiteLocale[] = ["en", "it"];
+
+/**
+ * Ids of the documents of a collection with the "hideFromSite" checkbox set.
+ * On a CMS version without the field the query is rejected: nothing is hidden.
+ */
+async function fetchHiddenIds(collection: string): Promise<Set<string>> {
+  try {
+    const res = await fetch(
+      `${BASE}/api/${collection}?where[hideFromSite][equals]=true&depth=0&limit=1000`,
+      { headers: { Authorization: `users API-Key ${KEY}` } },
+    );
+    if (!res.ok) return new Set();
+    const { docs } = (await res.json()) as { docs?: { id: string | number }[] };
+    return new Set((docs ?? []).map((doc) => String(doc.id)));
+  } catch {
+    return new Set();
+  }
+}
 const HOMEPAGE_ID = "homepage";
 const SEARCH_ID = "search";
 const LIMIT = 100;
@@ -453,16 +471,28 @@ async function generateLinkMap() {
 
   // All other collections: path = /locale/parentSlug/itemSlug
   // Each collection gets its own prefix to avoid cross-collection ID collisions.
-  addCollectionEntries(articles,   "articles",      linkMap, pageById, homeTitleByLocale);
-  addCollectionEntries(insights,   "insights",      linkMap, pageById, homeTitleByLocale);
+  // Documents that are not published get no entry in the map (see
+  // src/utils/publication.ts): hidden documents and unclassified stories.
+  const [hiddenArticles, hiddenInsights, hiddenStories, hiddenWebinars] =
+    await Promise.all(
+      ["articles", "insights", "story-items", "webinar-items"].map(fetchHiddenIds),
+    );
+  const visible = (items: NormalizedItem[], hidden: Set<string>) =>
+    items.filter((item) => !hidden.has(String(item.id)));
+  const publishedStories = visible(stories, hiddenStories).filter(
+    (story) => Object.keys(story.classIdByLocale).length > 0,
+  );
+
+  addCollectionEntries(visible(articles, hiddenArticles), "articles", linkMap, pageById, homeTitleByLocale);
+  addCollectionEntries(visible(insights, hiddenInsights), "insights", linkMap, pageById, homeTitleByLocale);
   addCollectionEntries(catalogues, "catalogues",    linkMap, pageById, homeTitleByLocale);
   // Stories and events take their breadcrumb from the catalogue listing them,
   // so the catalogues must already be in the map at this point.
-  addCollectionEntries(stories,    "story-items",   linkMap, pageById, homeTitleByLocale, {
+  addCollectionEntries(publishedStories, "story-items", linkMap, pageById, homeTitleByLocale, {
     catalogues,
     tabType: "story_item",
   });
-  addCollectionEntries(webinars,   "webinar-items", linkMap, pageById, homeTitleByLocale, {
+  addCollectionEntries(visible(webinars, hiddenWebinars), "webinar-items", linkMap, pageById, homeTitleByLocale, {
     catalogues,
     tabType: "webinar_item",
   });

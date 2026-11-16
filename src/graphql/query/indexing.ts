@@ -80,11 +80,11 @@ export const PagesIdxQuery = graphql(
   [PageIndexPayloadFragment],
 );
 
-// NewsItems have no localised slugs — index only metadata
+// NewsItems are external links: indexed with title, link and abstract
 export const NewsIdxQuery = graphql(`
   query NewsIdx($locale: LocaleInputType, $limit: Int, $page: Int) {
     NewsItems(locale: $locale, limit: $limit, page: $page) {
-      docs { id updatedAt createdAt }
+      docs { id title link paragraph updatedAt createdAt }
       hasNextPage
     }
   }

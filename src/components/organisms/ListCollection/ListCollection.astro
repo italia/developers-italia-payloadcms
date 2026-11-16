@@ -1,4 +1,5 @@
 ---
+import { unwrapSingleParagraph } from "@utils/singleParagraph";
 import { CardEditorialNews } from "@components/molecules/CardEditorialNews";
 import { CardInlineMini } from "@components/molecules/CardInlineMini";
 import { Carousel, CarouselItem } from "@components/molecules/Carousel";
@@ -43,7 +44,7 @@ const mobileItems = items.map((item, index) => ({
       <h2 class=`${textColorClass}` id={titleId}>
         {title}
       </h2>
-      {paragraph && <p class={`${textColorClass}`} set:html={paragraph} />}
+      {paragraph && <p class={`${textColorClass}`} set:html={unwrapSingleParagraph(paragraph)} />}
     </div>
 
     <div class=` ${!showInline ? 'd-none d-lg-block' : ''}`>

@@ -10,3 +10,13 @@ export function singleParagraphInner(html: string): string | null {
   if (!match) return null;
   return /<\/?p[\s>]/.test(match[1]) ? null : match[1];
 }
+
+/**
+ * For templates that write their own `<p>`: returns the inner HTML when the
+ * value is a single paragraph (so that paragraphs are not nested), the value
+ * itself otherwise.
+ */
+export function unwrapSingleParagraph(html: string | null | undefined): string {
+  if (!html) return "";
+  return singleParagraphInner(html) ?? html;
+}

@@ -1,4 +1,5 @@
 ---
+import { unwrapSingleParagraph } from "@utils/singleParagraph";
 import { Link } from "@components/atoms/Link";
 import ItFiles from "@static/assets/ItFiles.astro";
 import { slugify } from "@utils/slugify";
@@ -17,7 +18,7 @@ const titleId = slugify(title);
           <ItFiles />
           <span class="text">{title}</span>
         </div>
-        <p class="col-lg-7 col-12" set:html={paragraph} />
+        <p class="col-lg-7 col-12" set:html={unwrapSingleParagraph(paragraph)} />
         <Link label={label} url={url} openInNewTab={true} />
       </div>
     </div>

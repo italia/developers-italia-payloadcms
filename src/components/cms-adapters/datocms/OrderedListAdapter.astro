@@ -14,10 +14,12 @@ type DatoRecord = OrderedListFragmentType & {
 };
 
 type Props = {
-  block: DatoRecord;
+  block: DatoRecord;  /** Render only the list, without its own section: used when the list
+   *  belongs to the text that precedes it. */
+  bare?: boolean;
 };
 
-const { block } = Astro.props;
+const { block, bare = false } = Astro.props;
 const { lang } = Astro.locals;
 
 const items: ListItemProps[] = block.items.map((item) => {
@@ -63,10 +65,16 @@ const items: ListItemProps[] = block.items.map((item) => {
 });
 ---
 
-<SectionContainer className={getSectionBgClass("default")}>
-  <div class="row">
-    <div class="col-12 col-lg-8">
-      <OrderedList items={items} variant="default" />
-    </div>
-  </div>
-</SectionContainer>
+{
+  bare ? (
+    <OrderedList items={items} variant="default" />
+  ) : (
+    <SectionContainer className={getSectionBgClass("default")}>
+      <div class="row">
+        <div class="col-12 col-lg-8">
+          <OrderedList items={items} variant="default" />
+        </div>
+      </div>
+    </SectionContainer>
+  )
+}

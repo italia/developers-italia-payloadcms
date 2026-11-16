@@ -1,5 +1,5 @@
 ---
-import { RichParagraph } from "@components/atoms/RichParagraph";
+import { singleParagraphInner } from "@utils/singleParagraph";
 import { ButtonLink } from "@components/atoms/Button";
 import { Image } from "@components/atoms/Image";
 import { slugify } from "@utils/slugify";
@@ -18,6 +18,9 @@ const {
   openInNewTab = false,
 } = Astro.props;
 const titleId = slugify(title);
+// A single paragraph from the CMS is rendered as <p>, written in this template
+// so that the scoped styles of the hero apply to it.
+const paragraphInner = paragraph ? singleParagraphInner(paragraph) : null;
 ---
 
 <style>
@@ -33,7 +36,13 @@ const titleId = slugify(title);
         <div class="it-hero-text-wrapper px-0">
           {showBreadcrumb && <slot name="breadcrumb" />}
           <h1 id={titleId}>{title}</h1>
-          {paragraph && <RichParagraph class="font-sans-serif" html={paragraph} />}
+          {
+            paragraphInner !== null ? (
+              <p class="font-sans-serif" set:html={paragraphInner} />
+            ) : (
+              paragraph && <div class="font-sans-serif" set:html={paragraph} />
+            )
+          }
           {
             labelButton && linkTo && (
               <div class="it-btn-container">

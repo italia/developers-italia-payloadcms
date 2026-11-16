@@ -98,17 +98,32 @@ export const getMapWebinar = (
 };
 
 // ─── News ─────────────────────────────────────────────────────────────────────
-// NewsItems are external links — only id/dates are indexed from PayloadCMS.
-// Skip entries with no title to avoid polluting the search index.
+// NewsItems are links to external articles: they are indexed with their title
+// and abstract and point to the external address. Entries without a title in
+// this locale are not translated and are skipped.
 
 export const getMapNews = (
-  news: WithLocale<NewsIndexPayloadFragmentType>,
+  news: WithLocale<{
+    id: string | number;
+    title?: string | null;
+    link?: string | null;
+    paragraph?: unknown;
+  }>,
   lang: SiteLocale,
-  _category: string,
+  category: string,
 ) => {
-  if (news.locale !== lang) return null;
-  // NewsIndexPayloadFragment only exposes id + timestamps — no title/link available.
-  return null;
+  if (news.locale !== lang || !news.title || !news.link) return null;
+  const description = lexicalToPlainText(news.paragraph) ?? "";
+
+  return {
+    type: "news",
+    id: news.id,
+    category,
+    externalLink: news.link,
+    title: news.title,
+    description,
+    content: description,
+  };
 };
 
 // ─── Resources ────────────────────────────────────────────────────────────────

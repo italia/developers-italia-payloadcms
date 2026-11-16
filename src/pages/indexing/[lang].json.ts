@@ -1,9 +1,10 @@
 import type { SiteLocale } from "@graphql/types";
 import { getI18n } from "@i18n/microcopy";
 import * as Mappers from "@utils/indexing/indexingMappers";
+import { getBreadcrumbs } from "@utils/linkResolver";
 import type { APIRoute } from "astro";
 import { getEntry } from "astro:content";
-import { getCataloguesMapCategory, getCategoryName, getTitleByTypeNews, getTitleByTypeResourse } from "@utils/indexing/getCategory";
+import { getCataloguesMapCategory, getTitleByTypeNews, getTitleByTypeResourse } from "@utils/indexing/getCategory";
 
 export async function getStaticPaths() {
   const response = await getEntry("locales", "site-locales");
@@ -51,31 +52,43 @@ export const GET: APIRoute = async ({ params }) => {
     lang,
   );
 
-  // The type strings below must match the `newsPageTabType` values saved in the
-  // Payload CMS CatalogueTab blocks (typically the collection slug).
-  const articleCategory = getTitleByTypeNews(cataloguesMapCategory, "articles") || "";
-  const insightCategory = getCategoryName((insights[0] as any)?.parent);
-  const storyCategory = getTitleByTypeNews(cataloguesMapCategory, "story-items") || "";
-  const newsCategory = getTitleByTypeNews(cataloguesMapCategory, "news-items") || "";
-  const webinarCategory = getTitleByTypeNews(cataloguesMapCategory, "webinar-items") || "";
+  // Category shown with each search result, as on the previous site.
+  // - Articles, guides and stories: the section they belong to, i.e. the step
+  //   before the document in its breadcrumb ("Normativa", "Guide", "Notizie",
+  //   "Piattaforme").
+  // - External news and events: "<catalogue>, <tab>" of the catalogue that lists
+  //   them. The tab types are the ones saved in the CMS CatalogueTab blocks.
+  const sectionOf = (id: string) => {
+    const steps = getBreadcrumbs(id, lang);
+    return steps.length >= 2 ? steps[steps.length - 2].title : "";
+  };
+  const newsCategory = getTitleByTypeNews(cataloguesMapCategory, "news_item") || "";
+  const webinarCategory = getTitleByTypeNews(cataloguesMapCategory, "webinar_item") || "";
   const resourseCategory = getTitleByTypeResourse(cataloguesMapCategory, "resources") || "";
 
   const allDocuments = [
     ...pages.map((item) => Mappers.getMapPages(item as any, lang)),
     ...newsItems.map((item) => Mappers.getMapNews(item as any, lang, newsCategory)),
     ...articles.map((item) =>
-      Mappers.getMapArticle(item as any, lang, articleCategory),
+      Mappers.getMapArticle(item as any, lang, sectionOf(`articles:${item.id}`)),
     ),
     ...insights.map((item) =>
-      Mappers.getMapInsight(item as any, lang, insightCategory),
+      Mappers.getMapInsight(item as any, lang, sectionOf(`insights:${item.id}`)),
     ),
-    ...stories.map((item) => Mappers.getMapStory(item as any, lang, storyCategory)),
+    ...stories.map((item) => Mappers.getMapStory(item as any, lang, sectionOf(`story-items:${item.id}`))),
     ...webinars.map((item) =>
       Mappers.getMapWebinar(item as any, lang, webinarCategory),
     ),
     ...resourses
       .map((item) => Mappers.getMapResourse(item, lang, resourseCategory)),
-  ].filter(Boolean);
+  ]
+    .filter(Boolean)
+    // A document without a page on the site (not published, see
+    // src/utils/publication.ts) resolves to "#": it must not be searchable.
+    .filter(
+      (document) =>
+        (document as { internalLink?: string }).internalLink !== "#",
+    );
 
   return new Response(
     JSON.stringify({

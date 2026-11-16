@@ -24,6 +24,7 @@ import {
   STATIC_GLOBAL_SETTINGS_VALUE,
 } from "@data/staticLayout";
 import { lexicalToHtml, lexicalToPlainText } from "@utils/lexicalUtils";
+import { isHiddenFromSite, isStoryPublished } from "@utils/publication";
 
 const LOCALES = ["it", "en"] as const;
 type Locale = (typeof LOCALES)[number];
@@ -284,6 +285,7 @@ function mergeByDocId<Raw extends { id: number | string }>(
       // did not list that locale at all, so we skip it instead of emitting
       // an empty card. Collections without a title opt out via skipUntitled.
       if (skipUntitled && !(doc as { title?: unknown }).title) continue;
+      if (isHiddenFromSite(doc)) continue;
       const id = String(doc.id);
       if (!byId.has(id)) {
         byId.set(id, { id, ...(baseFrom ? baseFrom(doc) : {}) });
@@ -378,7 +380,7 @@ export const storiesLoader = async () => {
       while (hasMore) {
         const qs = `locale=${locale}&depth=1&limit=100&page=${page}&fallbackLocale=none`;
         const res = await payloadFetch<StoryList>("/story-items", qs).catch(() => ({ docs: [], hasNextPage: false }));
-        docs.push(...res.docs);
+        docs.push(...res.docs.filter(isStoryPublished));
         hasMore = res.hasNextPage;
         page++;
       }
@@ -557,7 +559,7 @@ export const pagesLoader = async () => {
   // Build slug map: id -> { it: slug, en: slug }
   for (const { locale, docs } of allLocalePages) {
     for (const doc of docs) {
-      if (!doc.slug) continue;
+      if (!doc.slug || isHiddenFromSite(doc)) continue;
       const id = String(doc.id);
       if (!slugMap.has(id)) slugMap.set(id, {} as Record<Locale, string>);
       const entry = slugMap.get(id);
@@ -580,7 +582,7 @@ export const pagesLoader = async () => {
 
   for (const { locale, docs } of allLocalePages) {
     for (const doc of docs) {
-      if (!doc.slug) continue;
+      if (!doc.slug || isHiddenFromSite(doc)) continue;
       const docId = String(doc.id);
       entries.push({
         id: `${docId}_${locale}`,
@@ -622,7 +624,7 @@ export const articleContentLoader = async () => {
       const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
       const res = await payloadFetch<ArticleList>("/articles", qs);
       for (const doc of res.docs) {
-        if (!doc.slug) continue;
+        if (!doc.slug || isHiddenFromSite(doc)) continue;
         entries.push({
           id: `${doc.id}_${locale}`,
           docId: String(doc.id),
@@ -666,7 +668,7 @@ export const insightContentLoader = async () => {
       const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
       const res = await payloadFetch<InsightList>("/insights", qs);
       for (const doc of res.docs) {
-        if (!doc.slug) continue;
+        if (!doc.slug || isHiddenFromSite(doc)) continue;
         entries.push({
           id: `${doc.id}_${locale}`,
           docId: String(doc.id),
@@ -721,7 +723,7 @@ export const storyContentLoader = async () => {
       const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
       const res = await payloadFetch<StoryList>("/story-items", qs);
       for (const doc of res.docs) {
-        if (!doc.slug) continue;
+        if (!doc.slug || !isStoryPublished(doc)) continue;
         entries.push({
           id: `${doc.id}_${locale}`,
           docId: String(doc.id),
@@ -784,7 +786,7 @@ export const webinarContentLoader = async () => {
       const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
       const res = await payloadFetch<WebinarList>("/webinar-items", qs);
       for (const doc of res.docs) {
-        if (!doc.slug) continue;
+        if (!doc.slug || isHiddenFromSite(doc)) continue;
         entries.push({
           id: `${doc.id}_${locale}`,
           docId: String(doc.id),
@@ -849,7 +851,7 @@ export const cataloguesLoader = async () => {
       const qs = `locale=${locale}&depth=3&limit=100&page=${page}&fallbackLocale=none`;
       const res = await payloadFetch<CatalogueList>("/catalogues", qs);
       for (const doc of res.docs) {
-        if (!doc.slug) continue;
+        if (!doc.slug || isHiddenFromSite(doc)) continue;
         entries.push({
           id: `${doc.id}_${locale}`,
           docId: String(doc.id),

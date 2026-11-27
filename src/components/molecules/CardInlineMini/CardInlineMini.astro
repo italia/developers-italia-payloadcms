@@ -44,7 +44,8 @@ const ariaLabel = isExternal ? t["link.external"] : t["link.internal"];
       <div class="it-card-image-wrapper">
         <div class="ratio ratio-16x9">
           <figure class="figure img-full">
-            <Image {...image} />
+            {/* Decorative: the card title already says what the image shows */}
+            <Image {...image} alt="" />
           </figure>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import type { ImageProps } from "@components/atoms/Image/types";
+import { meaningfulAlt } from "@utils/imageAlt";
 
 export function Image({ url, alt, title, width, height }: ImageProps) {
   if (!width || !height) {
@@ -26,7 +27,7 @@ export function Image({ url, alt, title, width, height }: ImageProps) {
       src={`${resolvedUrl}?w=${width}&auto=format`}
       srcSet={srcset}
       sizes="(max-width: 1024px) 100vw, 1024px"
-      alt={alt || ""}
+      alt={meaningfulAlt(alt, url)}
       title={title || ""}
       width={width}
       height={height}

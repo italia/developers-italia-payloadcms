@@ -1,5 +1,6 @@
 ---
 import { Image as ImageAstro } from "astro:assets";
+import { meaningfulAlt } from "@utils/imageAlt";
 import type { ImageProps } from "./types";
 type Props = ImageProps;
 const {
@@ -26,7 +27,7 @@ const resolvedUrl =
 <ImageAstro
   src={resolvedUrl}
   title={title}
-  alt={alt || ""}
+  alt={meaningfulAlt(alt, url)}
   widths={responsiveWidths}
   sizes="(max-width: 480px) 466px, (max-width: 1024px) 720px, 928px"
   width={width}

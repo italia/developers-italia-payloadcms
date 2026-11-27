@@ -58,7 +58,8 @@ export function CardEditorialNews({
       <div className="it-card-image-wrapper">
         <div className="ratio ratio-16x9">
           <figure className="figure img-full">
-            <Image {...image} />
+            {/* Decorative: the card title already says what the image shows */}
+            <Image {...image} alt="" />
           </figure>
         </div>
       </div>

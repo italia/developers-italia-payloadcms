@@ -24,7 +24,6 @@ const items: CardEditorialNewsProps[] = block.listContent.map((item) => {
     description: item.paragraph || "",
     image: item.image,
     linkTo: url || linkTo || "#",
-    action: url ? new URL(url).host : undefined,
     isExternal: !!url,
   };
 });

@@ -53,6 +53,11 @@ export function CardEditorialNews({
         <a href={linkTo} target={target} rel={rel}>
           {title}
           <span className="visually-hidden">{ariaLabel}</span>
+          {isExternal && (
+            <svg className="icon icon-sm icon-primary" aria-hidden="true">
+              <use href="/bsi-svg/sprites.svg#it-external-link" />
+            </svg>
+          )}
         </a>
       </h3>
       <div className="it-card-image-wrapper">

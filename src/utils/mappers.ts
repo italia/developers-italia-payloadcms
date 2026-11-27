@@ -25,7 +25,6 @@ export const mapNewsToCardEditorialNewsProps = (
     linkTo: link || "#",
     category: getLocaleValue(topic?._allLabelLocales, lang, ""),
     dateTime: news.publishedAt,
-    action: link ? new URL(link).host : "",
     lang: lang,
     isExternal: true,
   };
